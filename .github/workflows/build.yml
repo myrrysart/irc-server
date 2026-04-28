@@ -1,0 +1,61 @@
+name: ft_irc CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test 'make' (first build)
+        run: make
+
+      - name: Verify executable exists
+        run: test -f ircserv
+
+      - name: Test no relink (second make)
+        run: |
+          output=$(make 2>&1)
+          echo "$output"
+          if echo "$output" | grep -q "Nothing to be done"; then
+            echo "✓ No relinking - Makefile correctly skips unnecessary rebuild"
+          else
+            echo "✗ PROBLEM: Makefile is relinking when nothing changed!"
+            exit 1
+          fi
+
+      - name: Test 'make clean'
+        run: |
+          make clean
+          # Verify .o files are removed
+          if find . -name "*.o" | grep -q .; then
+            echo "✗ PROBLEM: .o files still exist after make clean"
+            exit 1
+          else
+            echo "✓ make clean works - object files removed"
+          fi
+
+      - name: Test 'make fclean'
+        run: |
+          make fclean
+          if [ -f ircserv ]; then
+            echo "✗ PROBLEM: ircserv still exists after make fclean"
+            exit 1
+          else
+            echo "✓ make fclean works - executable removed"
+          fi
+
+      - name: Test 'make re'
+        run: |
+          make re
+          if [ -f ircserv ]; then
+            echo "✓ make re works - full rebuild successful"
+          else
+            echo "✗ PROBLEM: ircserv not created after make re"
+            exit 1
+          fi
+
+      - name: Test run (starts and stops)
+        run: |
+          ./ircserv 6667 password &
+          sleep 2
+          kill %1 || true

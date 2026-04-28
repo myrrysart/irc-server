@@ -1,0 +1,18 @@
+# Whitelist gitignore, everything not listed after this will be automatically blocked
+*
+
+# TODO: remove this whole block from the project before returning for the evaluations, it is just for github stuff during development
+# BLOCK START:
+!.github/workflows/build.yml
+!.gitignore
+# BlOCK END
+
+# Makefile
+!Makefile
+
+# Project files
+!*/
+!*.cpp
+!*.hpp
+!*.tpp
+
