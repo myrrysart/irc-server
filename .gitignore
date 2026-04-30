@@ -5,6 +5,7 @@
 # BLOCK START:
 !.github/workflows/build.yml
 !.gitignore
+!irc_notes.md
 # BlOCK END
 
 # Makefile
@@ -15,4 +16,3 @@
 !*.cpp
 !*.hpp
 !*.tpp
-
