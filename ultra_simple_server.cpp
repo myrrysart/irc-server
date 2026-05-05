@@ -99,11 +99,12 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	int server_fd = setup_socket(atoi(argv[1]));
+	std::cout << "To test type ´nc localhost " << argv[1] << "' in a different terminal. "
+		<< "Then write something to see it echoed back." << std::endl;
 	int client_fd = accept_connetion(server_fd);
 	echo_message(client_fd);
-
 	close(client_fd);
 	close(server_fd);
-	std::cout << "Bye!" << std::endl;
+	std::cout << "Server done." << std::endl;
 	return 0;
 }
