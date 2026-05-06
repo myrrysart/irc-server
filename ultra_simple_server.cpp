@@ -92,6 +92,7 @@ void echo_loop(int client_fd)
 		if (received < 0)
 		{
 			std::perror("recv");
+			break;
 		}
 		if (received > 0)
 		{
@@ -101,7 +102,7 @@ void echo_loop(int client_fd)
 			message = "Echo: " + message;
 			send(client_fd, message.data(), message.size(), 0);
 		}
-}
+	}
 }
 
 int main(int argc, char** argv)
