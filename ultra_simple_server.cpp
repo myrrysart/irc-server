@@ -6,6 +6,32 @@
 
 #include <iostream>
 #include <string>
+#include <array>
+
+/*
+ NOTE: this is how the poll loop would look like. And a vector<> to manage the fds.
+ while (1)
+ {
+     poll(fds, nfds, -1);
+
+     for (int i = 0; i < nfds; i++)
+     {
+         if (fds[i].revents & POLLIN)
+         {
+             if (fds[i].fd == server_socket)
+                 accept_new_client();
+             else
+                 read_from_client(i);
+         }
+
+         if (fds[i].revents & POLLHUP)
+             disconnect_client(i);
+
+         if (fds[i].revents & POLLERR)
+             disconnect_client(i);
+     }
+ }
+ */
 
 int setup_socket(int port)
 {

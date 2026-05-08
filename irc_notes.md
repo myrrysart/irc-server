@@ -1,4 +1,4 @@
-# IRC Server Notes
+o# IRC Server Notes
 
 ##  How an IRC server works
 
