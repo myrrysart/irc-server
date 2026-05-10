@@ -73,7 +73,7 @@ typedef struct	s_IRC_Client
 	std::string		hostname;
 	std::string		received_message_buffer;
 	int				received_message_len;
-	t_IRC_Channel*	joined_channels[MAX_CHANNELS];
+	t_IRC_Channel*	joined_channels;
 	int				joined_count;
 }					t_IRC_Client;
 static_assert(sizeof(t_IRC_Client) <= 3*CACHE_LINE_SIZE," t_IRC_Client did not use 3 cache line" );
