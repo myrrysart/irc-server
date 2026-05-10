@@ -5,6 +5,7 @@
 
 # define MAX_CLIENTS 128
 # define MAX_CHANNELS 64
+# define CACHE_LINE_SIZE std::hardware_constructive_interference_size
 
 // bitmask helper macro for declaring bit state macros
 # define BIT(x) (1u << (x))
