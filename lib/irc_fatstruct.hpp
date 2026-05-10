@@ -27,6 +27,8 @@ typedef struct	s_IRC_ChannelMembership
 	t_IRC_Client*	client;
 }					t_IRC_ChannelMembership;
 
+// IRC_Channel state bitmask definitions
+# define	IS_RUNNING BIT(0)
 // IRC_Channel mode bitmask definitions
 # define	INVITE BIT(0)
 # define	TOPIC  BIT(1)
