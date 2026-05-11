@@ -2,6 +2,8 @@
 # define IRC_FATSTRUCT_HPP
 
 # include <string>
+# include <sys/poll.h>
+# include <vector>
 
 # define MAX_CLIENTS 128
 # define MAX_CHANNELS 64
@@ -11,7 +13,7 @@
 # define BIT(x) (1u << (x))
 // bitmask assumption that if a state of bitmask is 0, it is still in setup phase and have just been created
 # define IN_SETUP 0
-// bitmask typedefinition for fat struct bitfields. 
+// bitmask typedefinition for fat struct bitfields.
 //NOTE: Create a new one if more bits are needed (ex. typedef unsigned long t_long_bmask;)
 typedef unsigned int	t_bmask;
 
@@ -22,7 +24,7 @@ typedef s_IRC_Client t_IRC_Client;
 // the states of clients in individual channels
 # define IS_OPERATOR bit(0)
 # define IS_BANNED	bit(2)
-typedef struct	s_IRC_ChannelMembership 
+typedef struct	s_IRC_ChannelMembership
 {
 	t_bmask			state;
 	t_IRC_Client*	client;
@@ -36,7 +38,7 @@ static_assert(sizeof(t_IRC_ChannelMembership) <= 1*CACHE_LINE_SIZE,"IRC_ChannelM
 # define	TOPIC  BIT(1)
 # define	KEY BIT(2)
 # define	LIMIT BIT(3)
-typedef struct	s_IRC_Channel 
+typedef struct	s_IRC_Channel
 {
 	t_bmask						state;
 	t_bmask						mode;
@@ -52,7 +54,7 @@ static_assert(sizeof(t_IRC_Channel) <= 2*CACHE_LINE_SIZE," t_IRC_Channel did not
 // IRC_Client state bitmask definitions
 //NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in and chatting away. Anything else is an active state that needs to be resolved in some way.
 # define	IS_OK BIT(0)
-typedef struct	s_IRC_Client 
+typedef struct	s_IRC_Client
 {
 	t_bmask			state;
 	int				fd;
@@ -69,16 +71,17 @@ static_assert(sizeof(t_IRC_Client) <= 3*CACHE_LINE_SIZE," t_IRC_Client did not u
 
 // IRC_Server state bitmask definitions
 //NOTE: state is essentially an error code catcher for the IRC_Server. BIT(0) means server is running smoothly, anything else is an error case.
-typedef struct	s_IRC_Server 
+typedef struct	s_IRC_Server
 {
-	t_bmask			state;
-	int				listen_fd;
-	int				port;
-	std::string		password;
-	t_IRC_Client	clients[MAX_CLIENTS];
-	int				client_count;
-	t_IRC_Channel	channels[MAX_CHANNELS];
-	int				channel_count;
-}					t_IRC_Server;
+	t_bmask				state;
+	int					listen_fd;
+	int					port;
+	std::string			password;
+	t_IRC_Client		clients[MAX_CLIENTS];
+	int					client_count;
+	t_IRC_Channel		channels[MAX_CHANNELS];
+	int					channel_count;
+	std::vector<pollfd>	fds;
+}						t_IRC_Server;
 
 #endif//IRC_FATSTRUCT_HPP

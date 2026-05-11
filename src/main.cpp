@@ -8,3 +8,13 @@ int main(int argc, char **argv) {
     std::cout << "ircserv starting on port " << argv[1] << std::endl;
     return 0;
 }
+
+
+/*
+ * main():
+     parse args
+     setup_socket()
+     init fatstruct / t_IRC_server
+     server_loop(server)      ← hands off, never returns
+
+ */

@@ -2,13 +2,12 @@
 #include <cstdio>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <sys/poll.h>
 #include <unistd.h>
 
 #include <iostream>
-#include <string>
 #include <array>
-#include <vector>
+
+#include "../lib/irc_fatstruct.hpp"
 
 int setup_socket(int port)
 {
@@ -114,9 +113,8 @@ bool read_from_client(std::vector<pollfd>& fds, size_t index, std::array<char, 5
 void server_loop(int server_fd)
 {
 	std::array<char, 512> echo_buf;
-	std::vector<pollfd> fds;
 
-	fds.push_back(pollfd{server_fd, POLLIN, 0});
+	.push_back(pollfd{server_fd, POLLIN, 0});
 
 	while (1)
 	{
@@ -163,3 +161,14 @@ void server_loop(int server_fd)
 		}
 	}
 }
+
+
+/*
+ * 4. Refactor `ultra_simple_server.cpp`
+ - `server_loop(t_IRC_Server& server)` — owns `while(1) { poll(); poll_loop(); }`, no local buffers/vectors
+ - `poll_loop(t_IRC_Server& server)` — iterates `server.poll_fds`, dispatches to handlers
+ - `accept_new_client(t_IRC_Server& server)` — pulls from client pool, pushes to poll_fds
+ - `read_from_client(t_IRC_Server& server, size_t i)` — uses `server.clients[...].received_message_buffer` instead of shared `echo_buf`
+ - `disconnect_client(t_IRC_Server& server, size_t i)` — releases client slot, erases from poll_fds
+ - Remove the now-unnecessary `echo_buf` param
+ */
