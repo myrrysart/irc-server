@@ -2,36 +2,13 @@
 #include <cstdio>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/poll.h>
 #include <unistd.h>
 
 #include <iostream>
 #include <string>
 #include <array>
-
-/*
- NOTE: this is how the poll loop would look like. And a vector<> to manage the fds.
- while (1)
- {
-     poll(fds, nfds, -1);
-
-     for (int i = 0; i < nfds; i++)
-     {
-         if (fds[i].revents & POLLIN)
-         {
-             if (fds[i].fd == server_socket)
-                 accept_new_client();
-             else
-                 read_from_client(i);
-         }
-
-         if (fds[i].revents & POLLHUP)
-             disconnect_client(i);
-
-         if (fds[i].revents & POLLERR)
-             disconnect_client(i);
-     }
- }
- */
+#include <vector>
 
 int setup_socket(int port)
 {
@@ -91,42 +68,98 @@ int setup_socket(int port)
  * The format depends on the protocol used. In out case sockaddr_in (ip4v). So sort of polymorphism again?
  */
 
-int	accept_connetion(int server_fd)
+void disconnect_client(std::vector<pollfd>& fds, size_t index)
+{
+	close(fds[index].fd);
+	fds.erase(fds.begin() + static_cast<std::ptrdiff_t>(index));
+}
+
+void accept_new_client(std::vector<pollfd>& fds, int server_fd)
 {
 	int client_fd = accept(server_fd, nullptr, nullptr);
 	if (client_fd < 0)
 	{
 		std::perror("accept");
-		close(server_fd);
-		exit(1);
+		return;
 	}
-	return client_fd;
+	fds.push_back(pollfd{client_fd, POLLIN, 0});
 }
 
-void echo_loop(int client_fd)
+bool read_from_client(std::vector<pollfd>& fds, size_t index, std::array<char, 512>& echo_buf)
+{
+	int fd = fds[index].fd;
+	ssize_t received = recv(fd, echo_buf.data(), echo_buf.size(), 0);
+	if (received == 0)
+	{
+		std::cout << "Client disconnected.\n";
+		disconnect_client(fds, index);
+		return true;
+	}
+	if (received < 0)
+	{
+		std::perror("recv");
+		disconnect_client(fds, index);
+		return true;
+	}
+	if (received > 0)
+	{
+		std::string message(echo_buf.data(), static_cast<size_t>(received));
+		std::cout << "Received: " << message << std::endl;
+		message = "Echo: " + message;
+		send(fd, message.data(), message.size(), 0);
+	}
+	return false;
+}
+
+void server_loop(int server_fd)
 {
 	std::array<char, 512> echo_buf;
-	while(1)
+	std::vector<pollfd> fds;
+
+	fds.push_back(pollfd{server_fd, POLLIN, 0});
+
+	while (1)
 	{
-		ssize_t received = recv(client_fd, echo_buf.data(), echo_buf.size(), 0);
-
-		if (received == 0)
+		if (poll(fds.data(), static_cast<nfds_t>(fds.size()), -1) < 0)
 		{
-			std::cout << "Client disconnected." << std::endl;
+			std::perror("poll");
 			break;
 		}
-		if (received < 0)
-		{
-			std::perror("recv");
-			break;
-		}
-		if (received > 0)
-		{
-			std::string message(echo_buf.data(), received);
-			std::cout << "Received: " << message << std::endl;
 
-			message = "Echo: " + message;
-			send(client_fd, message.data(), message.size(), 0);
+		size_t i = 0;
+		while (i < fds.size())
+		{
+			pollfd& pfd = fds[i];
+
+			if (pfd.revents & POLLERR)
+			{
+				if (pfd.fd == server_fd)
+				{
+					std::cerr << "Listen socket error.\n";
+					return;
+				}
+				disconnect_client(fds, i);
+				continue;
+			}
+
+			if (pfd.revents & POLLHUP)
+			{
+				if (pfd.fd != server_fd)
+					disconnect_client(fds, i);
+				else
+					i++;
+				continue;
+			}
+
+			if (pfd.revents & POLLIN)
+			{
+				if (pfd.fd == server_fd)
+					accept_new_client(fds, server_fd);
+				else if (read_from_client(fds, i, echo_buf))
+					continue;
+			}
+
+			i++;
 		}
 	}
 }
@@ -141,9 +174,7 @@ int main(int argc, char** argv)
 	int server_fd = setup_socket(atoi(argv[1]));
 	std::cout << "To test type ´nc localhost " << argv[1] << "' in a different terminal. "
 		<< "Then write something to see it echoed back." << std::endl;
-	int client_fd = accept_connetion(server_fd);
-	echo_loop(client_fd);
-	close(client_fd);
+	server_loop(server_fd);
 	close(server_fd);
 	std::cout << "Server done." << std::endl;
 	return 0;
