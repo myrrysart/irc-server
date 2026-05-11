@@ -163,19 +163,3 @@ void server_loop(int server_fd)
 		}
 	}
 }
-
-int main(int argc, char** argv)
-{
-	if (argc != 2)
-	{
-		std::cout << "Usage: " << argv[0] << " <port>" << std::endl;
-		return 1;
-	}
-	int server_fd = setup_socket(atoi(argv[1]));
-	std::cout << "To test type ´nc localhost " << argv[1] << "' in a different terminal. "
-		<< "Then write something to see it echoed back." << std::endl;
-	server_loop(server_fd);
-	close(server_fd);
-	std::cout << "Server done." << std::endl;
-	return 0;
-}
