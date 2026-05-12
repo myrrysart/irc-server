@@ -1,4 +1,5 @@
 #include <iostream>
+#include "../lib/irc_fatstruct.hpp"
 
 int main(int argc, char **argv) {
     if (argc != 3) {
@@ -6,13 +7,19 @@ int main(int argc, char **argv) {
         return 1;
     }
     std::cout << "ircserv starting on port " << argv[1] << std::endl;
+
+    // init irc_struct
+    t_IRC_Server server;
+    server.port = atoi(argv[1]);
+    setup_socket(server);
+    server_loop(server);
     return 0;
 }
 
 
 /*
  * main():
-     parse args
+     parse args OK
      setup_socket()
      init fatstruct / t_IRC_server
      server_loop(server)      ← hands off, never returns

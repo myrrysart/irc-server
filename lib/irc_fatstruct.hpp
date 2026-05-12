@@ -7,6 +7,7 @@
 
 # define MAX_CLIENTS 128
 # define MAX_CHANNELS 64
+# define MAX_PENDING_CONNECTIONS 32
 # define CACHE_LINE_SIZE std::hardware_constructive_interference_size
 
 // bitmask helper macro for declaring bit state macros
@@ -83,5 +84,9 @@ typedef struct	s_IRC_Server
 	int					channel_count;
 	std::vector<pollfd>	fds;
 }						t_IRC_Server;
+
+//server prototypes at least for now.
+void	setup_socket(t_IRC_Server &server);
+void	server_loop(t_IRC_Server &server);
 
 #endif//IRC_FATSTRUCT_HPP
