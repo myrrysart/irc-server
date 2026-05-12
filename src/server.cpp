@@ -164,4 +164,6 @@ void server_loop(t_IRC_Server &server)
 
  5. **Small**
     `argv[2]` password is never stored in **`server.password`**.
- */
+
+After all that
+    */
