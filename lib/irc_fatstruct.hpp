@@ -3,6 +3,7 @@
 
 # include <string>
 # include <sys/poll.h>
+# include <unordered_map>
 # include <vector>
 
 # define MAX_CLIENTS 128
@@ -74,16 +75,15 @@ static_assert(sizeof(t_IRC_Client) <= 3*CACHE_LINE_SIZE," t_IRC_Client did not u
 //NOTE: state is essentially an error code catcher for the IRC_Server. BIT(0) means server is running smoothly, anything else is an error case.
 typedef struct	s_IRC_Server
 {
-	t_bmask				state;
-	int					listen_fd;
-	int					port;
-	std::string			password;
-	t_IRC_Client		clients[MAX_CLIENTS];
-	int					client_count;
-	t_IRC_Channel		channels[MAX_CHANNELS];
-	int					channel_count;
-	std::vector<pollfd>	fds;
-}						t_IRC_Server;
+	t_bmask									state;
+	int										listen_fd;
+	int										port;
+	std::string								password;
+	std::unordered_map<int, t_IRC_Client>	clients;
+	t_IRC_Channel							channels[MAX_CHANNELS];
+	int										channel_count;
+	std::vector<pollfd>						poll_fds;
+}											t_IRC_Server;
 
 //server prototypes at least for now.
 void	setup_socket(t_IRC_Server &server);
