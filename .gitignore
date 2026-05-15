@@ -5,7 +5,7 @@
 # BLOCK START:
 !.github/workflows/build.yml
 !.gitignore
-!*.md
+!notes.md
 # BlOCK END
 
 # Makefile
