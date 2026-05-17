@@ -1,9 +1,11 @@
-#include <arpa/inet.h>
 #include <cstdio>
+#include <unistd.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <unistd.h>
+#include <netinet/tcp.h>
 
+#include <vector>
 #include <iostream>
 #include "../lib/irc_fatstruct.hpp"
 
@@ -26,7 +28,7 @@ void  setup_socket(t_IRC_Server &server)
 
 	sockaddr_in socket_addr{};
 	socket_addr.sin_family = AF_INET;
-	socket_addr.sin_addr.s_addr = htonl(INADDR_ANY); //  = any available interface
+	socket_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	socket_addr.sin_port = htons(server.port);
 
 	if (bind(server.listen_fd, reinterpret_cast<sockaddr*>(&socket_addr), sizeof(socket_addr)) < 0)
@@ -50,7 +52,7 @@ void disconnect_client(t_IRC_Server &server, int fd)
 {
 	close(fd);
 	server.clients.erase(fd);
-	//TODO: remove the poll entry
+	std::erase_if(server.poll_fds, [fd](const pollfd& pfd){ return pfd.fd == fd; });
 }
 
 void accept_new_client(t_IRC_Server &server)
@@ -61,8 +63,25 @@ void accept_new_client(t_IRC_Server &server)
 		std::perror("accept");
 		return;
 	}
+	if (server.clients.size() >= MAX_CLIENTS)
+	{
+		std::cout << "This server is full." << std::endl;
+		close(client_fd);
+		return;
+	}
+
+	int one = 1;
+
+	if (setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) < 0)
+	{
+		std::perror("setsockopt");
+		close(client_fd);
+		return;
+	}
+
 	server.poll_fds.push_back(pollfd{client_fd, POLLIN, 0});
-	//TODO: insert to client map
+	server.clients[client_fd] = t_IRC_Client{};
+	server.clients[client_fd].fd = client_fd;
 }
 
 bool read_from_client(t_IRC_Server &server, int fd)
@@ -84,7 +103,12 @@ bool read_from_client(t_IRC_Server &server, int fd)
 	if (received > 0)
 	{
 		server.clients[fd].received_message_buffer.append(buf, received);
-		// if(terminator) parse and erase receive_message_buffer
+		if (server.clients[fd].received_message_buffer.find('\n') != std::string::npos)
+		{
+			//parsing here. Let's just print for now. TODO: termitaror to match IRC standard?
+			std::cout << "Received from "<< server.clients[fd].fd << " :" << server.clients[fd].received_message_buffer.substr(0, server.clients[fd].received_message_buffer.find('\n')) << std::endl;
+			server.clients[fd].received_message_buffer.erase(0, server.clients[fd].received_message_buffer.find('\n') + 1);
+		}
 	}
 	return false;
 }
@@ -136,3 +160,11 @@ void server_loop(t_IRC_Server &server)
 		}
 	}
 }
+
+
+/*
+ * TODO:
+ * 1) figure out non-blocking version of this.
+ * Probably a few flags somewhere.
+ * 2) make the first parsing step with correct termination.
+ */

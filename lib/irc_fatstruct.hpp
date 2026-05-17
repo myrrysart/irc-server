@@ -2,9 +2,10 @@
 # define IRC_FATSTRUCT_HPP
 
 # include <string>
-# include <sys/poll.h>
+# include <poll.h>
 # include <unordered_map>
 # include <vector>
+# include <new> // for hardware_constructive_interference_size
 
 # define MAX_CLIENTS 128
 # define MAX_CHANNELS 64

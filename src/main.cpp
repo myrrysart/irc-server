@@ -8,7 +8,6 @@ int main(int argc, char **argv) {
     }
     std::cout << "ircserv starting on port " << argv[1] << std::endl;
 
-    // init irc_struct
     t_IRC_Server server = {};
     server.port = atoi(argv[1]);
     setup_socket(server);
