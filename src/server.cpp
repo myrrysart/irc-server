@@ -160,11 +160,3 @@ void server_loop(t_IRC_Server &server)
 		}
 	}
 }
-
-
-/*
- * TODO:
- * 1) figure out non-blocking version of this.
- * Probably a few flags somewhere.
- * 2) make the first parsing step with correct termination.
- */
