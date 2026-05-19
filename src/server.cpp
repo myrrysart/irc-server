@@ -1,3 +1,4 @@
+#include <cerrno>
 #include <cstddef>
 #include <cstdio>
 #include <string>
@@ -12,22 +13,23 @@
 #include <iostream>
 #include "../lib/irc_fatstruct.hpp"
 
+void fatal_server_error(const char* msg, int fd)
+{
+	std::perror(msg);
+	if (fd>=0)
+		close(fd);
+	exit(1);
+}
+
 void	setup_socket(t_IRC_Server &server)
 {
-	 server.listen_fd  = socket(AF_INET, SOCK_STREAM, 0);
+	server.listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (server.listen_fd < 0)
-	{
-		std::perror("socket");
-		exit(1);
-	}
+		fatal_server_error("socket", -1);
 
 	int opt = 1;
 	if (setsockopt(server.listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-	{
-		std::perror("setsockopt");
-		close(server.listen_fd);
-		exit(1);
-	}
+		fatal_server_error("setsockopt", server.listen_fd);
 
 	sockaddr_in socket_addr{};
 	socket_addr.sin_family = AF_INET;
@@ -35,18 +37,10 @@ void	setup_socket(t_IRC_Server &server)
 	socket_addr.sin_port = htons(server.port);
 
 	if (bind(server.listen_fd, reinterpret_cast<sockaddr*>(&socket_addr), sizeof(socket_addr)) < 0)
-	{
-		std::perror("bind");
-		close(server.listen_fd);
-		exit(1);
-	}
+		fatal_server_error("bind", server.listen_fd);
 
 	if (listen(server.listen_fd, MAX_PENDING_CONNECTIONS) < 0)
-	{
-		std::perror("listen");
-		close(server.listen_fd);
-		exit(1);
-	}
+		fatal_server_error("listen", server.listen_fd);
 
 	std::cout << "Listening on port " << server.port << "\n";
 }
@@ -117,6 +111,33 @@ void	handle_client_message(t_IRC_Client &client)
 	}
 }
 
+bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
+{
+	if (rev & (POLLERR | POLLHUP | POLLNVAL))
+	{
+		if (fd == server.listen_fd)
+			fatal_server_error("listen socket poll event", -1);
+		disconnect_client(server, fd);
+		return true;
+	}
+
+	if (rev & POLLIN)
+	{
+		if (fd == server.listen_fd)
+		{
+			accept_new_client(server);
+			return false;
+		}
+		if (recv_from_client(server, fd))
+		{
+			disconnect_client(server, fd);
+			return true;
+		}
+		handle_client_message(server.clients[fd]);
+	}
+		return false;
+}
+
 void	server_loop(t_IRC_Server &server)
 {
 	server.poll_fds.push_back(pollfd{server.listen_fd, POLLIN, 0});
@@ -125,44 +146,17 @@ void	server_loop(t_IRC_Server &server)
 	{
 		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), -1) < 0)
 		{
-			std::perror("poll");
-			break;
+			if (errno == EINTR)
+				continue;
+			fatal_server_error("poll", -1);
 		}
+
 		for (size_t i = 0; i < server.poll_fds.size(); )
 		{
-			pollfd &pfd = server.poll_fds[i];
-			bool disconnected = false;
-			short rev = pfd.revents;
-
-			if (rev & (POLLERR | POLLHUP))
-			{
-				if (pfd.fd == server.listen_fd)
-				{
-					if (rev & POLLERR)
-					{
-						std::perror("poll");
-						return;
-					}
-					i++;
-					continue;
-				}
-				disconnect_client(server, pfd.fd);
-				disconnected = true;
-			}
-			else if (rev & POLLIN)
-			{
-				if (pfd.fd == server.listen_fd)
-					accept_new_client(server);
-				else
-				{
-					disconnected = recv_from_client(server, pfd.fd);
-					if (!disconnected)
-						handle_client_message(server.clients[pfd.fd]);
-					else
-						disconnect_client(server, pfd.fd);
-				}
-			}
-			if (!disconnected)
+			int fd = server.poll_fds[i].fd;
+			short rev = server.poll_fds[i].revents;
+			bool is_removed = handle_poll_event(server, fd, rev);
+			if (!is_removed)
 				i++;
 		}
 	}
