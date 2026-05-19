@@ -13,7 +13,7 @@
 #include <iostream>
 #include "../lib/irc_fatstruct.hpp"
 
-void fatal_server_error(const char* msg, int fd)
+void	fatal_server_error(const char* msg, int fd)
 {
 	std::perror(msg);
 	if (fd>=0)
@@ -27,7 +27,7 @@ void	setup_socket(t_IRC_Server &server)
 	if (server.listen_fd < 0)
 		fatal_server_error("socket", -1);
 
-	int opt = 1;
+	int	opt = 1;
 	if (setsockopt(server.listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		fatal_server_error("setsockopt", server.listen_fd);
 
@@ -53,20 +53,20 @@ void	disconnect_client(t_IRC_Server &server, int fd)
 	std::erase_if(server.poll_fds, [fd](const pollfd& pfd){ return pfd.fd == fd; });
 }
 
-void	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in const &client_addr)
+bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in const &client_addr)
 {
-	int one = 1;
-
+	int	one = 1;
 	if (setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) < 0)
 	{
 		std::perror("setsockopt");
 		close(client_fd);
-		return;
+		return false;
 	}
 	server.poll_fds.push_back(pollfd{client_fd, POLLIN, 0});
 	server.clients[client_fd] = t_IRC_Client{};
 	server.clients[client_fd].fd = client_fd;
 	server.clients[client_fd].addr = client_addr;
+	return true;
 }
 
 void	accept_new_client(t_IRC_Server &server)
@@ -85,7 +85,8 @@ void	accept_new_client(t_IRC_Server &server)
 		close(client_fd);
 		return;
 	}
-	setup_client(server, client_fd, client_addr);
+	if (!setup_client(server, client_fd, client_addr))
+		return ;
 }
 
 bool	recv_from_client(t_IRC_Server &server, int fd)
