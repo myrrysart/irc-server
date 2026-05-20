@@ -21,7 +21,7 @@ void	fatal_server_error(const char* msg, int fd)
 	exit(1);
 }
 
-void	setup_socket(t_IRC_Server &server)
+void	setup_listener(t_IRC_Server &server)
 {
 	server.listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (server.listen_fd < 0)

@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
 
     t_IRC_Server server = {};
     server.port = atoi(argv[1]);
-    setup_socket(server);
+    create_listener(server);
     server_loop(server);
     return 0;
 }

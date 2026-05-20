@@ -88,8 +88,4 @@ typedef struct	s_IRC_Server
 	std::vector<pollfd>						poll_fds;
 }											t_IRC_Server;
 
-//server prototypes at least for now.
-void	setup_socket(t_IRC_Server &server);
-void	server_loop(t_IRC_Server &server);
-
 #endif//IRC_FATSTRUCT_HPP
