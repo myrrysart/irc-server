@@ -54,7 +54,7 @@ typedef struct	s_IRC_Channel
 	int							member_count;
 }								t_IRC_Channel;
 
-// static_assert(sizeof(t_IRC_Channel) <= 2*CACHE_LINE_SIZE," t_IRC_Channel did not use 2 cache line" );
+static_assert(sizeof(t_IRC_Channel) <= 2*CACHE_LINE_SIZE," t_IRC_Channel did not use 2 cache line" );
 // IRC_Client state bitmask definitions
 //NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in and chatting away. Anything else is an active state that needs to be resolved in some way.
 # define	IS_OK BIT(0)

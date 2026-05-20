@@ -1,4 +1,5 @@
 #include <iostream>
+#include "../lib/server.hpp"
 #include "../lib/irc_fatstruct.hpp"
 
 int main(int argc, char **argv) {
@@ -14,3 +15,12 @@ int main(int argc, char **argv) {
     server_loop(server);
     return 0;
 }
+
+/*
+ * steps to establish connection:
+ * 1. Create socket
+ * 2. Bind socket to port
+ * 3. start listening for connections
+ * 4. poll for ready fd's
+ * 5. Accept client and add (POLLIN flag) to poll set and client map
+ */
