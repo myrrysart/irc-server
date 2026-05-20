@@ -1,4 +1,3 @@
-#include <iostream>
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
 
@@ -22,6 +21,4 @@ void	create_listener(t_IRC_Server &server)
 
 	if (listen(server.listen_fd, MAX_PENDING_CONNECTIONS) < 0)
 		fatal_server_error("listen", server.listen_fd);
-
-	std::cout << "Listening on port " << server.port << "\n";
 }
