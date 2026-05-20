@@ -8,6 +8,9 @@
 !irc_notes.md
 # BlOCK END
 
+# Testfiles
+!*.sh
+
 # Makefile
 !Makefile
 
