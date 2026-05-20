@@ -31,7 +31,7 @@ void	setup_socket(t_IRC_Server &server)
 	if (setsockopt(server.listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		fatal_server_error("setsockopt", server.listen_fd);
 
-	sockaddr_in socket_addr{};
+	sockaddr_in	socket_addr{};
 	socket_addr.sin_family = AF_INET;
 	socket_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	socket_addr.sin_port = htons(server.port);
@@ -86,13 +86,14 @@ void	accept_new_client(t_IRC_Server &server)
 		return;
 	}
 	if (!setup_client(server, client_fd, client_addr))
-		return ;
+		return;
 }
 
 bool	recv_from_client(t_IRC_Server &server, int fd)
 {
-	char buf[512];
-	ssize_t received = recv(fd, buf, sizeof(buf), 0);
+	char	buf[512];
+
+	ssize_t	received = recv(fd, buf, sizeof(buf), 0);
 	if (received <= 0)
 		return true;
 	server.clients[fd].received_message_buffer.append(buf, received);
@@ -101,8 +102,9 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 
 void	handle_client_message(t_IRC_Client &client)
 {
-	std::string &buf = client.received_message_buffer;
-	size_t pos;
+	std::string	&buf = client.received_message_buffer;
+	size_t		pos;
+
 	while((pos = buf.find('\n')) != std::string::npos)
 	{
 		std::cout	<< "Received from " << client.fd << " : "
@@ -145,7 +147,7 @@ void	server_loop(t_IRC_Server &server)
 
 	while (1)
 	{
-		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), -1) < 0)
+		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), 0) < 0)
 		{
 			if (errno == EINTR)
 				continue;
@@ -154,9 +156,9 @@ void	server_loop(t_IRC_Server &server)
 
 		for (size_t i = 0; i < server.poll_fds.size(); )
 		{
-			int fd = server.poll_fds[i].fd;
-			short rev = server.poll_fds[i].revents;
-			bool is_removed = handle_poll_event(server, fd, rev);
+			int		fd = server.poll_fds[i].fd;
+			short	rev = server.poll_fds[i].revents;
+			bool	is_removed = handle_poll_event(server, fd, rev);
 			if (!is_removed)
 				i++;
 		}
