@@ -4,8 +4,10 @@
  1) status flag for main loop, when off-> out of the main loop
  2) errno and message to a struct. Printed at error handler after the main loop
  3) close fds etc at the end
- - make the first parsing step with correct termination.
-
+- make the first parsing step with correct termination.
+- try catch blocks where error handling is now, at atoi
+- server.client.at(fd) throws
+-  
  '''
  create_listener(server)
  server_loop(server)        ← only enters if state == RUNNING
