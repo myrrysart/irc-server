@@ -45,7 +45,8 @@ static_assert(sizeof(t_IRC_ChannelMembership) <= 1*CACHE_LINE_SIZE,"IRC_ChannelM
 # define	TOPIC  BIT(1)
 # define	KEY BIT(2)
 # define	LIMIT BIT(3)
-typedef struct	s_IRC_Channel
+# define	OPERATOR_PRIVILEGE BIT(4)
+typedef struct	s_IRC_Channel 
 {
 	t_bmask						state;
 	t_bmask						mode;
