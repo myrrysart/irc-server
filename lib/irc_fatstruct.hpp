@@ -32,7 +32,7 @@ typedef s_IRC_Client t_IRC_Client;
 
 // the states of clients in individual channels
 # define IS_OPERATOR BIT(0)
-# define IS_BANNED	bit(2)
+# define IS_BANNED	BIT(2)
 typedef struct	s_IRC_ChannelMembership
 {
 	t_bmask			state;
