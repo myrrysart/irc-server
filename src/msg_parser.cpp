@@ -12,12 +12,6 @@
 
 #include <string>
 
-// WARN: Add those macros to the header at some point? They only concern the
-// 'clients' bit mask.
-# define	PASSWORD BIT(1)
-# define	NICK BIT(2)
-# define	USERNAME BIT(3)
-# define	ERROR_FLAG BIT(4)
 
 // TODO: FIRST THING TO DO: TOKENIZATION!
 // Create an array of std::string_views:
