@@ -5,13 +5,16 @@
 
 // TODO: Consider cases of commands that are received when they are not valid
 // anymore - for example, a nickname has to be set before
-//
+
 // TODO: test with netcat (nc)
 
-#include "irc_fatstruct.hpp"
+#include "../lib/irc_fatstruct.hpp"
 
 #include <string>
 
+// TODO: ONLY PUT A TIMER FOR KICKING OUT THE USER DURING THEIR REGISTRATION PHASE:
+// Do not kick them out for being inactive after they have registered!
+// date: 26.05.2026
 
 // TODO: FIRST THING TO DO: TOKENIZATION!
 // Create an array of std::string_views:
