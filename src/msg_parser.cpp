@@ -5,6 +5,8 @@
 
 // TODO: Consider cases of commands that are received when they are not valid
 // anymore - for example, a nickname has to be set before
+//
+// TODO: test with netcat (nc)
 
 #include "irc_fatstruct.hpp"
 

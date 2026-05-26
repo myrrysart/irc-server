@@ -93,6 +93,20 @@ typedef struct	s_IRC_Server
 	t_IRC_Channel							channels[MAX_CHANNELS];
 	int										channel_count;
 	std::vector<pollfd>						poll_fds;
+
+	static constexpr const char				*commands[] = {
+		"NICK",
+		"PASS",
+		"USER",
+		"JOIN", // "lets users join a channel"// WARN: is this the exact command needed to be implemented for joining a channel?
+		"KICK",
+		"INVITE",
+		"PART", // WARN: extra but nice to have: "lets users leave a channel."
+		"PING",
+		"PONG",
+		"PRIVMSG" // "used to send private messages between users, as well as to send messages to channels"
+	};
+	// NOTE: do not implement OPER: we need channel operators, not IRC operators.
 }											t_IRC_Server;
 
 #endif//IRC_FATSTRUCT_HPP
