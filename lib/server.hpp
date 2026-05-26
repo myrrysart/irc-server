@@ -1,12 +1,13 @@
 #include <cerrno>
-#include <cstdio>
 #include <sys/poll.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <netinet/tcp.h>
+#include <stdexcept> // i think i should start throwing at smoe point.
 #include "irc_fatstruct.hpp"
+
 
 void	fatal_server_error(const char* msg, int fd);
 

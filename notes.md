@@ -6,7 +6,7 @@
  3) close fds etc at the end
 - make the first parsing step with correct termination.
 - try catch blocks where error handling is now, at atoi
-- server.client.at(fd) throws
+- server.client.at(fd) throws, not catching atm
 -  
  '''
  create_listener(server)

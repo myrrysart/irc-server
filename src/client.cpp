@@ -9,7 +9,7 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 	ssize_t	received = recv(fd, buf, sizeof(buf), 0);
 	if (received <= 0)
 		return true;
-	server.clients[fd].received_message_buffer.append(buf, received);
+	server.clients.at(fd).received_message_buffer.append(buf, received);
 	return false;
 }
 
