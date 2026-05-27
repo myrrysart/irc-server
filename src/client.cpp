@@ -46,15 +46,6 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 			server.clients[fd].state &= ~t_IRC_Client::Flags::DISCARD_MSG;
 
 		}
-		else
-		{
-			// append the trailing part after the new line
-			if (pos < received - 1) // otherwise, there is nothing to append.
-				server.clients[fd].received_message_buffer.append(buf[pos + 1], received - pos - 1);
-			// unset DISCARD_MSG flag - FIXME: how?
-			server.clients[fd].state |?????? t_IRC_Client::Flags::DISCARD_MSG;
-		}
-
 	}
 	else
 		server.clients[fd].received_message_buffer.append(buf, received);
