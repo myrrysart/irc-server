@@ -1,24 +1,50 @@
 #include <iostream>
+#include <string_view>
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
 
 bool	recv_from_client(t_IRC_Server &server, int fd)
 {
-	char	buf[512];
+	static constexpr std::size_t	buf_size = 512;
+	char		buf[buf_size];
+	std::string	&msg = server.clients[fd].received_message_buffer;
 
-	ssize_t	received = recv(fd, buf, sizeof(buf), 0);
+	ssize_t	received = recv(fd, buf, buf_size, 0);
 	if (received <= 0)
 		return true;
-	// FIXME: add a truncation of the last 2 bytes: at index 510, insert "\r\n" - 
-	// or send ERR_INPUTTOOLONG (417).
-	// This is based upon "Compatibility with incorrect software" section on
+
+	// NOTE: Handle message with over 512 bytes:
+	// - Truncate the last 2 bytes: at index 510, insert "\r\n"
+	// or - send ERR_INPUTTOOLONG (417).
+	// This is based on "Compatibility with incorrect software" section on
 	// modern.ircdocs.horse/#source
-	if (received >= 512)
+	// if (received >= buf_size)
+	// {
+	//
+	//
+	// }
+		// Alternative 'truncation' version:
+		// buf[buf_size - 2] = '\r';
+		// buf[buf_size - 1] = '\n';
+	// }
+	// FIXME: Messages over 512 requires discarding the rest of the message,
+	// which would only get received later on!
+
+	// FIXME: Have to add a check for the buffer being over 512 as well!
+	// FIXME: just work in progress right now!
+	if (msg.length() > buf_size || (msg.length() == buf_size && msg[buf_size - 1] != '\n'))
 	{
-		buf[510] = '\r';
-		buf[511] = '\n';
+		// TODO: handle the error:
+			// - communicate: ERR_INPUTTOOLONG (417)
+			// - set some flag so that you can DISCARD rest of incoming message
+			// - add a check for that DISCARD flag at the top of this function?
+			// - erase the msg buffer?
+
+		return true;
 	}
-	server.clients[fd].received_message_buffer.append(buf, received);
+	// FIXME:
+	// Also handle case where there is only the '\n', not both "\r\n"
+
 	return false;
 }
 
@@ -37,7 +63,6 @@ void	handle_client_message(t_IRC_Client &client)
 
 		std::cout	<< "Received from " << client.fd << " : " << msg << std::endl;
 
-		//
 		// TODO: parsing happens here.
 		// Careful, 'msg' will not survive the end of this iteration of while loop!
 

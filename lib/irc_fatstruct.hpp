@@ -2,13 +2,12 @@
 # define IRC_FATSTRUCT_HPP
 
 
-#include <netinet/in.h>
+# include <netinet/in.h>
 # include <string>
 # include <poll.h>
 # include <unordered_map>
 # include <vector>
 # include <new> // for hardware_constructive_interference_size
-# include <string_view> // WARN: is it still used in this file?
 
 # define MAX_CLIENTS 128
 # define MAX_CHANNELS 64
@@ -63,30 +62,6 @@ typedef struct	s_IRC_Channel
 	int							member_count;
 }								t_IRC_Channel;
 static_assert(sizeof(t_IRC_Channel) <= 2*CACHE_LINE_SIZE," t_IRC_Channel did not use 2 cache line" );
-
-
-typedef struct	s_tokenizer
-{
-	static constexpr std::size_t	max_params = 512; // WARN: is this a good number for it? think again about it, now that each 512 byte message is being truncated with a "\r\n"!! It can be smaller!
-	// WARN: is this even necessary
-	// enum	Masks : uint8_t
-	// {
-	// 	HAS_TAGS		BIT(0),
-	// 	HAS_SOURCE		BIT(1),
-	// 	HAS_TRAILING	BIT(2)
-	// };
-
-	// WARN: is this even necessary?
-	// t_bmask		state;
-
-	//std::string_view	tags;
-	//std::string_view	source;
-	std::size_t			n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
-	std::string_view	cmd; // WARN: is it only one single word / 3 digits?
-	std::string_view	params[max_params];
-
-}				t_tokenizer;
-
 
 // IRC_Client state bitmask definitions
 //NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in and chatting away. Anything else is an active state that needs to be resolved in some way.

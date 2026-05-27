@@ -31,7 +31,9 @@
 // NOTE: expect to receive a string 'message' that is everything up to the '\n'
 // or "\r\n" - non inclusive!!
 // TODO: IF THE USER IS IDLE VERY LONG TIME, KICK THEM OUT!!!
-//
+
+/*
+ * NOTE: CLIENT AUTHENTIFICATION: unused draft, probably deprecated
 void	parse_input(const std::string &message, t_IRC_Server &IRC_Server,
 			const std::size_t i) // NOTE: i is the index of the concerned client.
 {
@@ -56,18 +58,17 @@ void	parse_input(const std::string &message, t_IRC_Server &IRC_Server,
 
 
 	if (!(IRC_Server.clients.i.state & IS_OK))
-		authenticate_user();
-
-
+		authenticate_client();
 
 
 
 }
 
-void	authenticate_user(const std::string &message, t_IRC_Server &IRC_Server,
+void	authenticate_client(const std::string &message, t_IRC_Server &IRC_Server,
 			const std::size_t i)
 {
 	
 
 
 }
+*/
