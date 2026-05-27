@@ -20,13 +20,13 @@ typedef struct	s_parser
 	* the last two of those are "\r\n", and, even in an improbable scenario
 	* where the message's command and each of the parameters would be only 1
 	* byte long (separated by a space), we could have as many as 255 arguments. */
-	static constexpr std::size_t	buf_size = 512;
-	static constexpr std::size_t	max_params = 255;
+	static constexpr size_t	buf_size = 512;
+	static constexpr size_t	max_params = 255;
 
 	// t_bmask			state; // WARN: is this even necessary?
 	//std::string_view	tags; // eventual tokens
 	//std::string_view	source; // eventual tokens
-	std::size_t			n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
+	size_t				n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
 	std::string_view	cmd; // WARN: can it ONLY be one single word / 3 digits?
 	std::string_view	params[max_params];
 

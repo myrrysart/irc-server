@@ -144,12 +144,12 @@ int8_t	prepare_message_for_parsing(const size_t pos, std::string &buf)
 /*
  * NOTE: CLIENT AUTHENTIFICATION: unused draft, probably deprecated
 void	parse_input(const std::string &message, t_IRC_Server &IRC_Server,
-			const std::size_t i) // NOTE: i is the index of the concerned client.
+			const size_t i) // NOTE: i is the index of the concerned client.
 {
 	// authenticate user - should not be part of a loop, only a check for the
 	// correct bit flag at the top before entering it...
 
-	std::size_t	 j;
+	size_t	 j;
 
 	if (IRC_Server.clients.i.state & ERROR_FLAG)
 		j = 0;
@@ -174,7 +174,7 @@ void	parse_input(const std::string &message, t_IRC_Server &IRC_Server,
 }
 
 void	authenticate_client(const std::string &message, t_IRC_Server &IRC_Server,
-			const std::size_t i)
+			const size_t i)
 {
 	
 
