@@ -1,6 +1,8 @@
 #ifndef PARSER_HPP
 # define PARSER_HPP
 
+# include "irc_fatstruct.hpp"
+
 # include <string_view>
 
 typedef struct	s_parser
@@ -29,14 +31,13 @@ typedef struct	s_parser
 	std::string_view	params[max_params];
 
 }	t_parser;
+// static_assert(sizeof(t_parser) <= 65*CACHE_LINE_SIZE, "t_parser did not use 1 cache line" ); // WARN: this is huge...
 
-// FIXME: Can messages contain more than one space between tokens?
-
-// FIXME: When a received message is longer than 512 bytes: remember to DISCARD
-// the rest of the message that follows the truncation.
-
-// FIXME: What if received message does not end with either "\r\n" or '\n', even
-// below 512 bytes? It is possible to achieve: netcat Client can send
-// unterminated messages with Ctrl+D, thus closing stdin.
+void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
+	                              const ssize_t received);
+int		prepare_and_parse_message(const size_t pos, std::string &buf,
+	                              t_IRC_Client &client);
+void	check_for_too_long_message(std::string &buf, t_IRC_Client &client);
+void	tokenize_message(const t_IRC_Client &client, const std::string_view &msg);
 
 #endif

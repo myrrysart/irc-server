@@ -105,7 +105,7 @@ typedef struct	s_IRC_Server
 
 	static constexpr const char				*commands[] = {
 		"NICK",
-		"PASS",
+		"PASS", // should align with the password for our server (argv[2])
 		"USER",
 		"JOIN", // "lets users join a channel"// WARN: is this the exact command needed to be implemented for joining a channel?
 		"KICK",
