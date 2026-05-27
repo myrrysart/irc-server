@@ -68,11 +68,12 @@ static_assert(sizeof(t_IRC_Channel) <= 2*CACHE_LINE_SIZE," t_IRC_Channel did not
 typedef struct	s_IRC_Client
 {
 	enum Flags : uint8_t {
-		IS_OK    = BIT(0),
-		PASSWORD = BIT(1),
-		NICK     = BIT(2),
-		USERNAME = BIT(3),
-		ERROR    = BIT(4)
+		IS_OK         = BIT(0),
+		PASSWORD      = BIT(1),
+		NICK          = BIT(2),
+		USERNAME      = BIT(3),
+		ERROR         = BIT(4),
+		DISCARD_MSG   = BIT(5)
 	};
 
 	t_bmask				state;
@@ -83,7 +84,7 @@ typedef struct	s_IRC_Client
 	std::string			realname;
 	std::string			hostname;
 	std::string			received_message_buffer;
-	int					received_message_len;
+	// int					received_message_len; // WARN: seems unnecessary.
 	t_IRC_Channel*		joined_channels;
 	int					joined_count;
 }						t_IRC_Client;
