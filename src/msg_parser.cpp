@@ -25,7 +25,7 @@ void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
 		// append the trailing part after the newline
 		if (pos < received - 1) // otherwise, there is nothing to append.
 			msg.append(buf[pos + 1], received - pos - 1);
-		// unset DISCARD_MSG flag  WARN: is this correct?
+		// unset DISCARD_MSG flag
 		client.state &= ~t_IRC_Client::Flags::DISCARD_MSG;
 	}
 	// else: no newline in the received buffer; the buffer can be igonored,
