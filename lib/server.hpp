@@ -8,6 +8,7 @@
 #include "irc_fatstruct.hpp"
 
 void	fatal_server_error(const char* msg, int fd);
+int		shutdown_server(t_IRC_Server *server);
 
 void	create_listener(t_IRC_Server &server);
 

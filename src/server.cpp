@@ -73,7 +73,7 @@ void	server_loop(t_IRC_Server &server)
 	server.poll_fds.push_back(pollfd{server.listen_fd, POLLIN, 0});
 	std::cout << "server running at port " << server.port << std::endl;
 
-	while (1)
+	while (server.state & SERVER_RUNNING)
 	{
 		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), 0) < 0)
 		{

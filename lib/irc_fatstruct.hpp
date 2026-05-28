@@ -22,6 +22,7 @@
 # define BIT(x) (1u << (x))
 // bitmask assumption that if a state of bitmask is 0, it is still in setup phase and have just been created
 # define IN_SETUP 0
+# define SERVER_RUNNING 1
 
 // bitmask typedefinition for fat struct bitfields.
 //NOTE: Create a new one if more bits are needed (ex. typedef unsigned long t_long_bmask;)

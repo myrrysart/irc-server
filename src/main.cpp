@@ -13,7 +13,9 @@ int main(int argc, char **argv)
 	t_IRC_Server server = {};
 	server.port = atoi(argv[1]);
 	create_listener(server);
+	server.state |= SERVER_RUNNING;
 	server_loop(server);
+	shutdown_server(&server);
 	return 0;
 }
 
