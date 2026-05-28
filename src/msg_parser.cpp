@@ -3,6 +3,9 @@
 // anymore - for example, a nickname has to be set before
 
 // TODO: test with netcat (nc)
+// FIXME: On linux, when running netcat (or is it only with 'netcat' but not
+// with 'nc'?), and inputting something and then ctrl + d twice in a row just
+// completely seems to break the server? This needs more testing. Is it SIGPIPE?
 
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
@@ -16,7 +19,7 @@ void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
 	std::string	&msg = client.received_message_buffer;
 	ssize_t		pos = 0;
 
-	while (pos < received && pos != '\n')
+	while (pos < received && buf[pos] != '\n')
 		++pos;
 
 	if (pos < received)
@@ -95,35 +98,6 @@ void	tokenize_message(const t_IRC_Client &client, const std::string_view &msg)
 
 }
 
-int8_t	prepare_message_for_parsing(const size_t pos, std::string &buf)
-{
-	if (pos >= t_parser::buf_size)
-	{
-	// handle the error:
-		// - communicate: ERR_INPUTTOOLONG (417)
-		// - set DISCARD_MSG flag so that you can discard the rest of incoming message
-		// - erase the msg buffer
-
-		// communicate: ERR_INPUTTOOLONG (417)
-		std::cerr << "ERROR 417: ERR_INPUTTOOLONG!" << std::endl;    // WARN: just temporary debugger
-		// erase from buffer everything until (and including) the newline
-		// NOTE: no need to set DISCARD_MSG flag here: next mesage may be a candidate
-		buf.erase(0, pos + 1);
-		return (-1); // start again: remaining bytes might hold a valid message.
-		// continue;
-	}
-
-	bool	has_carriage_return = 0;
-	// scan for carriage return
-	if (pos >= 1 && buf[pos - 1] == '\r')
-		has_carriage_return = 1;
-
-	return (has_carriage_return);
-}
-
-
-
-
 
 // TODO: IF THE USER IS IDLE VERY LONG TIME, KICK THEM OUT!!!
 // BUT ONLY DO THAT DURING THEIR REGISTRATION PHASE:
@@ -181,3 +155,8 @@ void	authenticate_client(const std::string &message, t_IRC_Server &IRC_Server,
 
 }
 */
+
+// FIXME: Should we accept multiple connections from the same client (perhaps there
+// is a way for them to connect once, and then somehow change their nickname/name to a
+// valid one, and then they could be still validated again? There is a way to check
+// the IP address via the socket address info struct of the client.... but is it necessary?)
