@@ -84,7 +84,6 @@ typedef struct	s_IRC_Client
 	std::string			realname;
 	std::string			hostname;
 	std::string			received_message_buffer;
-	// int					received_message_len; // WARN: seems unnecessary.
 	t_IRC_Channel*		joined_channels;
 	int					joined_count;
 }						t_IRC_Client;

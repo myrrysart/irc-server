@@ -26,12 +26,14 @@ typedef struct	s_parser
 	// t_bmask			state; // WARN: is this even necessary?
 	//std::string_view	tags; // eventual tokens
 	//std::string_view	source; // eventual tokens
+
 	size_t				n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
 	std::string_view	cmd; // WARN: can it ONLY be one single word / 3 digits?
 	std::string_view	params[max_params];
 
 }	t_parser;
-// static_assert(sizeof(t_parser) <= 65*CACHE_LINE_SIZE, "t_parser did not use 1 cache line" ); // WARN: this is huge...
+static_assert(sizeof(t_parser) <= 65*CACHE_LINE_SIZE, "t_parser did not use 65 cache lines");
+// WARN: this struct is quite large - is there a way to reduce it?
 
 void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
 	                              const ssize_t received);
