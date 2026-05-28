@@ -6,6 +6,9 @@
 !.github/workflows/build.yml
 !.gitignore
 !notes.md
+# NOTE: these are testing files
+!tests/
+!tests/*.sh
 # BlOCK END
 
 # Makefile
