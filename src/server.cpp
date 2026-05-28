@@ -15,6 +15,7 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 	server.clients[client_fd] = t_IRC_Client{};
 	server.clients[client_fd].fd = client_fd;
 	server.clients[client_fd].addr = client_addr;
+
 	return true;
 }
 
