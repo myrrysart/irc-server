@@ -1,7 +1,6 @@
 #ifndef IRC_FATSTRUCT_HPP
 # define IRC_FATSTRUCT_HPP
 
-
 #include <netinet/in.h>
 # include <string>
 # include <poll.h>
@@ -24,7 +23,7 @@
 // bitmask assumption that if a state of bitmask is 0, it is still in setup phase and have just been created
 # define IN_SETUP 0
 
-// bitmask typedefinition for fat struct bitfields. 
+// bitmask typedefinition for fat struct bitfields.
 //NOTE: Create a new one if more bits are needed (ex. typedef unsigned long t_long_bmask;)
 typedef unsigned int	t_bmask;
 
@@ -50,7 +49,7 @@ static_assert(sizeof(t_IRC_ChannelMembership) <= 1*CACHE_LINE_SIZE,"IRC_ChannelM
 # define	KEY BIT(2)
 # define	LIMIT BIT(3)
 # define	OPERATOR_PRIVILEGE BIT(4)
-typedef struct	s_IRC_Channel 
+typedef struct	s_IRC_Channel
 {
 	t_bmask						state;
 	t_bmask						mode;
@@ -75,7 +74,6 @@ typedef struct	s_IRC_Client
 	std::string			realname;
 	std::string			hostname;
 	std::string			received_message_buffer;
-	int					received_message_len;
 	t_IRC_Channel*		joined_channels;
 	int					joined_count;
 }						t_IRC_Client;

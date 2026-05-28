@@ -1,5 +1,4 @@
 #include <cerrno>
-#include <cstdio>
 #include <sys/poll.h>
 #include <unistd.h>
 #include <arpa/inet.h>
