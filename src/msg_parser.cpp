@@ -1,11 +1,11 @@
 
-// TODO: Consider cases of commands that are received when they are not valid
-// anymore - for example, a nickname has to be set before
-
-// TODO: test with netcat (nc)
 // FIXME: On linux, when running netcat (or is it only with 'netcat' but not
 // with 'nc'?), and inputting something and then ctrl + d twice in a row just
 // completely seems to break the server? This needs more testing. Is it SIGPIPE?
+
+// WARN: Should the parser check for null-terminators - that are not 'supposed'
+// to be sent by an IRC client, but that may still be sent, as part of an attack
+// for example?
 
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
@@ -40,32 +40,34 @@ void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
 	// after the call to this function.
 }
 
-int	prepare_and_parse_message(const size_t pos, std::string &buf, t_IRC_Client &client)
+// WARN: client might be labeled 'const' here? Right now yes, but later on probably not,
+// as tokenization might change it.
+void	prepare_and_parse_message(const size_t pos, std::string &buf, t_IRC_Client &client)
 {
 	if (pos >= t_parser::buf_size)
 	{
-	// handle the too long message error:
+		// Too long message detected. Handling:
 		// - communicate: ERR_INPUTTOOLONG (417)
-		// - set DISCARD_MSG flag so that you can discard the rest of incoming message
-		// - erase the msg buffer
+		// - no need to set DISCARD_MSG flag here: next mesage may be a candidate
+		// - erase from buffer until after the newline (happpens at caller)
 
-		// communicate: ERR_INPUTTOOLONG (417)
-		std::cerr << "ERROR 417: ERR_INPUTTOOLONG!" << std::endl;    // WARN: just temporary debugger
-		// erase from buffer everything until (and including) the newline
-		// NOTE: no need to set DISCARD_MSG flag here: next mesage may be a candidate
-		buf.erase(0, pos + 1);
-		return (-1);	// start again at the top of the looop:
-						// remaining bytes might hold a valid message.
+		std::cerr << "ERROR 417: ERR_INPUTTOOLONG!" << std::endl; // WARN: just temporary debugger
+		return;
 	}
 
-	// scan for carriage return
+	// scan for carriage return (IRC message may end with '\n' or "\r\n")
 	bool	has_carriage_return = 0;
 	if (pos >= 1 && buf[pos - 1] == '\r')
 		has_carriage_return = 1;
 
-	// candidate message detected: send string_view for parsing.
+	// Check whether client sent an empty message:
+	// such a message is to be ignored, according to the IRC protocol.
+	if (!pos || (pos == 1 && has_carriage_return))
+		return ;
+
+	// Candidate message detected: send string_view for parsing.
 	tokenize_message(client, std::string_view{&buf[0], pos - has_carriage_return});
-	return (0);
+	return ;
 }
 
 void	check_for_too_long_message(std::string &buf, t_IRC_Client &client)
@@ -77,9 +79,10 @@ void	check_for_too_long_message(std::string &buf, t_IRC_Client &client)
 	if (buf.length() >= t_parser::buf_size)
 	{
 		// communicate: ERR_INPUTTOOLONG (417)
-		std::cerr << "ERROR 417: ERR_INPUTTOOLONG!" << std::endl;    // WARN: just temporary debugger
+		std::cerr << "ERROR 417: ERR_INPUTTOOLONG!" << std::endl; // WARN: just temporary debugger
 		// set DISCARD_MSG flag
 		client.state |= t_IRC_Client::Flags::DISCARD_MSG;
+
 		// discard whole buffer
 		buf.clear();
 
@@ -90,6 +93,7 @@ void	check_for_too_long_message(std::string &buf, t_IRC_Client &client)
 	}
 }
 
+// TODO: Refer to the Modern IRC docs, section: "Client-to-Server Protocol Structure"!
 // FIXME: Can messages contain more than one space between tokens?
 void	tokenize_message(const t_IRC_Client &client, const std::string_view &msg)
 {
@@ -99,6 +103,7 @@ void	tokenize_message(const t_IRC_Client &client, const std::string_view &msg)
 }
 
 
+// ===================== CLIENT AUTHENTIFICATION CODE ==========================
 // TODO: IF THE USER IS IDLE VERY LONG TIME, KICK THEM OUT!!!
 // BUT ONLY DO THAT DURING THEIR REGISTRATION PHASE:
 // Do not kick them out for being inactive after they have registered!
@@ -114,6 +119,9 @@ void	tokenize_message(const t_IRC_Client &client, const std::string_view &msg)
 // TODO: store somewhere an array of constexpr commands, with all the available
 // commands that we are supposed to implement: The parser would compare against
 // these once the 'tokenization' process will be done.
+
+// TODO: Consider cases of commands that are received when they are not valid
+// anymore - for example, a nickname has to be set before
 
 /*
  * NOTE: CLIENT AUTHENTIFICATION: unused draft, probably deprecated

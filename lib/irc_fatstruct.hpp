@@ -8,6 +8,7 @@
 # include <unordered_map>
 # include <vector>
 # include <new> // for hardware_constructive_interference_size
+# include <string_view>
 
 # define MAX_CLIENTS 128
 # define MAX_CHANNELS 64
@@ -63,6 +64,50 @@ typedef struct	s_IRC_Channel
 }								t_IRC_Channel;
 static_assert(sizeof(t_IRC_Channel) <= 2*CACHE_LINE_SIZE," t_IRC_Channel did not use 2 cache line" );
 
+typedef struct	s_parser
+{
+	// WARN: is this even necessary
+	// enum	Flags : uint8_t
+	// {
+	// 	HAS_TAGS     = BIT(0),
+	// 	HAS_SOURCE   = BIT(1),
+	// 	HAS_TRAILING = BIT(2)
+	// };
+
+
+	/* NOTE: max_params is set to 255, because longest message is 512 bytes,
+	* the last two of those are "\r\n", and, even in an improbable scenario
+	* where the message's command and each of the parameters would be only 1
+	* byte long (separated by a space), we could have as many as 255 arguments. */
+	static constexpr size_t		buf_size = 512;
+	static constexpr size_t		max_params = 255;
+
+	static constexpr const char	*commands[] = {
+		"NICK",
+		"PASS", // should align with the password for our server (argv[2])
+		"USER",
+		"JOIN", // "lets users join a channel"// WARN: is this the exact command needed to be implemented for joining a channel?
+		"KICK",
+		"INVITE",
+		"PART", // WARN: extra but nice to have: "lets users leave a channel."
+		"PING",
+		"PONG",
+		"PRIVMSG" // "used to send private messages between users, as well as to send messages to channels"
+	};
+	// NOTE: do not implement OPER: we need channel operators, not IRC operators.
+
+	// t_bmask			state; // WARN: is this even necessary?
+	//std::string_view	tags; // eventual tokens
+	//std::string_view	source; // eventual tokens
+
+	size_t				n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
+	std::string_view	verb; // WARN: can it ONLY be one single word / 3 digits?
+	std::string_view	params[max_params];
+
+}	t_parser;
+static_assert(sizeof(t_parser) <= 65*CACHE_LINE_SIZE, "t_parser did not use 65 cache lines");
+// WARN: this struct is quite large - is there a way to reduce it?
+
 // IRC_Client state bitmask definitions
 //NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in and chatting away. Anything else is an active state that needs to be resolved in some way.
 typedef struct	s_IRC_Client
@@ -84,10 +129,11 @@ typedef struct	s_IRC_Client
 	std::string			realname;
 	std::string			hostname;
 	std::string			received_message_buffer;
+	t_parser			parser;
 	t_IRC_Channel*		joined_channels;
 	int					joined_count;
 }						t_IRC_Client;
-static_assert(sizeof(t_IRC_Client) <= 4*CACHE_LINE_SIZE," t_IRC_Client did not use 4 cache line" );
+static_assert(sizeof(t_IRC_Client) <= 67*CACHE_LINE_SIZE," t_IRC_Client did not use 67 cache line" );
 
 // IRC_Server state bitmask definitions
 //NOTE: state is essentially an error code catcher for the IRC_Server. BIT(0) means server is running smoothly, anything else is an error case.
@@ -102,19 +148,6 @@ typedef struct	s_IRC_Server
 	int										channel_count;
 	std::vector<pollfd>						poll_fds;
 
-	static constexpr const char				*commands[] = {
-		"NICK",
-		"PASS", // should align with the password for our server (argv[2])
-		"USER",
-		"JOIN", // "lets users join a channel"// WARN: is this the exact command needed to be implemented for joining a channel?
-		"KICK",
-		"INVITE",
-		"PART", // WARN: extra but nice to have: "lets users leave a channel."
-		"PING",
-		"PONG",
-		"PRIVMSG" // "used to send private messages between users, as well as to send messages to channels"
-	};
-	// NOTE: do not implement OPER: we need channel operators, not IRC operators.
 }											t_IRC_Server;
 
 #endif//IRC_FATSTRUCT_HPP
