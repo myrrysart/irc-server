@@ -66,19 +66,20 @@ static_assert(sizeof(t_IRC_Channel) <= 2*CACHE_LINE_SIZE," t_IRC_Channel did not
 
 typedef struct	s_parser
 {
-	// WARN: is this even necessary
+	/* eventual PREFIX implementations */
 	// enum	Flags : uint8_t
 	// {
 	// 	HAS_TAGS     = BIT(0),
 	// 	HAS_SOURCE   = BIT(1),
 	// 	HAS_TRAILING = BIT(2)
 	// };
+	// WARN: is this used?
 
-
-	/* NOTE: max_params is set to 255, because longest message is 512 bytes,
-	* the last two of those are "\r\n", and, even in an improbable scenario
-	* where the message's command and each of the parameters would be only 1
-	* byte long (separated by a space), we could have as many as 255 arguments. */
+	/* NOTE: max_params is currently set to 255, because the longest message the
+	 * server accepts is 512 bytes long, the last of which is either '\n' or "\r\n".
+	* Even in an improbable scenario where the message's command and each of the
+	* following parameters would be only 1 byte long (separated by a space),
+	* we could have as many as 254-255 arguments. */
 	static constexpr size_t		buf_size = 512;
 	static constexpr size_t		max_params = 255;
 
@@ -96,9 +97,11 @@ typedef struct	s_parser
 	};
 	// NOTE: do not implement OPER: we need channel operators, not IRC operators.
 
-	// t_bmask			state; // WARN: is this even necessary?
+	/* eventual PREFIX implementations */
+	// t_bmask			state;
 	//std::string_view	tags; // eventual tokens
 	//std::string_view	source; // eventual tokens
+	// WARN: is this used?
 
 	size_t				n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
 	std::string_view	verb; // WARN: can it ONLY be one single word / 3 digits?
@@ -147,7 +150,6 @@ typedef struct	s_IRC_Server
 	t_IRC_Channel							channels[MAX_CHANNELS];
 	int										channel_count;
 	std::vector<pollfd>						poll_fds;
-
 }											t_IRC_Server;
 
 #endif//IRC_FATSTRUCT_HPP
