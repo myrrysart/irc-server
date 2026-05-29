@@ -1,5 +1,4 @@
 #include <iostream>
-
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
 #include "../lib/parser.hpp"
@@ -8,7 +7,7 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 {
 	static char	buf[t_parser::buf_size];
 
-	ssize_t	received = recv(fd, buf, t_parser::buf_size, 0);
+	ssize_t	received = recv(fd, buf, sizeof(buf), 0);
 	if (received <= 0)
 		return true;
 
