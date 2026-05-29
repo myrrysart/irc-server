@@ -4,11 +4,6 @@
 #include "../lib/server.hpp"
 #include "../lib/parser.hpp"
 
-/* NOTE: Handle message with over 512 bytes - 2 options:
-/ 1. Truncate the last 2 bytes: at index 510, insert "\r\n"
-/ 2. send ERR_INPUTTOOLONG (417).
-/ This is based on the "Compatibility with incorrect software" section on
-/ modern.ircdocs.horse/#source */
 bool	recv_from_client(t_IRC_Server &server, int fd)
 {
 	static char	buf[t_parser::buf_size];
