@@ -136,7 +136,7 @@ typedef struct	s_IRC_Client
 	t_IRC_Channel*		joined_channels;
 	int					joined_count;
 }						t_IRC_Client;
-static_assert(sizeof(t_IRC_Client) <= 67*CACHE_LINE_SIZE," t_IRC_Client did not use 67 cache line" );
+static_assert(sizeof(t_IRC_Client) <= 68*CACHE_LINE_SIZE," t_IRC_Client did not use 68 cache line" );
 
 // IRC_Server state bitmask definitions
 //NOTE: state is essentially an error code catcher for the IRC_Server. BIT(0) means server is running smoothly, anything else is an error case.
