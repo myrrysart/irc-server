@@ -92,12 +92,3 @@ void	check_for_too_long_message(std::string &buf, t_IRC_Client &client)
 		/ candidate message. Is the team on board with this plan? */
 	}
 }
-
-// TODO: Refer to the Modern IRC docs, section: "Client-to-Server Protocol Structure"!
-// FIXME: Can messages contain more than one space between tokens?
-void	tokenize_message(const t_IRC_Client &client, const std::string_view &msg)
-{
-	// TODO: Tokenization / parsing happens here.
-	std::cout	<< "Received from " << client.fd << " : " << msg << std::endl; // WARN: just debugging.
-
-}

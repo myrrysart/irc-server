@@ -84,18 +84,24 @@ typedef struct	s_parser
 	static constexpr size_t		max_params = 255;
 
 	static constexpr const char	*commands[] = {
-		"NICK",
 		"PASS", // should align with the password for our server (argv[2])
+		"NICK",
 		"USER",
 		"JOIN", // "lets users join a channel"// WARN: is this the exact command needed to be implemented for joining a channel?
+		"PART", // WARN: extra but nice to have: "lets users leave a channel."
+		"PRIVMSG", // "used to send private messages between users, as well as to send messages to channels"
+		"MODE",
 		"KICK",
 		"INVITE",
-		"PART", // WARN: extra but nice to have: "lets users leave a channel."
+		"TOPIC",
 		"PING",
 		"PONG",
-		"PRIVMSG" // "used to send private messages between users, as well as to send messages to channels"
+		"QUIT",
+		"NAMES",
+		"LIST"
 	};
 	// NOTE: do not implement OPER: we need channel operators, not IRC operators.
+	// WARN: do we need to implement CAP? Is that what allows a user to become operator?
 
 	/* eventual PREFIX implementations */
 	// t_bmask			state;
