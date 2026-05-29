@@ -43,7 +43,10 @@
 // Clients MUST be able to process any given message the same way whether it
 // contains a source or does not contain one."
 
-// TODO: When a messsage is unknown: Irssi at least returns : "Unknown command: <the_command>"
+// WARN: When a messsage is unknown: Irssi at least returns : "Unknown command: <the_command>"
+// ----> but do not output 'the_command' with a different case, keep case sensitivity.
+// WARN: Only when dispatching the Verb (command) and looking for a match: temporarily
+// make a proper to_upper() for the verb, and only then compare, or something of that nature.
 
 // TODO: NICK: cap nicknames at 30 characters, and trim any characters beyond that
 // without saying anything. Example from the old Horse docs:
@@ -51,16 +54,54 @@
 // NOTE: In this example on Horse, the returned welcome 001 message does not
 // end with the nickname at all, unlike other, shorter examples?!
 
+// WARN: consider a case where the trailing parameter is empty - and its initial
+// ':' character is the last character of the message.
 
 // NOTE: "Message parts and parameters are separated by one or more ASCII SPACE characters"
-void	tokenize_message(const t_IRC_Client &client, const std::string_view &msg)
+void	tokenize_message(t_IRC_Client &client, const std::string_view &msg)
 {
 	// TODO: Tokenization / parsing happens here.
-	std::cout	<< "Received from " << client.fd << " : " << msg << std::endl; // WARN: just debugging.
+	size_t	i = 0;
+	size_t	j = 0;
+
+	// WARN: just debugging:
+	std::cout	<< "Received from " << client.fd << " : " << msg << std::endl;
+
+	i = msg.find(' ');
+	if (i == std::string_view::npos)
+		i = msg.size();
+	client.parser.verb = std::string_view{&msg[0], i};
+
+	for (size_t k; i != std::string_view::npos; ++j)
+	{
+		i = msg.find_first_not_of(' ', i);
+		if (i == std::string_view::npos)
+			break;
+		k = i;
+		if (msg[k] == ':') // for the trailing parameter
+			i = msg.size();
+		else
+		{
+			i = msg.find(' ', i);
+			if (i == std::string_view::npos)
+				i = msg.size();
+		}
+		client.parser.params[j] = std::string_view{&msg[k], i - k};
+	}
+	client.parser.n_params = j;
+
+	// WARN: debugging:
+	std::cout << "VERB is:	<" << client.parser.verb << ">\n";
+	std::cout << "PARAMS are:\n";
+	for (i = 0; i < client.parser.n_params; ++i)
+	{
+	  std::cout << "\t[" << i << "]: " << client.parser.params[i] << "\n";
+
+	}
+	std::cout << std::flush;
+	// WARN: debugging block above
 
 }
-
-
 
 
 /*
