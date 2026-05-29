@@ -1,7 +1,7 @@
 #ifndef PARSER_HPP
 # define PARSER_HPP
 
-#include <string>
+# include <string>
 
 /* forward declarations */
 struct s_IRC_Client;
