@@ -75,14 +75,6 @@ typedef struct	s_parser
 	// };
 	// WARN: is this used?
 
-	/* NOTE: max_params is currently set to 255, because the longest message the
-	 * server accepts is 512 bytes long, the last of which is either '\n' or "\r\n".
-	* Even in an improbable scenario where the message's command and each of the
-	* following parameters would be only 1 byte long (separated by a space),
-	* we could have as many as 254-255 arguments. */
-	static constexpr size_t		buf_size = 512;
-	static constexpr size_t		max_params = 255;
-
 	static constexpr const char	*commands[] = {
 		"PASS", // should align with the password for our server (argv[2])
 		"NICK",
@@ -103,15 +95,27 @@ typedef struct	s_parser
 	// NOTE: do not implement OPER: we need channel operators, not IRC operators.
 	// WARN: do we need to implement CAP? Is that what allows a user to become operator?
 
+	static constexpr size_t		n_valid_cmds = sizeof(commands) / sizeof(char *);
 	/* eventual PREFIX implementations */
 	// t_bmask			state;
 	//std::string_view	tags; // eventual tokens
 	//std::string_view	source; // eventual tokens
 	// WARN: is this used?
 
+	/* NOTE: max_params is currently set to 255, because the longest message the
+	* server accepts is 512 bytes long, the last of which is either '\n' or "\r\n".
+	* Even in an improbable scenario where the message's command and each of the
+	* following parameters would be only 1 byte long (separated by a space),
+	* we could have as many as 254-255 arguments. */
+	static constexpr size_t		buf_size = 512;
+	static constexpr size_t		max_params = 255;
+	static constexpr size_t		longest_cmd_size = sizeof("PRIVMSG") - 1;
+	// WARN: adapt to longest available Command in 'commands'. Currently it is: "PRIVMSG"
+
 	size_t				n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
 	std::string_view	verb; // WARN: can it ONLY be one single word / 3 digits?
 	std::string_view	params[max_params];
+	static char			verb_in_caps[longest_cmd_size]; // lives outside of the struct and shared between clients
 
 }	t_parser;
 static_assert(sizeof(t_parser) <= 65*CACHE_LINE_SIZE, "t_parser did not use 65 cache lines");

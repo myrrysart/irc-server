@@ -12,6 +12,10 @@
 
 #include <string>
 #include <iostream>
+#include <cstring> // for std::strncmp()
+
+/* out-of-line zero initialization of shared static buffer in t_parser struct */
+char	t_parser::verb_in_caps[t_parser::longest_cmd_size];
 
 void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
 	                              const ssize_t received)
@@ -126,8 +130,54 @@ void	tokenize_message(t_IRC_Client &client, const std::string_view &msg)
 	}
 	client.parser.n_params = j;
 
-	display_tokens(client);
+	display_tokens(client); // WARN: just debugging
 }
+
+// WARN: When a messsage is unknown: Irssi (at least) returns:
+// "Unknown command: <the_command>", keeping the user's provided case.
+// ----> do not output 'the_command' with a different case, remain case sensitive.
+// WARN: Only when dispatching the Verb (command) and looking for a match: temporarily
+// make a proper to_upper() for the verb, and only then compare.
+
+// WARN: remember to reset client.parser.n_params to zero after execution of its command,
+// to avoid any unpredictable bugs.
+void	dispatch_client_command(const t_IRC_Client &client)
+{
+	char	*verb_in_caps = client.parser.verb_in_caps;
+	size_t	i;
+	size_t	verb_len = client.parser.verb.size();
+
+	if (verb_len > t_parser::longest_cmd_size)
+		i = t_parser::n_valid_cmds;
+	else
+	{
+		for (size_t j = 0; j < verb_len; ++j)
+			verb_in_caps[j] = to_uppercase(client.parser.verb[j]);
+
+		for (i = 0; i < t_parser::n_valid_cmds; ++i)
+		{
+			if (!std::strncmp(t_parser::commands[i], verb_in_caps, verb_len))
+				break ;
+		}
+	}
+
+	// TODO:
+	// switch (i)
+	// {
+	//
+	//
+	//
+	//
+	//
+	// }
+}
+
+
+
+
+
+
+
 
 // WARN: Only for debugging purposes: remember to delete
 void	display_tokens(const t_IRC_Client &client)
