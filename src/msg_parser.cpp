@@ -92,3 +92,52 @@ void	check_for_too_long_message(std::string &buf, t_IRC_Client &client)
 		/ candidate message. Is the team on board with this plan? */
 	}
 }
+
+// FIXME: consider a case where the trailing parameter is empty - and its initial
+// ':' character is the last character of the message.
+void	tokenize_message(t_IRC_Client &client, const std::string_view &msg)
+{
+	size_t	i = 0;
+	size_t	j = 0;
+
+	// WARN: just debugging:
+	std::cout	<< "Received from " << client.fd << " : " << msg << std::endl;
+
+	i = msg.find(' ');
+	if (i == std::string_view::npos)
+		i = msg.size();
+	client.parser.verb = std::string_view{&msg[0], i};
+
+	for (size_t k; i != std::string_view::npos; ++j)
+	{
+		i = msg.find_first_not_of(' ', i);
+		if (i == std::string_view::npos)
+			break;
+		k = i;
+		if (msg[k] == ':') // for the trailing parameter
+			i = msg.size();
+		else
+		{
+			i = msg.find(' ', i);
+			if (i == std::string_view::npos)
+				i = msg.size();
+		}
+		client.parser.params[j] = std::string_view{&msg[k], i - k};
+	}
+	client.parser.n_params = j;
+
+	display_tokens(client);
+}
+
+// WARN: Only for debugging purposes: remember to delete
+void	display_tokens(const t_IRC_Client &client)
+{
+	std::cout << "\COMMAND is: <" << client.parser.verb << ">\n";
+	std::cout << "PARAMS are:\n";
+	for (size_t i = 0; i < client.parser.n_params; ++i)
+	{
+	  std::cout << "\t[" << i << "]: " << client.parser.params[i] << "\n";
+
+	}
+	std::cout << std::flush;
+}
