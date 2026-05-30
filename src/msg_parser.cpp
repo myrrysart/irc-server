@@ -132,11 +132,11 @@ void	tokenize_message(t_IRC_Client &client, const std::string_view &msg)
 // WARN: Only for debugging purposes: remember to delete
 void	display_tokens(const t_IRC_Client &client)
 {
-	std::cout << "\COMMAND is: <" << client.parser.verb << ">\n";
-	std::cout << "PARAMS are:\n";
+	std::cout << "\nCOMMAND: <" << client.parser.verb << ">\n";
+	std::cout << "PARAMS:\n";
 	for (size_t i = 0; i < client.parser.n_params; ++i)
 	{
-	  std::cout << "\t[" << i << "]: " << client.parser.params[i] << "\n";
+	  std::cout << "     [" << i << "]: " << client.parser.params[i] << "\n";
 
 	}
 	std::cout << std::flush;
