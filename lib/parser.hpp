@@ -12,4 +12,12 @@ void	prepare_and_parse_message(const size_t pos, std::string &buf, t_IRC_Client 
 void	check_for_too_long_message(std::string &buf, t_IRC_Client &client);
 void	tokenize_message(t_IRC_Client &client, const std::string_view &msg);
 
+
+
+
+
+
+// WARN: Only for debugging purposes: remember to delete
+void	display_tokens(const t_IRC_Client &client);
+
 #endif
