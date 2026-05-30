@@ -22,11 +22,6 @@
 // Clients MUST be able to process any given message the same way whether it
 // contains a source or does not contain one."
 
-// WARN: When a messsage is unknown: Irssi at least returns : "Unknown command: <the_command>"
-// ----> but do not output 'the_command' with a different case, keep case sensitivity.
-// WARN: Only when dispatching the Verb (command) and looking for a match: temporarily
-// make a proper to_upper() for the verb, and only then compare, or something of that nature.
-
 // TODO: NICK: cap nicknames at 30 characters, and trim any characters beyond that
 // without saying anything. Example from the old Horse docs:
 // 'dan-is-my-name-dont-wear-it-out-at-all' became: 'dan-is-my-name-dont-wear-it-ou'
