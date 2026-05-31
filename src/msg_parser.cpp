@@ -9,10 +9,12 @@
 
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
+#include "../lib/commands.hpp"
 
 #include <string>
 #include <iostream>
 #include <cstring> // for std::strncmp()
+#include <string_view>
 
 /* out-of-line zero initialization of shared static buffer in t_parser struct */
 char	t_parser::verb_in_caps[t_parser::longest_cmd_size];
@@ -133,23 +135,15 @@ void	tokenize_message(t_IRC_Client &client, const std::string_view &msg)
 	display_tokens(client); // WARN: just debugging
 }
 
-// WARN: When a messsage is unknown: Irssi (at least) returns:
-// "Unknown command: <the_command>", keeping the user's provided case.
-// ----> do not output 'the_command' with a different case, remain case sensitive.
 // WARN: Only when dispatching the Verb (command) and looking for a match: temporarily
 // make a proper to_upper() for the verb, and only then compare.
-
-// WARN: remember to reset client.parser.n_params to zero after execution of its command,
-// to avoid any unpredictable bugs.
-void	dispatch_client_command(const t_IRC_Client &client)
+void	dispatch_client_command(t_IRC_Client &client) // WARN: can client eventually be 'const'?
 {
 	char	*verb_in_caps = client.parser.verb_in_caps;
-	size_t	i;
 	size_t	verb_len = client.parser.verb.size();
+	size_t	i;
 
-	if (verb_len > t_parser::longest_cmd_size)
-		i = t_parser::n_valid_cmds;
-	else
+	if (verb_len <= t_parser::longest_cmd_size)
 	{
 		for (size_t j = 0; j < verb_len; ++j)
 			verb_in_caps[j] = to_uppercase(client.parser.verb[j]);
@@ -160,24 +154,46 @@ void	dispatch_client_command(const t_IRC_Client &client)
 				break ;
 		}
 	}
+	else
+		i = t_parser::n_valid_cmds;
 
-	// TODO:
-	// switch (i)
-	// {
-	//
-	//
-	//
-	//
-	//
-	// }
+
+	// WARN: Make 100% sure that the commands here match the ones in the commands array;
+	// And also, make sure that all of those commands are implemented / need to be implemented!
+
+	if (!(client.state & t_IRC_Client::Flags::IS_OK))
+	{
+		// Registration required - or unfinished
+		client_registration(client, i);
+	}
+	else
+	{
+		// dispatch for all commands
+		// TODO:
+		switch (i)
+		{
+			default:    invalid_command_detected(client); break;
+			// case 0:  execute_PASS_cmd(client);         break;
+			// case 1:  execute_NICK_cmd(client);         break;
+			// case 2:  execute_USER_cmd(client);         break;
+			// case 3:  execute_JOIN_cmd(client);         break;
+			// case 4:  execute_PART_cmd(client);         break;
+			// case 5:  execute_PRIVMSG_cmd(client);      break;
+			// case 6:  execute_MODE_cmd(client);         break;
+			// case 7:  execute_KICK_cmd(client);         break;
+			// case 8:  execute_INVITE_cmd(client);       break;
+			// case 9:  execute_TOPIC_cmd(client);        break;
+			// case 10: execute_PING_cmd(client);         break;
+			// case 11: execute_PONG_cmd(client);         break;
+			// case 12: execute_QUIT_cmd(client);         break;
+			// case 13: execute_NAMES_cmd(client);        break;
+			// case 14: execute_LIST_cmd(client);         break;
+		}
+	}
+
+	// WARN: reset n_params to zero, since current message is not to be utilized anymore?
+	client.parser.n_params = 0;
 }
-
-
-
-
-
-
-
 
 // WARN: Only for debugging purposes: remember to delete
 void	display_tokens(const t_IRC_Client &client)

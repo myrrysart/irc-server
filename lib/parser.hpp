@@ -2,8 +2,9 @@
 # define PARSER_HPP
 
 # include <string>
+# include <string_view>
 
-/* forward declarations */
+/* Forward declarations */
 struct s_IRC_Client;
 typedef s_IRC_Client t_IRC_Client;
 
@@ -14,14 +15,12 @@ void	check_for_too_long_message(std::string &buf, t_IRC_Client &client);
 
 /* Parsing & dispatch */
 void	tokenize_message(t_IRC_Client &client, const std::string_view &msg);
-void	dispatch_client_command(const t_IRC_Client &client);
+void	dispatch_client_command(t_IRC_Client &client);
 
 /* Parsing utils */
+int		init_password(const char *src, std::string_view &dest);
+ssize_t	strlen_printable_no_spaces(const char *str);
 char	to_uppercase(char c);
-
-
-
-
 
 // WARN: Only for debugging purposes: remember to delete
 void	display_tokens(const t_IRC_Client &client);
