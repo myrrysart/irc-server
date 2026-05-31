@@ -1,5 +1,69 @@
 
-// ======================== CLIENT REGISTRATION ================================
+#include "../lib/irc_fatstruct.hpp"
+#include "../lib/commands.hpp"
+
+#include <iostream>
+
+// TODO: Add the time checks!
+// Perhaps add some timer machine to t_IRC_Client (per client);
+// It would then be turned on as soon as a new client connection is validated
+// (in the server loop);
+// And it will only be turned off once the client is registered successfully,
+// and the IS_OK flag is set for the client's state - or if registration fails
+// entirely and then the client will be disconnected anyways?
+// NOTE: From Modern IRC docs: "If the server is waiting to complete a lookup of
+// client information (such as hostname or ident for a username), there may be an
+// arbitrary wait at some point during registration. Servers SHOULD set a
+// reasonable timeout for these lookups.
+// Additionally, some servers also send a PING and require a matching PONG from
+// the client before continuing. This exchange may happen immediately on connection
+// and at any time during connection registration, so clients MUST
+// respond correctly to it."
+// "Upon successful completion of the registration process, the server MUST send,
+// in this order:
+// RPL_WELCOME (001),
+// RPL_YOURHOST (002),
+// RPL_CREATED (003),
+// RPL_MYINFO (004),
+// at least one RPL_ISUPPORT (005) numeric to the client.
+// The server MAY then send other numerics and messages.
+// The server SHOULD then respond as though the client sent the LUSERS command
+// and return the appropriate numerics.
+// The server MUST then respond as though the client sent it the MOTD command,
+// i.e. it must send either the successful Message of the Day numerics or the
+// ERR_NOMOTD (422) numeric.
+// If the user has client modes set on them automatically upon joining the network,
+// the server SHOULD send the client the RPL_UMODEIS (221) reply or a MODE message
+// with the client as target, preferably the former.
+// The first parameter of the RPL_WELCOME (001) message is the nickname assigned
+// by the network to the client. Since it may differ from the nickname the client
+// requested with the NICK command (due to, e.g. length limits or policy
+// restrictions on nicknames), the client SHOULD use this parameter to determine
+// its actual nickname at the time of connection. Subsequent nickname changes,
+// client-initiated or not, will be communicated by the server sending a NICK message.
+
+void	client_registration(t_IRC_Client &client, size_t i)
+{
+	switch (i)
+	{
+		default:
+			if (i < t_parser::n_valid_cmds)
+			{
+				// FIXME: send instead of printing.
+				std::cout << "Registration incomplete\n";
+			}
+			else
+			{
+				invalid_command_detected(client);
+
+			} break;
+		// case 0: execute_PASS_cmd(); break;
+		// case 1: execute_NICK_cmd(); break;
+		// case 2: execute_USER_cmd(); break;
+	}
+}
+
+// WARN: Should we support CAP - capability negotiation? Probably unnecessary.
 
 // FIXME: Should we accept multiple connections from the same client (perhaps there
 // is a way for them to connect once, and then somehow change their nickname/name to a

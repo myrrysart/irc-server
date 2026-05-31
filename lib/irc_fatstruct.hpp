@@ -155,7 +155,7 @@ typedef struct	s_IRC_Server
 	t_bmask									state; //Not in use in this version
 	int										listen_fd;
 	int										port;
-	std::string								password;
+	std::string_view						password;
 	std::unordered_map<int, t_IRC_Client>	clients;
 	t_IRC_Channel							channels[MAX_CHANNELS];
 	int										channel_count;

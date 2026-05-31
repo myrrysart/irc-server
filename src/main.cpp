@@ -2,6 +2,7 @@
 #include <iostream>
 #include "../lib/server.hpp"
 #include "../lib/irc_fatstruct.hpp"
+#include "../lib/parser.hpp"
 
 volatile sig_atomic_t requested_shutdown = 0;
 
@@ -27,6 +28,15 @@ int main(int argc, char **argv)
 
 	t_IRC_Server server = {};
 	server.port = atoi(argv[1]);
+
+	if (init_password(argv[2], server.password) == -1)
+	{
+		std::cerr
+			<< "Password '" << argv[2] << "' is either empty or contains "
+			"invalid non-printable characters." << std::endl;
+		return 1;
+	}
+
 	create_listener(server);
 	server_loop(server);
 	shutdown_server(&server);
