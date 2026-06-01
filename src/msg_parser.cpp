@@ -99,8 +99,6 @@ void	check_for_too_long_message(std::string &buf, t_IRC_Client &client)
 	}
 }
 
-// FIXME: consider a case where the trailing parameter is empty - and its initial
-// ':' character is the last character of the message.
 void	tokenize_message(t_IRC_Client &client, const std::string_view &msg)
 {
 	size_t	i = 0;
@@ -121,7 +119,10 @@ void	tokenize_message(t_IRC_Client &client, const std::string_view &msg)
 			break;
 		k = i;
 		if (msg[k] == ':') // for the trailing parameter
-			i = msg.size();
+		{
+			++k;
+			++i = msg.size();
+		}
 		else
 		{
 			i = msg.find(' ', i);
