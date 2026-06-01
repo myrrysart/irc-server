@@ -125,13 +125,15 @@ static_assert(sizeof(t_parser) <= 65*CACHE_LINE_SIZE, "t_parser did not use 65 c
 //NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in and chatting away. Anything else is an active state that needs to be resolved in some way.
 typedef struct	s_IRC_Client
 {
-	enum Flags : uint8_t {
-		IS_OK         = BIT(0),
-		PASSWORD      = BIT(1),
-		NICK          = BIT(2),
-		USERNAME      = BIT(3),
-		ERROR         = BIT(4),
-		DISCARD_MSG   = BIT(5)
+	enum {
+		IS_OK        = BIT(0),
+		REGISTERED   = BIT(1),
+		PSWD_FIRST   = BIT(2),
+		PSWD_CORRECT = BIT(3),
+		NICK         = BIT(4),
+		USERNAME     = BIT(5),
+		ERROR        = BIT(6),
+		DISCARD_MSG  = BIT(7)
 	};
 
 	t_bmask				state;

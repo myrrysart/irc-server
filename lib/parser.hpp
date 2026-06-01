@@ -5,7 +5,9 @@
 # include <string_view>
 
 /* Forward declarations */
-struct s_IRC_Client;
+struct	s_IRC_Server;
+typedef s_IRC_Server t_IRC_Server;
+struct	s_IRC_Client;
 typedef s_IRC_Client t_IRC_Client;
 
 /* Received bytes handling */
@@ -15,7 +17,7 @@ void	check_for_too_long_message(std::string &buf, t_IRC_Client &client);
 
 /* Parsing & dispatch */
 void	tokenize_message(t_IRC_Client &client, const std::string_view &msg);
-void	dispatch_client_command(t_IRC_Client &client);
+void	dispatch_client_command(t_IRC_Client &client, const t_IRC_Server &server);
 
 /* Parsing utils */
 int		init_password(const char *src, std::string_view &dest);

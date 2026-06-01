@@ -11,7 +11,7 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 	if (received <= 0)
 		return true;
 
-	if (server.clients[fd].state & t_IRC_Client::Flags::DISCARD_MSG)
+	if ((server.clients[fd].state & t_IRC_Client::DISCARD_MSG) == t_IRC_Client::DISCARD_MSG)
 		handle_message_to_discard(server.clients[fd], buf, received);
 	else
 		server.clients[fd].received_message_buffer.append(buf, received);
@@ -19,7 +19,7 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 	return false;
 }
 
-void	handle_client_message(t_IRC_Client &client)
+void	handle_client_message(t_IRC_Client &client, const t_IRC_Server &server)
 {
 	std::string	&buf = client.received_message_buffer;
 	size_t		pos;
@@ -30,7 +30,9 @@ void	handle_client_message(t_IRC_Client &client)
 
 
 		// TODO:
-		dispatch_client_command(client);
+		dispatch_client_command(client, server);
+
+		// WARN: A check for the client's state should be added here!
 		// TODO:
 
 		buf.erase(0, pos + 1);
