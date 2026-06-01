@@ -35,7 +35,7 @@ void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
 		if (pos < received - 1) // otherwise, there is nothing to append.
 			msg.append(buf[pos + 1], received - pos - 1);
 		// unset DISCARD_MSG flag
-		client.state &= ~t_IRC_Client::Flags::DISCARD_MSG;
+		client.state &= ~t_IRC_Client::DISCARD_MSG;
 	}
 	// else: no newline in the received buffer; the buffer can be igonored,
 	// and DISCARD_MSG flag should not be unset, since the next batch should
@@ -87,7 +87,7 @@ void	check_for_too_long_message(std::string &buf, t_IRC_Client &client)
 		// communicate: ERR_INPUTTOOLONG (417)
 		std::cerr << "ERROR 417: ERR_INPUTTOOLONG!" << std::endl; // WARN: just temporary debugger
 		// set DISCARD_MSG flag
-		client.state |= t_IRC_Client::Flags::DISCARD_MSG;
+		client.state |= t_IRC_Client::DISCARD_MSG;
 
 		// discard whole buffer
 		buf.clear();
@@ -137,7 +137,7 @@ void	tokenize_message(t_IRC_Client &client, const std::string_view &msg)
 
 // WARN: Only when dispatching the Verb (command) and looking for a match: temporarily
 // make a proper to_upper() for the verb, and only then compare.
-void	dispatch_client_command(t_IRC_Client &client) // WARN: can client eventually be 'const'?
+void	dispatch_client_command(t_IRC_Client &client, const t_IRC_Server &server) // WARN: can client eventually be 'const'?
 {
 	char	*verb_in_caps = client.parser.verb_in_caps;
 	size_t	verb_len = client.parser.verb.size();
@@ -161,10 +161,10 @@ void	dispatch_client_command(t_IRC_Client &client) // WARN: can client eventuall
 	// WARN: Make 100% sure that the commands here match the ones in the commands array;
 	// And also, make sure that all of those commands are implemented / need to be implemented!
 
-	if (!(client.state & t_IRC_Client::Flags::IS_OK))
+	if ((client.state & t_IRC_Client::REGISTERED) != t_IRC_Client::REGISTERED)
 	{
 		// Registration required - or unfinished
-		client_registration(client, i);
+		client_registration(client, i, server);
 	}
 	else
 	{
@@ -172,10 +172,10 @@ void	dispatch_client_command(t_IRC_Client &client) // WARN: can client eventuall
 		// TODO:
 		switch (i)
 		{
-			default:    invalid_command_detected(client); break;
-			// case 0:  execute_PASS_cmd(client);         break;
+			default: invalid_command_detected(client); break;
+			case 0:  execute_PASS_cmd(client, server); break;
 			// case 1:  execute_NICK_cmd(client);         break;
-			// case 2:  execute_USER_cmd(client);         break;
+			case 2:  execute_USER_cmd(client);         break;
 			// case 3:  execute_JOIN_cmd(client);         break;
 			// case 4:  execute_PART_cmd(client);         break;
 			// case 5:  execute_PRIVMSG_cmd(client);      break;
