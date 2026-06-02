@@ -46,7 +46,11 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 	if (rev & (POLLERR | POLLHUP | POLLNVAL))
 	{
 		if (fd == server.listen_fd)
-			fatal_server_error("listen socket poll event", -1);
+		{
+			server.state |= SERVER_ERROR;
+			server.state &= ~SERVER_RUNNING;
+			return true;
+		}
 		disconnect_client(server, fd);
 		return true;
 	}
@@ -75,11 +79,16 @@ void	server_loop(t_IRC_Server &server)
 
 	while (server.state & SERVER_RUNNING)
 	{
-		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), 0) < 0)
+		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), -1) < 0)
 		{
 			if (errno == EINTR)
 				continue;
-			fatal_server_error("poll", -1);
+			else
+			{
+				server.state |= SERVER_ERROR;
+				server.state &= ~SERVER_RUNNING;
+				return ;
+			}
 		}
 
 		for (size_t i = 0; i < server.poll_fds.size(); )
