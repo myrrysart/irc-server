@@ -4,9 +4,9 @@
 # include "irc_fatstruct.hpp"
 
 /* Client registration */
-void	client_registration(t_IRC_Client &client, const size_t i, const t_IRC_Server &server);
+void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &server);
 void	execute_PASS_cmd(t_IRC_Client &client, const t_IRC_Server &server);
-void	execute_USER_cmd(t_IRC_Client &client);
+void	execute_USER_cmd(t_IRC_Client &client, t_IRC_Server &server);
 
 /* Bitmask check helpers */
 bool	has_provided_user_and_nick_names(t_bmask mask);
