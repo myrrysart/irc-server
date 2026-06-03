@@ -16,10 +16,4 @@ bool	is_invalid_password_request(const t_bmask state);
 /* Invalid command */
 void	invalid_command_detected(const t_IRC_Client &client);
 
-// FIXME: Move these away to another header?
-/* Numeric Replies */
-void	send_ERR_NEEDMOREPARAMS(const t_IRC_Client &client); // 461
-void	send_ERR_ALREADYREGISTERED(const t_IRC_Client &client); // 462
-void	send_ERR_PASSWDMISMATCH(const t_IRC_Client &client); // 464
-
 #endif

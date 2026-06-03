@@ -136,7 +136,8 @@ typedef struct	s_IRC_Client
 		DISCARD_MSG  = BIT(7)
 	};
 
-	static constexpr size_t	username_len = 5; // usernames beyond 5 characters are trimmed
+	// IRC protocol's username length parameter. Usually set to 5
+	static constexpr size_t	userlen = 5;
 
 	t_bmask				state;
 	struct sockaddr_in	addr;  //all the adress data. We'll trim it down as needed.
