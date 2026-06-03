@@ -13,6 +13,17 @@
 // TODO: "When sending messages, ensure that a pair of \r\n characters follows
 // every single message your software sends out"
 
+// TODO:
+// ERR_NONICKNAMEGIVEN (431)
+// "<client> :No nickname given"
+// "Returned when a nickname parameter is expected for a command but isn’t given."
+void	send_ERR_NONICKNAMEGIVEN(const t_IRC_Client &client)
+{
+	// WARN: temporary solution, send instead.
+	std::cout << client.nick << " :No nickname given\n";
+
+}
+
 // NOTE: "If a command is sent from a client to a server with less parameters
 // than the command requires to be processed, the server will reply with an
 // ERR_NEEDMOREPARAMS (461) numeric and the command will fail."
@@ -58,5 +69,3 @@ void	send_ERR_PASSWDMISMATCH(const t_IRC_Client &client)
 	// WARN: temporary solution. Also replace "<client>" with the right thing?
 		std::cout << "<client> " << client.nick << ":Password incorrect\n";
 }
-
-

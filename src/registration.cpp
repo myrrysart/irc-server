@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string_view>
 #include <new> // for std::bad_alloc
+#include <unordered_map>
 
 // TODO: Add the time checks!
 // Perhaps add some timer machine to t_IRC_Client (per client);
@@ -62,7 +63,7 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 				invalid_command_detected(client);
 		} break;
 		case 0: execute_PASS_cmd(client, server); break;
-		// case 1: execute_NICK_cmd(); break;
+		case 1: execute_NICK_cmd(client, server); break;
 		case 2: execute_USER_cmd(client, server); break;
 	}
 
@@ -241,19 +242,88 @@ void	execute_USER_cmd(t_IRC_Client &client, t_IRC_Server &server)
 }
 
 
+// FIXME: read CASEMAPPING section of IRC protocol. Is it true that string comparisons
+// should be case-insensitive? Also, that certain symbols, such as '\' may be considered
+// 'irc_equal' to '|' ? and other similar examples....
+
+
 // TODO: NICK: cap nicknames at 30 characters, and trim any characters beyond that
 // without saying anything. Example from the old Horse docs:
 // 'dan-is-my-name-dont-wear-it-out-at-all' became: 'dan-is-my-name-dont-wear-it-ou'
 // NOTE: In this example on Horse, the returned welcome 001 message does not
 // end with the nickname at all, unlike other, shorter examples?!
-
-// TODO: Consider cases of commands that are received when they are not valid
-// anymore - for example, a nickname has to be set before
-
+// NOTE: Maybe this last part is about the size of the send buffer, and that's why
+// the nick got entirely truncated there - it already displays it in the message
+// beforehand, making the string very long.
 
 // TODO: Follow flow of USER command, regarding the PSWD_FIRST flag.
-// TODO: write exec_NICK_cmd()
-// void	execute_NICK_cmd(const t_IRC_Client &client)
+
+// WARN: Think of edge case where the nickname parameter is empty!
+void	execute_NICK_cmd(t_IRC_Client &client, const t_IRC_Server &server)
+{
+	// no nickname provided
+	if (!client.parser.n_params)
+	{
+		send_ERR_NONICKNAMEGIVEN(client);
+		return;
+	}
+	std::string_view	new_nick = client.parser.params[0];
+
+	// ignore request for an already identical nickname (check for state avoids
+	// comparison of empty nicknames)
+	if (((client.state & t_IRC_Client::NICK) == t_IRC_Client::NICK)
+		&& new_nick == client.nick)
+		return;
+
+	if (is_nick_already_in_use(server.clients, client.fd, new_nick))
+	{
+		send_ERR_
+
+	}
+
+	// check that the nickname contains only existing characters
+
+
+
+
+
+
+}
+
+// TODO: work in progress
+// uses 'ascii' CASEMAPPING, meaning case-insensitive checks: "tommy" == "ToMMY"
+bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients,
+	                           const int fd, const std::string_view &new_nick)
+{
+	bool	is_in_use = 0;
+	size_t	i = 0;
+	size_t	new_nick_len = new_nick.size();
+	char	new_nick_in_caps[new_nick.size()];
+
+	for (std::unordered_map<int, t_IRC_Client>::const_iterator iterator = clients.begin();
+		iterator != clients.end();
+		++iterator)
+	{
+		if (iterator->first == fd) // no need to compare 'new_nick' against the current nickname of the client
+			continue;
+
+		const char		*current_nick = iterator->second.nick;
+		const size_t	len = iterator->second.nicklen;
+
+		if (new_nick_len == len)
+		{
+			for ( ; i < len; ++i)
+			{
+				if (to_uppercase(new_nick[i]) != to_uppercase(current_nick[i]))
+
+
+
+			}
+		}
+	}
+
+
+}
 
 
 
