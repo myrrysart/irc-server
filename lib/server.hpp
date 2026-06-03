@@ -1,3 +1,6 @@
+#ifndef SERVER_HPP
+# define SERVER_HPP
+
 #include <cerrno>
 #include <csignal>
 #include <unistd.h>
@@ -21,3 +24,5 @@ void	accept_new_client(t_IRC_Server &server);
 bool	recv_from_client(t_IRC_Server &server, int fd);
 void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server);
 void	disconnect_client(t_IRC_Server &server, int fd);
+
+#endif

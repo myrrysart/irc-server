@@ -68,7 +68,7 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 		}
 		handle_client_message(server.clients[fd], server);
 	}
-		return false;
+	return false;
 }
 
 void	server_loop(t_IRC_Server &server)

@@ -1,6 +1,8 @@
 
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/commands.hpp"
+#include "../lib/numerics.hpp"
+// WARN: is 'numerics.hpp' still used? those numeric reply functions will probably end up being called from the main server loop...
 
 #include <iostream>
 #include <string_view>
@@ -100,7 +102,6 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 			// set DISCONNECT FLAG?
 			client.state |= t_IRC_Client::ERROR;
 
-
 			// WARN: debugging only
 			std::cout << "\n\nBITMASK of client is = " << client.state << "\n\n";
 
@@ -178,7 +179,7 @@ bool	is_invalid_password_request(const t_bmask state)
 			|| ((state & t_IRC_Client::USERNAME) == t_IRC_Client::USERNAME))
 			return true;
 	}
-	return true;
+	return false;
 }
 
 // TODO: work in progress: function not ready.
@@ -192,10 +193,9 @@ void	execute_USER_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	// check if a username was actually provided in current message
-	// WARN: should I change this next boolean to:
-	// if (client.parser.n_params != 4 || client.parser.params[3] == '') ????
-	if (!client.parser.n_params)
+	/* check that enough parameters are provided; if they are, check that the
+	* 1st parameter ('username') is not empty. This strictly follows protocol. */
+	if (client.parser.n_params < 4 || client.parser.params[0].empty())
 	{
 		// TODO: send ERR_NEEDMOREPARAMS (461)
 		send_ERR_NEEDMOREPARAMS(client);
@@ -208,31 +208,23 @@ void	execute_USER_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// check that a password was provided before this command
 	if ((client.state & t_IRC_Client::PSWD_FIRST) == t_IRC_Client::PSWD_FIRST)
 	{
-		std::string_view	&param = client.parser.params[0];
-
-		// TODO:
-		// continue registration here
-		try { // std::string often dynamically allocates new resources!
-			client.username = "~";
-			client.username.append(param.substr(0, t_IRC_Client::username_len));
-		} catch (const std::bad_alloc &e) {
-
+		std::string_view	*params = client.parser.params;
+		try {
+			client.username = "~"; // a prefix indicating that 'username' is set by the user.
+			client.username.append(params[0].substr(0, t_IRC_Client::userlen)); // silently trim any characters after userlen
+			client.realname = params[3];
+			/* as for parameters [1] & [2]: they are usually sent from the client
+			* as '0' and '*', respectively - but they do not really concern anything
+			* in the current scope, and can be silently ignored. */
+		} catch (const std::bad_alloc &e) { // std::string often dynamically allocates new resources, and may fail
 			std::cerr << "Exception caught: " << e.what() << std::endl;
 			// set fatal error flags!
 			client.state |= t_IRC_Client::ERROR;
-			// server.state |= SERVER_ERROR; // WARN: add the right flag after PR is merged.
-			(void)server; // WARN: temporary since server flag does not exist.
+			// server.state |= SERVER_ERROR; // FIXME: set the appropriate flag/s after PR is merged.
+			// server.state &= ~SERVER_RUNNING; // FIXME: set the appropriate flag/s after PR is merged.
+			(void)server; // FIXME: temporary since server flag does not exist.
 			return;
 		}
-
-
-		// check if the realname is available // WARN: Am I sure about this?
-		// TODO:
-
-
-
-
-
 	}
 	// NOTE:
 	// Server requires passowrd, which means that the user HAS to provide
@@ -266,68 +258,9 @@ void	execute_USER_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 
 
-// FIXME: move all numeric communication functions to dedicated file/s
-
-
-// NOTE: "If a command is sent from a client to a server with less parameters
-// than the command requires to be processed, the server will reply with an
-// ERR_NEEDMOREPARAMS (461) numeric and the command will fail."
-
-// TODO:
-// ERR_NEEDMOREPARAMS (461)
-//   "<client> <command> :Not enough parameters"
-// Returned when a client command cannot be parsed because not enough parameters
-// were supplied. The text used in the last param of this message may vary.
-// TODO: send message instead.
-void	send_ERR_NEEDMOREPARAMS(const t_IRC_Client &client)
-{
-	std::string_view	capitalized_verb{client.parser.verb_in_caps,
-		                    client.parser.verb.size()};
-	// WARN: temporary solution. Also replace "<client>" with the right thing?
-	std::cout
-		<< "<client> " << client.nick << ' '
-		<< capitalized_verb << " :Not enough parameters\n";
-}
-
-// TODO:
-// ERR_ALREADYREGISTERED (462)
-// "<client> :You may not reregister"
-// Returned when a client tries to change a detail that can only be set during
-// registration (such as resending the PASS or USER after registration). The text
-// used in the last param of this message varies.
-// TODO: send message instead.
-void	send_ERR_ALREADYREGISTERED(const t_IRC_Client &client)
-{
-	// WARN: temporary solution. Also replace "<client>" with the right thing?
-	std::cout << "<client> " << client.nick << ":You may not reregister\n";
-}
-
-
-// TODO:
-// ERR_PASSWDMISMATCH (464)
-//   "<client> :Password incorrect"
-// Returned to indicate that the connection could not be registered as the
-// password was either incorrect or not supplied. The text used in the last param
-// of this message may vary.
-// TODO: send message instead.
-void	send_ERR_PASSWDMISMATCH(const t_IRC_Client &client)
-{
-	// WARN: temporary solution. Also replace "<client>" with the right thing?
-		std::cout << "<client> " << client.nick << ":Password incorrect\n";
-}
-
-
 // WARN: Should we support CAP - capability negotiation? Probably unnecessary.
 
 // FIXME: Should we accept multiple connections from the same client (perhaps there
 // is a way for them to connect once, and then somehow change their nickname/name to a
 // valid one, and then they could be still validated again? There is a way to check
 // the IP address via the socket address info struct of the client.... but is it necessary?)
-
-// NOTE: "Clients MUST NOT include a source when sending a message. Servers MAY
-// include a source on any message, and MAY leave a source off of any message.
-// Clients MUST be able to process any given message the same way whether it
-// contains a source or does not contain one."
-
-// TODO: "When sending messages, ensure that a pair of \r\n characters follows
-// every single message your software sends out"

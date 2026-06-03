@@ -6,15 +6,19 @@
 bool	recv_from_client(t_IRC_Server &server, int fd)
 {
 	static char	buf[t_parser::buf_size];
+	t_IRC_Client	&client = server.clients[fd]; // reference to the observed client
+
+	if ((client.state & t_IRC_Client::ERROR) == t_IRC_Client::ERROR)
+		return true;
 
 	ssize_t	received = recv(fd, buf, sizeof(buf), 0);
 	if (received <= 0)
 		return true;
 
-	if ((server.clients[fd].state & t_IRC_Client::DISCARD_MSG) == t_IRC_Client::DISCARD_MSG)
-		handle_message_to_discard(server.clients[fd], buf, received);
+	if ((client.state & t_IRC_Client::DISCARD_MSG) == t_IRC_Client::DISCARD_MSG)
+		handle_message_to_discard(client, buf, received);
 	else
-		server.clients[fd].received_message_buffer.append(buf, received);
+		client.received_message_buffer.append(buf, received);
 
 	return false;
 }
