@@ -138,11 +138,14 @@ typedef struct	s_IRC_Client
 
 	// IRC protocol's username length parameter. Usually set to 5
 	static constexpr size_t	userlen = 5;
+	// "If <nickname> is longer than the server allows (...), it is silently truncated"
+	static constexpr size_t	max_nicklen = 30;
 
 	t_bmask				state;
 	struct sockaddr_in	addr;  //all the adress data. We'll trim it down as needed.
 	int					fd;
-	std::string			nick;
+	char				nick[max_nicklen];
+	size_t				nicklen;
 	std::string			username;
 	std::string			realname;
 	std::string			hostname;
