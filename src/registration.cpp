@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <string_view>
+#include <new> // for std::bad_alloc
 
 // TODO: Add the time checks!
 // Perhaps add some timer machine to t_IRC_Client (per client);
@@ -48,7 +49,7 @@
 // its actual nickname at the time of connection. Subsequent nickname changes,
 // client-initiated or not, will be communicated by the server sending a NICK message.
 
-void	client_registration(t_IRC_Client &client, const size_t i, const t_IRC_Server &server)
+void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &server)
 {
 	switch (i)
 	{
@@ -60,7 +61,7 @@ void	client_registration(t_IRC_Client &client, const size_t i, const t_IRC_Serve
 		} break;
 		case 0: execute_PASS_cmd(client, server); break;
 		// case 1: execute_NICK_cmd(); break;
-		case 2: execute_USER_cmd(client); break;
+		case 2: execute_USER_cmd(client, server); break;
 	}
 
 	if (has_provided_user_and_nick_names(client.state))
@@ -181,7 +182,7 @@ bool	is_invalid_password_request(const t_bmask state)
 }
 
 // TODO: work in progress: function not ready.
-void	execute_USER_cmd(t_IRC_Client &client)
+void	execute_USER_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
 	// check if already registered
 	if ((client.state & t_IRC_Client::REGISTERED) == t_IRC_Client::REGISTERED)
@@ -192,6 +193,8 @@ void	execute_USER_cmd(t_IRC_Client &client)
 	}
 
 	// check if a username was actually provided in current message
+	// WARN: should I change this next boolean to:
+	// if (client.parser.n_params != 4 || client.parser.params[3] == '') ????
 	if (!client.parser.n_params)
 	{
 		// TODO: send ERR_NEEDMOREPARAMS (461)
@@ -205,13 +208,26 @@ void	execute_USER_cmd(t_IRC_Client &client)
 	// check that a password was provided before this command
 	if ((client.state & t_IRC_Client::PSWD_FIRST) == t_IRC_Client::PSWD_FIRST)
 	{
-
-		// check if the username is available // WARN: Am I sure about this?
-		// TODO:
-
+		std::string_view	&param = client.parser.params[0];
 
 		// TODO:
 		// continue registration here
+		try { // std::string often dynamically allocates new resources!
+			client.username = "~";
+			client.username.append(param.substr(0, t_IRC_Client::username_len));
+		} catch (const std::bad_alloc &e) {
+
+			std::cerr << "Exception caught: " << e.what() << std::endl;
+			// set fatal error flags!
+			client.state |= t_IRC_Client::ERROR;
+			// server.state |= SERVER_ERROR; // WARN: add the right flag after PR is merged.
+			(void)server; // WARN: temporary since server flag does not exist.
+			return;
+		}
+
+
+		// check if the realname is available // WARN: Am I sure about this?
+		// TODO:
 
 
 

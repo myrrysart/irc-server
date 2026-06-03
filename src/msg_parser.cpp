@@ -138,7 +138,7 @@ void	tokenize_message(t_IRC_Client &client, const std::string_view &msg)
 
 // WARN: Only when dispatching the Verb (command) and looking for a match: temporarily
 // make a proper to_upper() for the verb, and only then compare.
-void	dispatch_client_command(t_IRC_Client &client, const t_IRC_Server &server) // WARN: can client eventually be 'const'?
+void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 {
 	char	*verb_in_caps = client.parser.verb_in_caps;
 	size_t	verb_len = client.parser.verb.size();
@@ -176,7 +176,7 @@ void	dispatch_client_command(t_IRC_Client &client, const t_IRC_Server &server) /
 			default: invalid_command_detected(client); break;
 			case 0:  execute_PASS_cmd(client, server); break;
 			// case 1:  execute_NICK_cmd(client);         break;
-			case 2:  execute_USER_cmd(client);         break;
+			case 2:  execute_USER_cmd(client, server); break;
 			// case 3:  execute_JOIN_cmd(client);         break;
 			// case 4:  execute_PART_cmd(client);         break;
 			// case 5:  execute_PRIVMSG_cmd(client);      break;

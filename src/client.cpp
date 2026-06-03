@@ -19,7 +19,7 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 	return false;
 }
 
-void	handle_client_message(t_IRC_Client &client, const t_IRC_Server &server)
+void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 {
 	std::string	&buf = client.received_message_buffer;
 	size_t		pos;
