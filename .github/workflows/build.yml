@@ -1,7 +1,18 @@
-name: ft_irc CI
-on: [push, pull_request]
+name: ft_irc CI/CD
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: irc-server-deploy
+  cancel-in-progress: false
+
+env:
+  IRC_TEST_PORT: 6668
+
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,6 +67,60 @@ jobs:
 
       - name: Test run (starts and stops)
         run: |
-          ./ircserv 6667 password &
+          set -euo pipefail
+          ./ircserv "$IRC_TEST_PORT" > ircserv-ci.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true' EXIT
           sleep 2
-          kill %1 || true
+          if ! kill -0 "$pid" 2>/dev/null; then
+            echo "ircserv exited during smoke test"
+            cat ircserv-ci.log
+            exit 1
+          fi
+          timeout 5 bash -c "</dev/tcp/127.0.0.1/$IRC_TEST_PORT"
+
+  deploy:
+    needs: ci
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate deployment secrets
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_HOST" || { echo "Missing DEPLOY_HOST secret"; exit 1; }
+          test -n "$DEPLOY_USER" || { echo "Missing DEPLOY_USER secret"; exit 1; }
+          test -n "$DEPLOY_SSH_KEY" || { echo "Missing DEPLOY_SSH_KEY secret"; exit 1; }
+
+      - name: Configure SSH key
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Pull main on server
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash -lc 'set -euo pipefail; \
+             if [ ! -d /home/deploy/irc-server/.git ]; then \
+               rm -rf /home/deploy/irc-server; \
+               git clone --branch main https://github.com/myrrysart/irc-server.git /home/deploy/irc-server; \
+             fi; \
+             cd /home/deploy/irc-server; \
+             git fetch origin main; \
+             git reset --hard origin/main'"
+
+      - name: Rebuild and restart remote IRC server
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash /home/deploy/irc-server/scripts/deploy_remote.sh"
