@@ -47,7 +47,6 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 	{
 		if (fd == server.listen_fd)
 		{
-			server.state |= SERVER_ERROR;
 			server.state &= ~SERVER_RUNNING;
 			return true;
 		}
@@ -85,7 +84,6 @@ void	server_loop(t_IRC_Server &server)
 				continue;
 			else
 			{
-				server.state |= SERVER_ERROR;
 				server.state &= ~SERVER_RUNNING;
 				return ;
 			}
@@ -93,6 +91,8 @@ void	server_loop(t_IRC_Server &server)
 
 		for (size_t i = 0; i < server.poll_fds.size(); )
 		{
+			if (!SERVER_RUNNING)
+				return;
 			int		fd = server.poll_fds[i].fd;
 			short	rev = server.poll_fds[i].revents;
 			bool	is_removed = handle_poll_event(server, fd, rev);

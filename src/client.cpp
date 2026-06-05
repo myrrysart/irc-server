@@ -22,6 +22,7 @@ void	handle_client_message(t_IRC_Client &client)
 	{
 		std::cout	<< "Received from " << client.fd << " : "
 					<< buf.substr(0, pos) << std::endl;
+		send(client.fd, buf.substr(0, pos).c_str(), pos, 0);
 		buf.erase(0, pos + 1);
 
 	}

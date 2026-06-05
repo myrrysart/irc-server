@@ -21,9 +21,8 @@
 // bitmask helper macro for declaring bit state macros
 # define BIT(x) (1u << (x))
 // bitmask assumption that if a state of bitmask is 0, it is still in setup phase and have just been created
-# define IN_SETUP 0
+# define SERVER_DOWN 0
 # define SERVER_RUNNING BIT(1)
-# define SERVER_ERROR BIT(2)
 
 // bitmask typedefinition for fat struct bitfields.
 //NOTE: Create a new one if more bits are needed (ex. typedef unsigned long t_long_bmask;)
@@ -41,7 +40,7 @@ typedef struct	s_IRC_ChannelMembership
 	t_bmask			state;
 	t_IRC_Client*	client;
 }					t_IRC_ChannelMembership;
-// static_assert(sizeof(t_IRC_ChannelMembership) <= 1*CACHE_LINE_SIZE,"IRC_ChannelMembership did not use 1 cache line" );
+static_assert(sizeof(t_IRC_ChannelMembership) <= 1*CACHE_LINE_SIZE,"IRC_ChannelMembership did not use 1 cache line" );
 
 // IRC_Channel state bitmask definitions
 # define	IS_RUNNING BIT(0)
@@ -62,7 +61,7 @@ typedef struct	s_IRC_Channel
 	t_IRC_ChannelMembership*	members;
 	int							member_count;
 }								t_IRC_Channel;
-// static_assert(sizeof(t_IRC_Channel) <= 2*CACHE_LINE_SIZE," t_IRC_Channel did not use 2 cache line" );
+static_assert(sizeof(t_IRC_Channel) <= 2*CACHE_LINE_SIZE," t_IRC_Channel did not use 2 cache line" );
 // IRC_Client state bitmask definitions
 //NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in and chatting away. Anything else is an active state that needs to be resolved in some way.
 # define	IS_OK BIT(0)
@@ -79,7 +78,7 @@ typedef struct	s_IRC_Client
 	t_IRC_Channel*		joined_channels;
 	int					joined_count;
 }						t_IRC_Client;
-// static_assert(sizeof(t_IRC_Client) <= 4*CACHE_LINE_SIZE," t_IRC_Client did not use 3 cache line" );
+static_assert(sizeof(t_IRC_Client) <= 4*CACHE_LINE_SIZE," t_IRC_Client did not use 3 cache line" );
 
 // IRC_Server state bitmask definitions
 //NOTE: state is essentially an error code catcher for the IRC_Server. BIT(0) means server is running smoothly, anything else is an error case.
