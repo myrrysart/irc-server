@@ -91,7 +91,7 @@ void	server_loop(t_IRC_Server &server)
 
 		for (size_t i = 0; i < server.poll_fds.size(); )
 		{
-			if (!SERVER_RUNNING)
+			if (!(server.state & SERVER_RUNNING))
 				return;
 			int		fd = server.poll_fds[i].fd;
 			short	rev = server.poll_fds[i].revents;
