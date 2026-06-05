@@ -27,7 +27,7 @@ void	handle_client_message(t_IRC_Client &client)
 	while ((pos = buf.find('\n')) != std::string::npos)
 	{
 		prepare_and_parse_message(pos, buf, client);
-    send(client.fd, buf.substr(0, pos).c_str(), pos, 0); // reply placeholder
+    	send(client.fd, buf.substr(0, pos).c_str(), pos, 0); // reply placeholder
 		buf.erase(0, pos + 1);
 	}
 
