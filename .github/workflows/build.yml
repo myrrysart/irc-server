@@ -87,7 +87,6 @@ jobs:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
       DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -104,12 +103,12 @@ jobs:
           install -d -m 700 ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 10 -p 22 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
       - name: Pull main on server
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+          ssh -i ~/.ssh/deploy_key -p 22 "$DEPLOY_USER@$DEPLOY_HOST" \
             "bash -lc 'set -euo pipefail; \
              if [ ! -d /home/deploy/irc-server/.git ]; then \
                rm -rf /home/deploy/irc-server; \
@@ -122,5 +121,5 @@ jobs:
       - name: Rebuild and restart remote IRC server
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+          ssh -i ~/.ssh/deploy_key -p 22 "$DEPLOY_USER@$DEPLOY_HOST" \
             "bash /home/deploy/irc-server/scripts/deploy_remote.sh"
