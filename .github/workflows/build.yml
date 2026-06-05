@@ -105,7 +105,7 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -T 10 -p 22 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
-      - name: Pull main on server
+      - name: Deploy on server
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/deploy_key -p 22 "$DEPLOY_USER@$DEPLOY_HOST" \
@@ -116,10 +116,10 @@ jobs:
              fi; \
              cd /home/deploy/irc-server; \
              git fetch origin main; \
-             git reset --hard origin/main'"
-
-      - name: Rebuild and restart remote IRC server
-        run: |
-          set -euo pipefail
-          ssh -i ~/.ssh/deploy_key -p 22 "$DEPLOY_USER@$DEPLOY_HOST" \
-            "bash /home/deploy/irc-server/scripts/deploy_remote.sh"
+             git reset --hard origin/main; \
+             make re; \
+             if [ -f ircserv.pid ]; then kill \$(cat ircserv.pid) 2>/dev/null || true; sleep 1; fi; \
+             nohup /home/deploy/irc-server/ircserv 6668 > ircserv.log 2>&1 & echo \$! > ircserv.pid; \
+             sleep 1; \
+             kill -0 \$(cat ircserv.pid); \
+             ss -ltn | awk '\''{print \$4}'\'' | grep -Eq '\''(^|:)6668$'\'''"

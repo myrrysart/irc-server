@@ -9,8 +9,6 @@
 # NOTE: these are testing files
 !tests/
 !tests/*.sh
-!scripts/
-!scripts/*.sh
 # BlOCK END
 
 # Makefile
