@@ -68,7 +68,7 @@ jobs:
       - name: Test run (starts and stops)
         run: |
           set -euo pipefail
-          ./ircserv "$IRC_TEST_PORT" > ircserv-ci.log 2>&1 &
+          ./ircserv "$IRC_TEST_PORT" "" > ircserv-ci.log 2>&1 &
           pid=$!
           trap 'kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true' EXIT
           sleep 2
