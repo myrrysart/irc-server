@@ -74,7 +74,8 @@ void	server_loop(t_IRC_Server &server)
 
 	while (1)
 	{
-		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), 0) < 0)
+		// WARN: last argument is now -1, not 0
+		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), -1) < 0)
 		{
 			if (errno == EINTR)
 				continue;
