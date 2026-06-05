@@ -15,6 +15,7 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 	server.clients[client_fd] = t_IRC_Client{};
 	server.clients[client_fd].fd = client_fd;
 	server.clients[client_fd].addr = client_addr;
+
 	return true;
 }
 
@@ -45,7 +46,10 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 	if (rev & (POLLERR | POLLHUP | POLLNVAL))
 	{
 		if (fd == server.listen_fd)
-			fatal_server_error("listen socket poll event", -1);
+		{
+			server.state &= ~SERVER_RUNNING;
+			return true;
+		}
 		disconnect_client(server, fd);
 		return true;
 	}
@@ -72,18 +76,23 @@ void	server_loop(t_IRC_Server &server)
 	server.poll_fds.push_back(pollfd{server.listen_fd, POLLIN, 0});
 	std::cout << "server running at port " << server.port << std::endl;
 
-	while (1)
+	while (server.state & SERVER_RUNNING)
 	{
-		// WARN: last argument is now -1, not 0
 		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), -1) < 0)
 		{
 			if (errno == EINTR)
 				continue;
-			fatal_server_error("poll", -1);
+			else
+			{
+				server.state &= ~SERVER_RUNNING;
+				return ;
+			}
 		}
 
 		for (size_t i = 0; i < server.poll_fds.size(); )
 		{
+			if (!(server.state & SERVER_RUNNING))
+				return;
 			int		fd = server.poll_fds[i].fd;
 			short	rev = server.poll_fds[i].revents;
 			bool	is_removed = handle_poll_event(server, fd, rev);
