@@ -38,7 +38,7 @@ void	disconnect_client(t_IRC_Server &server, int fd)
 {
 	close(fd);
 	server.clients.erase(fd);
-	std::erase_if(server.poll_fds, [fd](const pollfd& pfd){ return pfd.fd == fd; });
+	std::erase_if(server.poll_fds, [fd](const pollfd& pfd) {return pfd.fd == fd; });
 	std::cout << "Client disconnected.\n";
 	std::cout << "total number of clients: " << server.clients.size() << std::endl;
 }

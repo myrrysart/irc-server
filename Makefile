@@ -1,6 +1,6 @@
 NAME	= ircserv
 CC		= c++
-CFLAGS	= -Wall -Wextra -Werror -Wshadow -std=c++20 -MMD -MP
+CFLAGS	= -Wall -Wextra -Werror -Wshadow -pedantic -std=c++20 -MMD -MP
 SRC		= src/main.cpp src/server.cpp src/listener.cpp src/client.cpp \
 		  src/error.cpp src/msg_parser.cpp
 OBJS	= $(SRC:.cpp=.o)
