@@ -22,7 +22,7 @@ void	server_loop(t_IRC_Server &server);
 void	accept_new_client(t_IRC_Server &server);
 
 bool	recv_from_client(t_IRC_Server &server, int fd);
-void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server);
+bool	handle_client_message(t_IRC_Client &client, t_IRC_Server &server);
 void	disconnect_client(t_IRC_Server &server, int fd);
 
 #endif

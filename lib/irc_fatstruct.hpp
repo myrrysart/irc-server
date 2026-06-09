@@ -121,31 +121,31 @@ typedef struct	s_parser
 static_assert(sizeof(t_parser) <= 65*CACHE_LINE_SIZE, "t_parser did not use 65 cache lines");
 // WARN: this struct is quite large - is there a way to reduce it?
 
-// IRC_Client state bitmask definitions
-//NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in and chatting away. Anything else is an active state that needs to be resolved in some way.
+//NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in error state and should be disconnected. Anything else is an active state that needs to be resolved in some way.
 typedef struct	s_IRC_Client
 {
+	// IRC_Client state bitmask definitions
 	enum {
-		IS_OK        = BIT(0),
+		ERROR        = BIT(0),
 		REGISTERED   = BIT(1),
 		PSWD_FIRST   = BIT(2),
 		PSWD_CORRECT = BIT(3),
 		NICK         = BIT(4),
 		USERNAME     = BIT(5),
-		ERROR        = BIT(6),
-		DISCARD_MSG  = BIT(7)
+		DISCARD_MSG  = BIT(6)
 	};
 
 	// IRC protocol's username length parameter. Usually set to 5
 	static constexpr size_t	userlen = 5;
+
 	// "If <nickname> is longer than the server allows (...), it is silently truncated"
 	static constexpr size_t	max_nicklen = 30;
 
 	t_bmask				state;
 	struct sockaddr_in	addr;  //all the adress data. We'll trim it down as needed.
 	int					fd;
-	char				nick[max_nicklen];
-	size_t				nicklen;
+	std::string_view	nick;
+	char				nick_buf[max_nicklen]; // not nullterminated, use 'nick' instead
 	std::string			username;
 	std::string			realname;
 	std::string			hostname;
@@ -169,5 +169,8 @@ typedef struct	s_IRC_Server
 	int										channel_count;
 	std::vector<pollfd>						poll_fds;
 }											t_IRC_Server;
+
+
+bool	is_flag_set(const t_bmask state, const unsigned int mask);
 
 #endif//IRC_FATSTRUCT_HPP

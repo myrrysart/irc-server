@@ -3,6 +3,9 @@
 
 # include "irc_fatstruct.hpp"
 
+# include <unordered_map>
+# include <string_view>
+
 /* Client registration */
 void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &server);
 void	execute_PASS_cmd(t_IRC_Client &client, const t_IRC_Server &server);
@@ -11,10 +14,15 @@ void	execute_NICK_cmd(t_IRC_Client &client, const t_IRC_Server &server);
 
 /* Bitmask check helpers */
 bool	has_provided_user_and_nick_names(t_bmask mask);
-bool	has_provided_correct_password(t_bmask mask);
-bool	is_invalid_password_request(const t_bmask state);
+bool	has_provided_password_first_and_it_is_correct(const t_bmask state);
+bool	is_or_was_password_provided_first(const t_bmask state);
 
 /* Invalid command */
 void	invalid_command_detected(const t_IRC_Client &client);
+
+/* Utils */
+bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients,
+            const int fd, const std::string_view &new_nick);
+bool	is_nickname_valid(const std::string_view &nickname);
 
 #endif

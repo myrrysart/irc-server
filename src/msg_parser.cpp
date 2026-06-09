@@ -20,7 +20,7 @@
 char	t_parser::verb_in_caps[t_parser::longest_cmd_size];
 
 void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
-	                              const ssize_t received)
+            const ssize_t received)
 {
 	std::string	&msg = client.received_message_buffer;
 	ssize_t		pos = 0;
@@ -132,8 +132,6 @@ void	tokenize_message(t_IRC_Client &client, const std::string_view &msg)
 		client.parser.params[j] = std::string_view{&msg[k], i - k};
 	}
 	client.parser.n_params = j;
-
-	display_tokens(client); // WARN: just debugging
 }
 
 // WARN: Only when dispatching the Verb (command) and looking for a match: temporarily
@@ -162,7 +160,7 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 	// WARN: Make 100% sure that the commands here match the ones in the commands array;
 	// And also, make sure that all of those commands are implemented / need to be implemented!
 
-	if ((client.state & t_IRC_Client::REGISTERED) != t_IRC_Client::REGISTERED)
+	if (!is_flag_set(client.state, t_IRC_Client::REGISTERED))
 	{
 		// Registration required - or unfinished
 		client_registration(client, i, server);
@@ -192,19 +190,5 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 		}
 	}
 
-	// WARN: reset n_params to zero, since current message is not to be utilized anymore?
 	client.parser.n_params = 0;
-}
-
-// WARN: Only for debugging purposes: remember to delete
-void	display_tokens(const t_IRC_Client &client)
-{
-	std::cout << "\nCOMMAND: <" << client.parser.verb << ">\n";
-	std::cout << "PARAMS:\n";
-	for (size_t i = 0; i < client.parser.n_params; ++i)
-	{
-	  std::cout << "     [" << i << "]: " << client.parser.params[i] << "\n";
-
-	}
-	std::cout << std::flush;
 }

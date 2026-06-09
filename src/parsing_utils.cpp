@@ -38,3 +38,17 @@ char	to_uppercase(char c)
 
 	return (result);
 }
+
+bool	are_equal_strs_case_insensitive(const char *str1, const size_t len1,
+            const char *str2, const size_t len2)
+{
+	if (len1 != len2)
+		return false;
+
+	for (size_t i = 0; i < len1; ++i)
+	{
+		if (to_uppercase(str1[i]) != to_uppercase(str2[i]))
+			return false;
+	}
+	return true;
+}
