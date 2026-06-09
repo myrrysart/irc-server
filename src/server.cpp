@@ -13,8 +13,17 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 	}
 	server.poll_fds.push_back(pollfd{client_fd, POLLIN, 0});
 	server.clients[client_fd] = t_IRC_Client{};
-	server.clients[client_fd].fd = client_fd;
-	server.clients[client_fd].addr = client_addr;
+
+	t_IRC_Client	&client = server.clients[client_fd];
+	client.fd = client_fd;
+	client.addr = client_addr;
+
+	/* Initialize default nickname to '*'. This is an invalid nickname, but it
+	* is crucial for sending numeric replies from the server to the client when
+	* registration is still ongoing, without leading to parsing errors on the
+	* client side. */
+	client.nick_buf[0] = '*';
+	client.nick = std::string_view{client.nick_buf, 1};
 	return true;
 }
 
@@ -62,7 +71,11 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 			disconnect_client(server, fd);
 			return true;
 		}
-		handle_client_message(server.clients[fd], server);
+		if (handle_client_message(server.clients[fd], server))
+		{
+			disconnect_client(server, fd);
+			return true;
+		}
 	}
 	return false;
 }
