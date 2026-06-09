@@ -29,8 +29,6 @@ void 	queue_out_message(t_IRC_Server &server,int fd, std::string msg)
 void	flush_client(t_IRC_Server &server, int fd)
 {
 	std::string		&out_buf = server.clients[fd].send_message_buffer;
-	t_IRC_Client	&client = server.clients[fd];
-	pollfd			&poll_fd = server.poll_fds[fd];
 	int				sent;
 
 	while (!out_buf.empty())
@@ -46,8 +44,14 @@ void	flush_client(t_IRC_Server &server, int fd)
 			return ;
 		}
 	}
-	poll_fd.events &= ~POLLOUT;
-
+	for (pollfd &pfd : server.poll_fds)
+	{
+		if (pfd.fd == fd)
+		{
+			pfd.events &= ~POLLOUT;
+			break;
+		}
+	}
 }
 
 void	handle_client_message(t_IRC_Server &server, int fd)
