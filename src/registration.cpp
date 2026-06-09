@@ -58,12 +58,7 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 {
 	switch (i)
 	{
-		default: {
-			if (i < t_parser::n_valid_cmds)
-				std::cout << "Registration incomplete\n"; // FIXME: send instead of printing. Is there a numeric for this? This was just copied from Irssi's output.
-			else
-				invalid_command_detected(client);
-		} break;
+		default: send_ERR_NOTREGISTERED(client);  break;
 		case 0: execute_PASS_cmd(client, server); break;
 		case 1: execute_NICK_cmd(client, server); break;
 		case 2: execute_USER_cmd(client, server); break;

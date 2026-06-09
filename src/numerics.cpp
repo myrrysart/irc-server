@@ -26,6 +26,18 @@
 // replaced by the client's nickname
 
 // TODO:
+// ERR_UNKNOWNCOMMAND (421)
+// "<client> <command> :Unknown command"
+// "Sent to a registered client to indicate that the command they sent isn’t
+// known by the server. The text used in the last param of this message may vary."
+void	send_ERR_UNKNOWNCOMMAND(const t_IRC_Client &client)
+{
+	// WARN: temporary solution, send instead.
+	std::cout << client.nick << ' ' << client.parser.verb << " :Unknown command\n";
+}
+
+
+// TODO:
 // ERR_NONICKNAMEGIVEN (431)
 // "<client> :No nickname given"
 // "Returned when a nickname parameter is expected for a command but isn’t given."
@@ -71,6 +83,19 @@ void	send_ERR_NICKNAMEINUSE(const t_IRC_Client &client,
 	// already deprecated! It is a string_view that would become invalid!!!
 	std::cout << client.nick << ' ' << new_nick << " :Nickname is already in use\n";
 }
+
+// TODO:
+// ERR_NOTREGISTERED (451)
+// "<client> :You have not registered"
+// "Returned when a client command cannot be parsed as they are not yet registered.
+// Servers offer only a limited subset of commands until clients are properly
+// registered to the server. The text used in the last param of this message may vary."
+void	send_ERR_NOTREGISTERED(const t_IRC_Client &client)
+{
+	// WARN: temporary solution
+	std::cout << client.nick << " :You have not registered\n";
+}
+
 
 // NOTE: "If a command is sent from a client to a server with less parameters
 // than the command requires to be processed, the server will reply with an

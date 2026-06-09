@@ -1,12 +1,10 @@
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/commands.hpp"
+#include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
 
-#include <iostream>
 #include <cstring> // for std::strncmp()
 #include <string_view>
-
-// TODO: Add prefix?
 
 void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -43,7 +41,7 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 		// TODO:
 		switch (i)
 		{
-			default: invalid_command_detected(client); break;
+			default: send_ERR_UNKNOWNCOMMAND(client);  break;
 			case 0:  execute_PASS_cmd(client, server); break;
 			case 1:  execute_NICK_cmd(client, server); break;
 			case 2:  execute_USER_cmd(client, server); break;
@@ -63,13 +61,4 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 	}
 
 	client.parser.n_params = 0;
-}
-
-// NOTE: When a messsage is unknown: Irssi (at least) returns:
-// "Irssi: Unknown command: <the_command>", keeping the user's provided case.
-// ----> do not output 'the_command' with a different case, remain case sensitive.
-void	invalid_command_detected(const t_IRC_Client &client)
-{
-	// FIXME: send instead of printing.
-	std::cout << "Unknown command: " << client.parser.verb << "\r\n";
 }

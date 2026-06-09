@@ -20,9 +20,6 @@ bool	has_provided_user_and_nick_names(t_bmask mask);
 bool	has_provided_password_first_and_it_is_correct(const t_bmask state);
 bool	is_or_was_password_provided_first(const t_bmask state);
 
-/* Invalid command */
-void	invalid_command_detected(const t_IRC_Client &client);
-
 /* Utils */
 bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients,
             const int fd, const std::string_view &new_nick);
