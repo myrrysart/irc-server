@@ -24,3 +24,17 @@ Key differences from your original:
 - **No deque at all** — single `std::string` per client, `erase(0, sent)` handles partial sends cleanly
 - **`queue_message()` is a new function**, not part of `flush_client()` — one pushes, one drains
 - **POLLOUT is set when queueing**, cleared when drained — the pollfd's `events` field becomes the authoritative "is there data to send" signal
+
+Still broken (3 bugs):**
+
+1. **`client.cpp:33` — `server.poll_fds[fd]`** still wrong. `poll_fds` is a `vector<pollfd>`, not indexed by fd. Need to search by `pfd.fd == fd`.
+
+2. **`client.cpp:63` — `flush_client()` still called synchronously** in `handle_client_message()`. Needs removal once POLLOUT handling is in place.
+
+3. **`client.cpp:24-27` — `queue_out_message()` doesn't set `POLLOUT`** on the pollfd entry. It just appends to the buffer but never tells `poll()` to watch for writability.
+
+**Still missing (2 features):**
+
+4. **`server.cpp` — `O_NONBLOCK` in `setup_client()`** (need `#include <fcntl.h>`)
+
+5. **`server.cpp` — POLLOUT branch in `handle_poll_event()`** that calls `flush_client()

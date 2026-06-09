@@ -66,7 +66,7 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 			disconnect_client(server, fd);
 			return true;
 		}
-		handle_client_message(server.clients[fd]);
+		handle_client_message(server, fd);
 	}
 		return false;
 }

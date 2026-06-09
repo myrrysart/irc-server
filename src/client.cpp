@@ -1,3 +1,4 @@
+#include <cerrno>
 #include <iostream>
 #include <string>
 #include "../lib/irc_fatstruct.hpp"
@@ -23,23 +24,46 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 void 	queue_out_message(t_IRC_Server &server,int fd, std::string msg)
 {
 	server.clients[fd].send_message_buffer += msg;
-	server.clients[fd].send_message_buffer += "\n";
+}
+
+void	flush_client(t_IRC_Server &server, int fd)
+{
+	std::string		&out_buf = server.clients[fd].send_message_buffer;
+	t_IRC_Client	&client = server.clients[fd];
+	pollfd			&poll_fd = server.poll_fds[fd];
+	int				sent;
+
+	while (!out_buf.empty())
+	{
+		sent = send(fd, out_buf.data(), out_buf.size(), MSG_NOSIGNAL); //NOSIGNAL avoids pipe
+		if (sent  > 0)
+			out_buf.erase(0, sent);
+		else if (sent == -1 && (errno == EAGAIN || EWOULDBLOCK))
+			break; // Socket not ready. Wait for nex POLLOUT
+		else
+		{
+			disconnect_client(server, fd);
+			return ;
+		}
+	}
+	poll_fd.events &= ~POLLOUT;
+
 }
 
 void	handle_client_message(t_IRC_Server &server, int fd)
 {
-	std::string		&buf = server.clients[fd].received_message_buffer;
+	std::string		&in_buf = server.clients[fd].received_message_buffer;
 	t_IRC_Client	&client = server.clients[fd];
 	size_t			pos;
 
-	while ((pos = buf.find('\n')) != std::string::npos)
+	while ((pos = in_buf.find('\n')) != std::string::npos)
 	{
-		prepare_and_parse_message(pos, buf, client);
-		queue_out_message(server, fd, buf.substr(0, pos));
-		flush_client(server, fd);
-		buf.erase(0, pos + 1);
+		prepare_and_parse_message(pos, in_buf, client);
+		queue_out_message(server, fd, in_buf.substr(0, pos));
+		flush_client(server, fd); //sends
+		in_buf.erase(0, pos + 1);
 	}
-	check_for_too_long_message(buf, client);
+	check_for_too_long_message(in_buf, client);
 }
 
 void	disconnect_client(t_IRC_Server &server, int fd)
