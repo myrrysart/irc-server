@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
 #include "../lib/parser.hpp"
@@ -19,18 +20,25 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 	return false;
 }
 
-void	handle_client_message(t_IRC_Client &client)
+void 	queue_out_message(t_IRC_Server &server,int fd, std::string msg)
 {
-	std::string	&buf = client.received_message_buffer;
-	size_t		pos;
+	server.clients[fd].send_message_buffer += msg;
+	server.clients[fd].send_message_buffer += "\n";
+}
+
+void	handle_client_message(t_IRC_Server &server, int fd)
+{
+	std::string		&buf = server.clients[fd].received_message_buffer;
+	t_IRC_Client	&client = server.clients[fd];
+	size_t			pos;
 
 	while ((pos = buf.find('\n')) != std::string::npos)
 	{
 		prepare_and_parse_message(pos, buf, client);
-    	send(client.fd, buf.substr(0, pos).c_str(), pos, 0); // reply placeholder
+		queue_out_message(server, fd, buf.substr(0, pos));
+		flush_client(server, fd);
 		buf.erase(0, pos + 1);
 	}
-
 	check_for_too_long_message(buf, client);
 }
 
