@@ -28,8 +28,4 @@ char	to_uppercase(char c);
 bool	are_equal_strs_case_insensitive(const char *str1, const size_t len1,
             const char *str2, const size_t len2);
 
-/* Error logging */
-void	log_error(const char *error, const char *filename, int line_number,
-            bool is_exception);
-
 #endif

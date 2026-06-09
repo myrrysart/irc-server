@@ -161,7 +161,11 @@ typedef struct	s_IRC_Server
 	std::vector<pollfd>						poll_fds;
 }											t_IRC_Server;
 
-
+/* Bit mask utils */
 bool	is_flag_set(const t_bmask state, const unsigned int mask);
+
+/* Error logging */
+void	log_error(const char *error, const char *filename, int line_number,
+            bool is_exception);
 
 #endif//IRC_FATSTRUCT_HPP
