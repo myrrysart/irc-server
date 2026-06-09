@@ -5,10 +5,10 @@
 
 bool	recv_from_client(t_IRC_Server &server, int fd)
 {
-	static char	buf[t_parser::buf_size];
+	static char		buf[t_parser::buf_size];
 	t_IRC_Client	&client = server.clients[fd]; // reference to the observed client
 
-	if (is_flag_set(client.state, t_IRC_Client::ERROR))
+	if (is_flag_set(client.state, t_IRC_Client::DISCONNECT))
 		return true;
 
 	ssize_t	received = recv(fd, buf, sizeof(buf), 0);
@@ -36,10 +36,11 @@ bool	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 		// WARN: The next statement should be reviewed once the queue system is
 		// in place: Sending error message/s to the client might be required
 		// BEFORE disconnecting it from the server.
-		if (is_flag_set(client.state, t_IRC_Client::ERROR))
+		if (is_flag_set(client.state, t_IRC_Client::DISCONNECT))
 			return true;
 
-    	// send(client.fd, buf.substr(0, pos).c_str(), pos, 0); // reply placeholder
+		// NOTE:
+		// send(client.fd, buf.substr(0, pos).c_str(), pos, 0); // reply placeholder
 		buf.erase(0, pos + 1);
 	}
 

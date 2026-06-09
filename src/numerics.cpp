@@ -81,6 +81,8 @@ void	send_ERR_NICKNAMEINUSE(const t_IRC_Client &client,
 // Returned when a client command cannot be parsed because not enough parameters
 // were supplied. The text used in the last param of this message may vary."
 // TODO: send message instead.
+// WARN: Make sure that verb_in_caps is not deprecated when this function is
+// called! It is a static character array, shared between all clients!
 void	send_ERR_NEEDMOREPARAMS(const t_IRC_Client &client)
 {
 	std::string_view	capitalized_verb{client.parser.verb_in_caps,

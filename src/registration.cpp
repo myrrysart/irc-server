@@ -108,8 +108,8 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 			// queue system for sending replies to the client: Shouldn't the client
 			// FIRST receive the error messages, and only then be disconnected?
 
-			// set error flag
-			client.state |= t_IRC_Client::ERROR;
+			// set disconnect flag
+			client.state |= t_IRC_Client::DISCONNECT;
 		}
 	}
 
@@ -229,9 +229,8 @@ void	execute_USER_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		} catch (const std::bad_alloc &e) {
 			// std::string often dynamically allocates and may fail
 			log_error(e.what(), __FILE__, __LINE__, 1);
-			client.state |= t_IRC_Client::ERROR;
-			// server.state &= ~SERVER_RUNNING; // FIXME: set the appropriate flag/s after PR is merged.
-			(void)server; // FIXME: temporary since server flag does not exist.
+			client.state |= t_IRC_Client::DISCONNECT;
+			server.state &= ~SERVER_RUNNING;
 			return;
 		}
 	}

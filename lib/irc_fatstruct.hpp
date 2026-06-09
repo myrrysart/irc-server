@@ -66,19 +66,11 @@ static_assert(sizeof(t_IRC_Channel) <= 2*CACHE_LINE_SIZE," t_IRC_Channel did not
 
 typedef struct	s_parser
 {
-	/* eventual PREFIX implementations */
-	// enum	Flags : uint8_t
-	// {
-	// 	HAS_TAGS     = BIT(0),
-	// 	HAS_SOURCE   = BIT(1),
-	// 	HAS_TRAILING = BIT(2)
-	// };
-	// WARN: is this used?
-
 	static constexpr const char	*commands[] = {
-		"PASS", // should align with the password for our server (argv[2])
+		"PASS",
 		"NICK",
 		"USER",
+		"QUIT",
 		"JOIN", // "lets users join a channel"// WARN: is this the exact command needed to be implemented for joining a channel?
 		"PART", // WARN: extra but nice to have: "lets users leave a channel."
 		"PRIVMSG", // "used to send private messages between users, as well as to send messages to channels"
@@ -88,7 +80,6 @@ typedef struct	s_parser
 		"TOPIC",
 		"PING",
 		"PONG",
-		"QUIT",
 		"NAMES",
 		"LIST"
 	};
@@ -113,7 +104,7 @@ typedef struct	s_parser
 	// WARN: adapt to longest available Command in 'commands'. Currently it is: "PRIVMSG"
 
 	size_t				n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
-	std::string_view	verb; // WARN: can it ONLY be one single word / 3 digits?
+	std::string_view	verb;
 	std::string_view	params[max_params];
 	static char			verb_in_caps[longest_cmd_size]; // lives outside of the struct and shared between clients
 
@@ -121,12 +112,12 @@ typedef struct	s_parser
 static_assert(sizeof(t_parser) <= 65*CACHE_LINE_SIZE, "t_parser did not use 65 cache lines");
 // WARN: this struct is quite large - is there a way to reduce it?
 
-//NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in error state and should be disconnected. Anything else is an active state that needs to be resolved in some way.
+//NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in error state (or has asked to quit) and should be disconnected. Anything else is an active state that needs to be resolved in some way.
 typedef struct	s_IRC_Client
 {
 	// IRC_Client state bitmask definitions
 	enum {
-		ERROR        = BIT(0),
+		DISCONNECT   = BIT(0),
 		REGISTERED   = BIT(1),
 		PSWD_FIRST   = BIT(2),
 		PSWD_CORRECT = BIT(3),
