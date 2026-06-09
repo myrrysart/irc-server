@@ -2,6 +2,7 @@
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
 #include "../lib/parser.hpp"
+#include "../lib/commands.hpp"
 
 bool	recv_from_client(t_IRC_Server &server, int fd)
 {

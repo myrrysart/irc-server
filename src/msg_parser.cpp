@@ -9,18 +9,14 @@
 
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
-#include "../lib/commands.hpp"
 
-#include <string>
 #include <iostream>
-#include <cstring> // for std::strncmp()
+#include <string>
 #include <string_view>
 
 /* out-of-line zero initialization of shared static buffer in t_parser struct */
 char	t_parser::verb_in_caps[t_parser::longest_cmd_size];
 
-// WARN: client might be labeled 'const' here? Right now yes, but later on probably not,
-// as tokenization might change it.
 void	prepare_and_parse_message(const size_t pos, std::string &buf, t_IRC_Client &client)
 {
 	if (pos >= t_parser::buf_size)
@@ -132,63 +128,4 @@ void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
 	// communicated to the client earlier.
 	// WARN: code should return false in this case - make sure it is the case
 	// after the call to this function.
-}
-
-// WARN: Only when dispatching the Verb (command) and looking for a match: temporarily
-// make a proper to_upper() for the verb, and only then compare.
-void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
-{
-	char	*verb_in_caps = client.parser.verb_in_caps;
-	size_t	verb_len = client.parser.verb.size();
-	size_t	i;
-
-	if (verb_len <= t_parser::longest_cmd_size)
-	{
-		for (size_t j = 0; j < verb_len; ++j)
-			verb_in_caps[j] = to_uppercase(client.parser.verb[j]);
-
-		for (i = 0; i < t_parser::n_valid_cmds; ++i)
-		{
-			if (!std::strncmp(t_parser::commands[i], verb_in_caps, verb_len))
-				break ;
-		}
-	}
-	else
-		i = t_parser::n_valid_cmds;
-
-
-	// WARN: Make 100% sure that the commands here match the ones in the commands array;
-	// And also, make sure that all of those commands are implemented / need to be implemented!
-
-	if (!is_flag_set(client.state, t_IRC_Client::REGISTERED))
-	{
-		// Registration required - or unfinished
-		client_registration(client, i, server);
-	}
-	else
-	{
-		// dispatch for all commands
-		// TODO:
-		switch (i)
-		{
-			default: invalid_command_detected(client); break;
-			case 0:  execute_PASS_cmd(client, server); break;
-			case 1:  execute_NICK_cmd(client, server); break;
-			case 2:  execute_USER_cmd(client, server); break;
-			// case 3:  execute_JOIN_cmd(client);         break;
-			// case 4:  execute_PART_cmd(client);         break;
-			// case 5:  execute_PRIVMSG_cmd(client);      break;
-			// case 6:  execute_MODE_cmd(client);         break;
-			// case 7:  execute_KICK_cmd(client);         break;
-			// case 8:  execute_INVITE_cmd(client);       break;
-			// case 9:  execute_TOPIC_cmd(client);        break;
-			// case 10: execute_PING_cmd(client);         break;
-			// case 11: execute_PONG_cmd(client);         break;
-			// case 12: execute_QUIT_cmd(client);         break;
-			// case 13: execute_NAMES_cmd(client);        break;
-			// case 14: execute_LIST_cmd(client);         break;
-		}
-	}
-
-	client.parser.n_params = 0;
 }

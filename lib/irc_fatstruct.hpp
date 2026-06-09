@@ -106,7 +106,7 @@ typedef struct	s_parser
 	size_t				n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
 	std::string_view	verb;
 	std::string_view	params[max_params];
-	static char			verb_in_caps[longest_cmd_size]; // lives outside of the struct and shared between clients
+	static char			verb_in_caps[longest_cmd_size]; // lives outside of the struct and shared between clients. WARN: If threads are introduced in this project, this will not be thread safe!
 
 }	t_parser;
 static_assert(sizeof(t_parser) <= 65*CACHE_LINE_SIZE, "t_parser did not use 65 cache lines");

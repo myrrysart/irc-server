@@ -18,9 +18,8 @@ void	prepare_and_parse_message(const size_t pos, std::string &buf,
             t_IRC_Client &client);
 void	check_for_too_long_message(std::string &buf, t_IRC_Client &client);
 
-/* Parsing & dispatch */
+/* Parsing */
 void	tokenize_message(t_IRC_Client &client, const std::string_view &msg);
-void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server);
 
 /* Parsing utils */
 int		init_password(const char *src, std::string_view &dest);

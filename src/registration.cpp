@@ -67,6 +67,7 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 		case 0: execute_PASS_cmd(client, server); break;
 		case 1: execute_NICK_cmd(client, server); break;
 		case 2: execute_USER_cmd(client, server); break;
+		// case 3: execute_QUIT_cmd(client);         break;
 	}
 
 	if (has_provided_user_and_nick_names(client.state))

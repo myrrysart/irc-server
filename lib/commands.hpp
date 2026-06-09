@@ -6,6 +6,9 @@
 # include <unordered_map>
 # include <string_view>
 
+/* Command handling dispatch */
+void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server);
+
 /* Client registration */
 void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &server);
 void	execute_PASS_cmd(t_IRC_Client &client, const t_IRC_Server &server);
