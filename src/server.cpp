@@ -47,7 +47,7 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 	{
 		if (fd == server.listen_fd)
 		{
-			server.state &= ~SERVER_RUNNING;
+			requested_shutdown = 1;
 			return true;
 		}
 		disconnect_client(server, fd);
@@ -76,7 +76,7 @@ void	server_loop(t_IRC_Server &server)
 	server.poll_fds.push_back(pollfd{server.listen_fd, POLLIN, 0});
 	std::cout << "server running at port " << server.port << std::endl;
 
-	while (server.state & SERVER_RUNNING)
+	while (!requested_shutdown)
 	{
 		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), -1) < 0)
 		{
@@ -84,14 +84,14 @@ void	server_loop(t_IRC_Server &server)
 				continue;
 			else
 			{
-				server.state &= ~SERVER_RUNNING;
+				requested_shutdown = 1;
 				return ;
 			}
 		}
 
 		for (size_t i = 0; i < server.poll_fds.size(); )
 		{
-			if (!(server.state & SERVER_RUNNING))
+			if (requested_shutdown)
 				return;
 			int		fd = server.poll_fds[i].fd;
 			short	rev = server.poll_fds[i].revents;

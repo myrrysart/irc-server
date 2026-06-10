@@ -1,11 +1,14 @@
 #include <cerrno>
-#include <sys/poll.h>
+#include <csignal>
 #include <unistd.h>
+#include <sys/poll.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <netinet/tcp.h>
 #include "irc_fatstruct.hpp"
+
+extern volatile sig_atomic_t requested_shutdown;
 
 void	fatal_server_error(const char* msg, int fd);
 int		shutdown_server(t_IRC_Server *server);
