@@ -11,7 +11,6 @@ void	fatal_server_error(const char* msg, int fd)
 
 int	shutdown_server(t_IRC_Server *server)
 {
-	server->state = 0;
 	if (server->listen_fd >= 0)
 		close(server->listen_fd);
 

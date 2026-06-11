@@ -1,6 +1,15 @@
+#include <csignal>
 #include <iostream>
 #include "../lib/server.hpp"
 #include "../lib/irc_fatstruct.hpp"
+
+volatile sig_atomic_t requested_shutdown = 0;
+
+void signal_handler(int sig)
+{
+	(void) sig;
+	requested_shutdown = 1;
+}
 
 int main(int argc, char **argv)
 {
@@ -10,10 +19,15 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	struct sigaction sa = {};
+	sa.sa_handler = signal_handler;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+
 	t_IRC_Server server = {};
 	server.port = atoi(argv[1]);
 	create_listener(server);
-	server.state |= SERVER_RUNNING;
 	server_loop(server);
 	shutdown_server(&server);
 	return 0;

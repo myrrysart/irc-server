@@ -22,8 +22,8 @@
 // bitmask helper macro for declaring bit state macros
 # define BIT(x) (1u << (x))
 // bitmask assumption that if a state of bitmask is 0, it is still in setup phase and have just been created
-# define SERVER_DOWN 0
-# define SERVER_RUNNING BIT(1)
+// # define SERVER_DOWN 0 //not used in this version
+// # define SERVER_RUNNING BIT(1)
 
 // bitmask typedefinition for fat struct bitfields.
 //NOTE: Create a new one if more bits are needed (ex. typedef unsigned long t_long_bmask;)
@@ -142,7 +142,7 @@ static_assert(sizeof(t_IRC_Client) <= 68*CACHE_LINE_SIZE," t_IRC_Client did not 
 //NOTE: state is essentially an error code catcher for the IRC_Server. BIT(0) means server is running smoothly, anything else is an error case.
 typedef struct	s_IRC_Server
 {
-	t_bmask									state;
+	t_bmask									state; //Not in use in this version
 	int										listen_fd;
 	int										port;
 	std::string								password;
