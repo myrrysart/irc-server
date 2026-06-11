@@ -24,6 +24,24 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 	* client side. */
 	client.nick_buf[0] = '*';
 	client.nick = std::string_view{client.nick_buf, 1};
+
+	// TODO: initialize hostname
+	if (!inet_ntop(AF_INET, &client_addr.sin_addr, client.hostname, INET_ADDRSTRLEN))
+	{
+		if (errno == EAFNOSUPPORT)
+			log_error("Failure to initialize hostname; "
+			"client's address is neither AF_INET nor AF_IFNET6",
+			 __FILE__, __LINE__, 0);
+		else
+			log_error("Failure to initialize hostname; "
+			"Size provided for string conversion is insufficient",
+			 __FILE__, __LINE__, 0);
+
+		disconnect_client(server, client.fd);
+		server.state &= ~SERVER_RUNNING;
+		return true;
+	}
+
 	return true;
 }
 
@@ -69,6 +87,12 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 			accept_new_client(server);
 			return false;
 		}
+		// NOTE: The following check is in case the client should be disconnected,
+		// there might still be messages to be sent to it before disconnecting.
+		// This will be handled in the subsequent send loop. But here, the server
+		// can simply ignore any input from that client, it is irrelevant.
+		if (is_flag_set(server.clients[fd].state, t_IRC_Client::DISCONNECT))
+			return false;
 		if (recv_from_client(server, fd))
 		{
 			disconnect_client(server, fd);
@@ -90,7 +114,7 @@ void	server_loop(t_IRC_Server &server)
 
 	while (!requested_shutdown)
 	{
-		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), -1) < 0)
+		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), 1000) < 0)
 		{
 			if (errno == EINTR)
 				continue;
@@ -101,6 +125,7 @@ void	server_loop(t_IRC_Server &server)
 			}
 		}
 
+		// poll loop
 		for (size_t i = 0; i < server.poll_fds.size(); )
 		{
 			if (requested_shutdown)
@@ -111,5 +136,10 @@ void	server_loop(t_IRC_Server &server)
 			if (!is_removed)
 				i++;
 		}
+
+		// send messages loop
+		send_messages_to_all_clients(server);
+		if (!is_flag_set(server.state, SERVER_RUNNING))
+			return;
 	}
 }

@@ -25,4 +25,6 @@ bool	recv_from_client(t_IRC_Server &server, int fd);
 bool	handle_client_message(t_IRC_Client &client, t_IRC_Server &server);
 void	disconnect_client(t_IRC_Server &server, int fd);
 
+void	send_messages_to_all_clients(t_IRC_Server &server);
+
 #endif

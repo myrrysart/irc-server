@@ -4,7 +4,6 @@
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
 
-#include <iostream>
 #include <string_view>
 #include <unordered_map>
 #include <new>            // for std::bad_alloc
@@ -58,11 +57,11 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 {
 	switch (i)
 	{
-		default: send_ERR_NOTREGISTERED(client);  break;
+		default: build_ERR_NOTREGISTERED(client); break;
 		case 0: execute_PASS_cmd(client, server); break;
 		case 1: execute_NICK_cmd(client, server); break;
 		case 2: execute_USER_cmd(client, server); break;
-		// case 3: execute_QUIT_cmd(client);         break;
+		case 3: execute_QUIT_cmd(client);         break;
 	}
 
 	if (has_provided_user_and_nick_names(client.state))
@@ -75,11 +74,9 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 
 			client.state |= t_IRC_Client::REGISTERED;
 
+			build_RPL_WELCOME(client, server);
 			// TODO:
 			// missing steps here.
-
-			// WARN: debugging only
-			std::cout << client.nick << " registered successfully!\n";
 
 		}
 		else
@@ -94,7 +91,7 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 
 			// TODO: missing elements here.
 			// send password mismatch 464
-			send_ERR_PASSWDMISMATCH(client);
+			build_ERR_PASSWDMISMATCH(client);
 
 			// TODO:
 			// send ERROR ?
@@ -108,9 +105,6 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 			client.state |= t_IRC_Client::DISCONNECT;
 		}
 	}
-
-	// WARN: debugging only
-	std::cout << "\nBITMASK of client is = " << client.state << '\n';
 }
 
 bool	is_flag_set(const t_bmask state, const unsigned int mask)
@@ -141,16 +135,14 @@ void	execute_PASS_cmd(t_IRC_Client &client, const t_IRC_Server &server)
 	// check if already registered
 	if (is_flag_set(client.state, t_IRC_Client::REGISTERED))
 	{
-		// TODO: send ERR_ALREADYREGISTERED (462)
-		send_ERR_ALREADYREGISTERED(client);
+		build_ERR_ALREADYREGISTERED(client);
 		return;
 	}
 
 	// check that a password was provided in current message
 	if (!client.parser.n_params)
 	{
-		// TODO: send ERR_NEEDMOREPARAMS (461)
-		send_ERR_NEEDMOREPARAMS(client);
+		build_ERR_NEEDMOREPARAMS(client);
 		return;
 	}
 
@@ -196,7 +188,7 @@ void	execute_USER_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// check if already registered
 	if (is_flag_set(client.state, t_IRC_Client::REGISTERED))
 	{
-		send_ERR_ALREADYREGISTERED(client);
+		build_ERR_ALREADYREGISTERED(client);
 		return;
 	}
 
@@ -204,7 +196,7 @@ void	execute_USER_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	* 1st parameter ('username') is not empty. This strictly follows protocol. */
 	if (client.parser.n_params < 4 || client.parser.params[0].empty())
 	{
-		send_ERR_NEEDMOREPARAMS(client);
+		build_ERR_NEEDMOREPARAMS(client);
 		return;
 	}
 
@@ -253,12 +245,12 @@ void	execute_USER_cmd(t_IRC_Client &client, t_IRC_Server &server)
 // the nick got entirely truncated there - it already displays it in the message
 // beforehand, making the string very long.
 
-void	execute_NICK_cmd(t_IRC_Client &client, const t_IRC_Server &server)
+void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
 	// no nickname / empty nickname provided
 	if (!client.parser.n_params || client.parser.params[0].empty())
 	{
-		send_ERR_NONICKNAMEGIVEN(client);
+		build_ERR_NONICKNAMEGIVEN(client, server);
 		return;
 	}
 
@@ -275,7 +267,7 @@ void	execute_NICK_cmd(t_IRC_Client &client, const t_IRC_Server &server)
 	// this function checks whether it is already taken...
 	if (!is_nickname_valid(new_nick))
 	{
-		send_ERR_ERONEOUSNICKNAME(client, new_nick);
+		build_ERR_ERRONEOUSNICKNAME(client, new_nick, server);
 		return;
 	}
 
@@ -289,7 +281,7 @@ void	execute_NICK_cmd(t_IRC_Client &client, const t_IRC_Server &server)
 	// handle an already taken nickname
 	if (is_nick_already_in_use(server.clients, client.fd, new_nick))
 	{
-		send_ERR_NICKNAMEINUSE(client, new_nick);
+		build_ERR_NICKNAMEINUSE(client, new_nick, server);
 		return;
 	}
 

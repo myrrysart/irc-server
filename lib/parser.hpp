@@ -14,9 +14,9 @@ typedef s_IRC_Client t_IRC_Client;
 /* Received bytes handling */
 void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
             const ssize_t received);
-void	prepare_and_parse_message(const size_t pos, std::string &buf,
+int		prepare_and_parse_message(const size_t pos, const std::string &buf,
             t_IRC_Client &client);
-void	check_for_too_long_message(std::string &buf, t_IRC_Client &client);
+int		check_for_too_long_message(std::string &buf, t_IRC_Client &client);
 
 /* Parsing */
 void	tokenize_message(t_IRC_Client &client, const std::string_view &msg);

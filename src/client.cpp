@@ -31,21 +31,39 @@ bool	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 
 	while ((pos = buf.find('\n')) != std::string::npos)
 	{
-		prepare_and_parse_message(pos, buf, client);
-		dispatch_client_command(client, server);
-
-		// WARN: The next statement should be reviewed once the queue system is
-		// in place: Sending error message/s to the client might be required
-		// BEFORE disconnecting it from the server.
-		if (is_flag_set(client.state, t_IRC_Client::DISCONNECT))
+		if (prepare_and_parse_message(pos, buf, client) == -1)
+		{
+		// WARN: Shouldn't messages to the client that is about to be disconnected
+		// still be sent to them beforehand?
+			client.state |= client.DISCONNECT;
+			server.state &= ~SERVER_RUNNING;
 			return true;
+		}
+		if (is_flag_set(client.state, t_IRC_Client::DISCARD_MSG))
+			client.state &= ~t_IRC_Client::DISCARD_MSG;
+		else
+		{
+			dispatch_client_command(client, server);
 
-		// NOTE:
-		// send(client.fd, buf.substr(0, pos).c_str(), pos, 0); // reply placeholder
+			// TODO: send messages here?
+
+
+		}
 		buf.erase(0, pos + 1);
 	}
 
-	check_for_too_long_message(buf, client);
+	if (check_for_too_long_message(buf, client) == -1)
+	{
+		// WARN: Shouldn't messages to the client that is about to be disconnected
+		// still be sent to them beforehand?
+		// WARN: Consider adding a flushing loop for sending messages to the all
+		// clients in the shutdown_server() function? And perhaps add a flag for
+		// fatal hardware issues, that would communicate that sending more messages
+		// is perhaps unnecessary in that extreme case?
+		client.state |= client.DISCONNECT;
+		server.state &= ~SERVER_RUNNING;
+		return true;
+	}
 	return false;
 }
 

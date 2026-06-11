@@ -41,24 +41,41 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 		// TODO:
 		switch (i)
 		{
-			default: send_ERR_UNKNOWNCOMMAND(client);  break;
-			case 0:  execute_PASS_cmd(client, server); break;
-			case 1:  execute_NICK_cmd(client, server); break;
-			case 2:  execute_USER_cmd(client, server); break;
-			// case 3:  execute_QUIT_cmd(client);         break;
-			// case 4:  execute_JOIN_cmd(client);         break;
-			// case 5:  execute_PART_cmd(client);      break;
-			// case 6:  execute_PRIVMSG_cmd(client);         break;
-			// case 7:  execute_MODE_cmd(client);         break;
-			// case 8:  execute_KICK_cmd(client);       break;
-			// case 9:  execute_INVITE_cmd(client);        break;
-			// case 10: execute_TOPIC_cmd(client);         break;
-			// case 11: execute_PING_cmd(client);         break;
-			// case 12: execute_PONG_cmd(client);         break;
-			// case 13: execute_NAMES_cmd(client);        break;
-			// case 14: execute_LIST_cmd(client);         break;
+			default: build_ERR_UNKNOWNCOMMAND(client, server); break;
+			case 0:  execute_PASS_cmd(client, server);         break;
+			case 1:  execute_NICK_cmd(client, server);         break;
+			case 2:  execute_USER_cmd(client, server);         break;
+			case 3:  execute_QUIT_cmd(client);                 break;
+			// case 4:  execute_JOIN_cmd(client);                 break;
+			// case 5:  execute_PART_cmd(client);                 break;
+			// case 6:  execute_PRIVMSG_cmd(client);              break;
+			// case 7:  execute_MODE_cmd(client);                 break;
+			// case 8:  execute_KICK_cmd(client);                 break;
+			// case 9:  execute_INVITE_cmd(client);               break;
+			// case 10: execute_TOPIC_cmd(client);                break;
+			// case 11: execute_PING_cmd(client);                 break;
+			// case 12: execute_PONG_cmd(client);                 break;
+			// case 13: execute_NAMES_cmd(client);                break;
+			// case 14: execute_LIST_cmd(client);                 break;
 		}
 	}
 
 	client.parser.n_params = 0;
+}
+
+// WARN: work in progress
+void	execute_QUIT_cmd(t_IRC_Client &client)
+{
+	// TODO:
+	// assemble reply ERROR message (follow modern Horse documentation for 'QUIT message')
+
+
+	// TODO:
+	// optional feature:
+	// assemble message to be sent to every single client that is on the same channel/s
+	// as the disconnecting client
+
+
+	// set the disconnect flag
+	client.state |= t_IRC_Client::DISCONNECT;
 }

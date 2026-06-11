@@ -1,8 +1,20 @@
 
 #include "../lib/irc_fatstruct.hpp"
 
-#include <string_view>
 #include <iostream>
+#include <string>
+#include <string_view>
+#include <exception>
+
+// NOTE: From the modern documentation, regarding numeric replies:
+// "Most messages sent from a client to a server generates a reply of some sort.
+// The most common form of reply is the numeric reply, used for both errors and
+// normal replies. Distinct from a normal message, a numeric reply MUST contain
+// a <source> and use a three-digit numeric as the command. A numeric reply
+// SHOULD contain the target of the reply as the first parameter of the message.
+// A numeric reply is not allowed to originate from a client.
+// In all other respects, a numeric reply is just like a normal message. A list
+// of numeric replies is supplied in the Numerics section."
 
 // FIXME: Consider designing a single function that could be overloaded and serve
 // all of the present functions.
@@ -25,121 +37,296 @@
 // NOTE: When IRC documentation uses the '<client>' placeholder, it should be
 // replaced by the client's nickname
 
+
+// RPL_WELCOME (001)
+// "<client> :Welcome to the <networkname> Network, <nick>[!<user>@<host>]"
+// "The first message sent after client registration, this message introduces the
+// client to the network. The text used in the last param of this message varies wildly.
+// Servers that implement spoofed hostmasks in any capacity SHOULD NOT include the
+// extended (complete) hostmask in the last parameter of this reply, either for
+// all clients or for those whose hostnames have been spoofed. This is because
+// some clients try to extract the hostname from this final parameter of this
+// message and resolve this hostname, in order to discover their ‘local IP address’.
+// Clients MUST NOT try to extract the hostname from the final parameter of this
+// message and then attempt to resolve this hostname. This method of operation
+// WILL BREAK and will cause issues when the server returns a spoofed hostname."
+void	build_RPL_WELCOME(t_IRC_Client &client, t_IRC_Server &server)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	try {
+		buffer += ':';
+		buffer += (t_IRC_Server::name);
+		buffer += " 001 ";
+		buffer += ":Welcome to this Helsinki based Internet Relay Chat server, ";
+		buffer += client.nick;
+		buffer += '!';
+		buffer += client.username;
+		buffer += '@';
+		buffer += client.hostname;
+		buffer += "\r\n";
+
+	} catch (const std::exception &e) {
+		log_error(e.what(), __FILE__, __LINE__, 1);
+		client.state |= t_IRC_Client::DISCONNECT;
+		server.state &= ~SERVER_RUNNING;
+		// WARN: should I send a message to indicate the failure?
+	}
+}
+
+/*
 // TODO:
+// RPL_YOURHOST (002)
+void	send_RPL_YOURHOST(const t_IRC_Client &client)
+{
+
+}
+*/
+
+
+// ERR_INPUTTOOLONG (417)
+// "<client> :Input line was too long"
+// "Indicates a given line does not follow the specified size limits (512 bytes
+// for the main section, 4094 or 8191 bytes for the tag section)."
+// WARN: Placement of the calls to this function may need to be reviewed...
+int	build_ERR_INPUTTOOLONG(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	// WARN: test that the catch would propagate properly!
+	try {
+		buffer += ':';
+		buffer += t_IRC_Server::name;
+		buffer += " 417 ";
+		buffer += client.nick;
+		buffer += " :Input line was too long\r\n";
+
+	} catch (const std::exception &e) {
+		log_error(e.what(), __FILE__, __LINE__, 1);
+		// WARN: should I send a message to indicate the failure?
+		return (-1);
+	}
+
+	return (0);
+}
+
 // ERR_UNKNOWNCOMMAND (421)
 // "<client> <command> :Unknown command"
 // "Sent to a registered client to indicate that the command they sent isn’t
 // known by the server. The text used in the last param of this message may vary."
-void	send_ERR_UNKNOWNCOMMAND(const t_IRC_Client &client)
+void	build_ERR_UNKNOWNCOMMAND(t_IRC_Client &client, t_IRC_Server &server)
 {
-	// WARN: temporary solution, send instead.
-	std::cout << client.nick << ' ' << client.parser.verb << " :Unknown command\n";
+	std::string	&buffer = client.send_message_buffer;
+
+	try {
+		buffer += ':';
+		buffer += t_IRC_Server::name;
+		buffer += " 421 ";
+		buffer += client.nick;
+		buffer += ' ';
+		buffer += client.parser.verb;
+		buffer += " :Unknown command\r\n";
+
+	} catch (const std::exception &e) {
+		log_error(e.what(), __FILE__, __LINE__, 1);
+		client.state |= t_IRC_Client::DISCONNECT;
+		server.state &= ~SERVER_RUNNING;
+		// WARN: should I send a message to indicate the failure?
+	}
 }
 
 
-// TODO:
 // ERR_NONICKNAMEGIVEN (431)
 // "<client> :No nickname given"
 // "Returned when a nickname parameter is expected for a command but isn’t given."
-void	send_ERR_NONICKNAMEGIVEN(const t_IRC_Client &client)
+void	build_ERR_NONICKNAMEGIVEN(t_IRC_Client &client, t_IRC_Server &server)
 {
-	// WARN: temporary solution, send instead.
-	std::cout << client.nick << " :No nickname given\n";
+	std::string	&buffer = client.send_message_buffer;
+
+	try {
+		buffer += ':';
+		buffer += t_IRC_Server::name;
+		buffer += " 431 ";
+		buffer += client.nick;
+		buffer += " :No nickname given\r\n";
+
+	} catch (const std::exception &e) {
+		log_error(e.what(), __FILE__, __LINE__, 1);
+		client.state |= t_IRC_Client::DISCONNECT;
+		server.state &= ~SERVER_RUNNING;
+		// WARN: should I send a message to indicate the failure?
+	}
 }
 
-// TODO:
 // ERR_ERRONEOUSNICKNAME (432)
 // "<client> <nick> :Erroneus nickname"
 // Returned when a NICK command cannot be successfully completed as the desired
 // nickname contains characters that are disallowed by the server. See the NICK
 // command for more information on characters which are allowed in various IRC
 // servers. The text used in the last param of this message may vary."
-void	send_ERR_ERONEOUSNICKNAME(const t_IRC_Client &client,
-            const std::string_view &new_nick)
+void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,
+            const std::string_view &new_nick, t_IRC_Server &server)
 {
-	// WARN: temporary solution, send instead
-	std::cout
-		<< client.nick << ' ' << new_nick
-		<< " :Erroneous nickname. Accepted characters: alphabetical letters, "
-			"digits, and the following symbols: \"[]{}\\|#&:$%<>_-\". "
-			"First characters may not be: a digit, '#', ':' or \"&#\". "
-			"Only the first 30 characters will be considered.\n";
-	// WARN: is this message too long? Check IRC documentation about length of
-	// server-client messages.
+	// WARN: is the last parameter too long? Check IRC documentation regarding
+	// length of server-client messages.
 	// WARN: update all allowed symbols if they change!
+
+	std::string	&buffer = client.send_message_buffer;
+
+	try {
+		buffer += ':';
+		buffer += t_IRC_Server::name;
+		buffer += " 432 ";
+		buffer += client.nick;
+		buffer += ' ';
+		buffer += new_nick;
+		buffer += " :Erroneous nickname. Accepted characters: alphabetical "
+			"letters, digits, and the following symbols: \"[]{}\\|#&:$%<>_-\". "
+			"First characters may not be: a digit, '#', ':' or \"&#\". "
+			"Only the first 30 characters will be considered.\r\n";
+
+	} catch (const std::exception &e) {
+		log_error(e.what(), __FILE__, __LINE__, 1);
+		client.state |= t_IRC_Client::DISCONNECT;
+		server.state &= ~SERVER_RUNNING;
+		// WARN: should I send a message to indicate the failure?
+	}
 }
 
-// TODO:
 // ERR_NICKNAMEINUSE (433)
 //    "<client> <nick> :Nickname is already in use"
 // Returned when a NICK command cannot be successfully completed as the desired
 // nickname is already in use on the network. The text used in the last param of
 // this message may vary."
-void	send_ERR_NICKNAMEINUSE(const t_IRC_Client &client,
-            const std::string_view &new_nick)
+void	build_ERR_NICKNAMEINUSE(t_IRC_Client &client,
+            const std::string_view &new_nick, t_IRC_Server &server)
 {
-	// WARN: temporary solution
-	// FIXME: Once the string to send is constructed: new_nick could probably be
-	// already deprecated! It is a string_view that would become invalid!!!
-	std::cout << client.nick << ' ' << new_nick << " :Nickname is already in use\n";
+	std::string	&buffer = client.send_message_buffer;
+
+	try {
+		buffer += ':';
+		buffer += t_IRC_Server::name;
+		buffer += " 433 ";
+		buffer += client.nick;
+		buffer += ' ';
+		buffer += new_nick;
+		buffer += " :Nickname is already in use\r\n";
+
+	} catch (const std::exception &e) {
+		log_error(e.what(), __FILE__, __LINE__, 1);
+		client.state |= t_IRC_Client::DISCONNECT;
+		server.state &= ~SERVER_RUNNING;
+		// WARN: should I send a message to indicate the failure?
+	}
 }
 
-// TODO:
 // ERR_NOTREGISTERED (451)
 // "<client> :You have not registered"
 // "Returned when a client command cannot be parsed as they are not yet registered.
 // Servers offer only a limited subset of commands until clients are properly
 // registered to the server. The text used in the last param of this message may vary."
-void	send_ERR_NOTREGISTERED(const t_IRC_Client &client)
+void	build_ERR_NOTREGISTERED(t_IRC_Client &client)
 {
-	// WARN: temporary solution
-	std::cout << client.nick << " :You have not registered\n";
+	std::string	&buffer = client.send_message_buffer;
+
+	try {
+		buffer += ':';
+		buffer += t_IRC_Server::name;
+		buffer += " 451 ";
+		buffer += client.nick;
+		buffer += " :You have not registered\r\n";
+
+	} catch (const std::exception &e) {
+		log_error(e.what(), __FILE__, __LINE__, 1);
+		// FIXME:
+		// client.state |= t_IRC_Client::DISCONNECT;
+		// server.state &= ~SERVER_RUNNING;
+		// WARN: should I send a message to indicate the failure?
+	}
 }
 
-
-// NOTE: "If a command is sent from a client to a server with less parameters
-// than the command requires to be processed, the server will reply with an
-// ERR_NEEDMOREPARAMS (461) numeric and the command will fail."
-// TODO:
 // ERR_NEEDMOREPARAMS (461)
-//   "<client> <command> :Not enough parameters"
-// Returned when a client command cannot be parsed because not enough parameters
+// "<client> <command> :Not enough parameters"
+// "Returned when a client command cannot be parsed because not enough parameters
 // were supplied. The text used in the last param of this message may vary."
-// TODO: send message instead.
 // WARN: Make sure that verb_in_caps is not deprecated when this function is
-// called! It is a static character array, shared between all clients!
-void	send_ERR_NEEDMOREPARAMS(const t_IRC_Client &client)
+// called! It is a static character array, shared between all clients! But it
+// should be fine, since concatenating this message to the output buffer happens
+// right after parsing the incoming message.
+void	build_ERR_NEEDMOREPARAMS(t_IRC_Client &client)
 {
 	std::string_view	capitalized_verb{client.parser.verb_in_caps,
                                          client.parser.verb.size()};
-	// WARN: temporary solution
-	std::cout
-		<< client.nick << ' ' << capitalized_verb << " :Not enough parameters\n";
+	std::string	&buffer = client.send_message_buffer;
+
+	try {
+		buffer += ':';
+		buffer += t_IRC_Server::name;
+		buffer += " 461 ";
+		buffer += client.nick;
+		buffer += ' ';
+		buffer += capitalized_verb;
+		buffer += " :Not enough parameters\r\n";
+
+	} catch (const std::exception &e) {
+		log_error(e.what(), __FILE__, __LINE__, 1);
+		// FIXME:
+		// client.state |= t_IRC_Client::DISCONNECT;
+		// server.state &= ~SERVER_RUNNING;
+		// WARN: should I send a message to indicate the failure?
+	}
 }
 
 
-// TODO:
 // ERR_ALREADYREGISTERED (462)
 // "<client> :You may not reregister"
-// Returned when a client tries to change a detail that can only be set during
+// "Returned when a client tries to change a detail that can only be set during
 // registration (such as resending the PASS or USER after registration). The text
 // used in the last param of this message varies."
-// TODO: send message instead.
-void	send_ERR_ALREADYREGISTERED(const t_IRC_Client &client)
+void	build_ERR_ALREADYREGISTERED(t_IRC_Client &client)
 {
-	// WARN: temporary solution
-	std::cout << client.nick << " :You may not reregister\n";
+	std::string	&buffer = client.send_message_buffer;
+
+	try {
+		buffer += ':';
+		buffer += t_IRC_Server::name;
+		buffer += " 462 ";
+		buffer += client.nick;
+		buffer += " :You may not reregister\r\n";
+
+	} catch (const std::exception &e) {
+		log_error(e.what(), __FILE__, __LINE__, 1);
+		// FIXME:
+		// client.state |= t_IRC_Client::DISCONNECT;
+		// server.state &= ~SERVER_RUNNING;
+		// WARN: should I send a message to indicate the failure?
+	}
 }
 
-// TODO:
+// FIXME: the client gets disconnected BEFORE getting this message!
+// Make sure they receive it and only then send it !!
+
 // ERR_PASSWDMISMATCH (464)
-//   "<client> :Password incorrect"
-// Returned to indicate that the connection could not be registered as the
+// "<client> :Password incorrect"
+// "Returned to indicate that the connection could not be registered as the
 // password was either incorrect or not supplied. The text used in the last param
 // of this message may vary."
-// TODO: send message instead.
-void	send_ERR_PASSWDMISMATCH(const t_IRC_Client &client)
+void	build_ERR_PASSWDMISMATCH(t_IRC_Client &client)
 {
-	// WARN: temporary solution
-	std::cout << client.nick << " :Password incorrect\n";
+	std::string	&buffer = client.send_message_buffer;
+
+	try {
+		buffer += ':';
+		buffer += t_IRC_Server::name;
+		buffer += " 464 ";
+		buffer += client.nick;
+		buffer += " :Password incorrect\r\n";
+
+	} catch (const std::exception &e) {
+		log_error(e.what(), __FILE__, __LINE__, 1);
+		// FIXME:
+		// client.state |= t_IRC_Client::DISCONNECT;
+		// server.state &= ~SERVER_RUNNING;
+		// WARN: should I send a message to indicate the failure?
+	}
 }

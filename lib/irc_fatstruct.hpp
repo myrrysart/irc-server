@@ -60,9 +60,11 @@ typedef struct	s_IRC_Channel
 	std::string					key;
 	int							user_limit;
 	t_IRC_ChannelMembership*	members;
+	// FIXME: ADD AN INT ARRAY FD of size clients_max macro - and a length. All fds connected to that channel will be in the array, and we update it as we go.
+	int							member_fds[MAX_CLIENTS]; // WARN: can we remove some of the other members from this struct, now that we have this array?
 	int							member_count;
 }								t_IRC_Channel;
-static_assert(sizeof(t_IRC_Channel) <= 2*CACHE_LINE_SIZE," t_IRC_Channel did not use 2 cache line" );
+static_assert(sizeof(t_IRC_Channel) <= 10*CACHE_LINE_SIZE," t_IRC_Channel did not use 10 cache line" );
 
 typedef struct	s_parser
 {
@@ -139,8 +141,9 @@ typedef struct	s_IRC_Client
 	char				nick_buf[max_nicklen]; // not nullterminated, use 'nick' instead
 	std::string			username;
 	std::string			realname;
-	std::string			hostname;
+	char				hostname[INET_ADDRSTRLEN];
 	std::string			received_message_buffer;
+	std::string			send_message_buffer;
 	t_parser			parser;
 	t_IRC_Channel*		joined_channels;
 	int					joined_count;
@@ -152,6 +155,7 @@ static_assert(sizeof(t_IRC_Client) <= 68*CACHE_LINE_SIZE," t_IRC_Client did not 
 typedef struct	s_IRC_Server
 {
 	t_bmask									state; //Not in use in this version
+	static constexpr const char				name[] = "humble_server";
 	int										listen_fd;
 	int										port;
 	std::string_view						password;
