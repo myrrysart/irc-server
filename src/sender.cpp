@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <unistd.h> // for close()
 #include <unordered_map>
-#include <vector> // for std::erase_if() 
+#include <vector> // for std::erase_if()
 #include <string>
 #include <cstring> // for std::strerror()
 #include <cerrno>
