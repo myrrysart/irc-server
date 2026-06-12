@@ -59,9 +59,7 @@ void	build_RPL_WELCOME(t_IRC_Client &client)
 {
 	std::string	&buffer = client.send_message_buffer;
 
-	buffer += ':';
-	buffer += (t_IRC_Server::name);
-	buffer += " 001 ";
+	append_common_reply_prefix(buffer, "001", client.nick);
 	buffer += ":Welcome to this Helsinki based Internet Relay Chat server, ";
 	buffer += client.nick;
 	buffer += '!';

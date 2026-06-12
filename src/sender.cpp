@@ -1,4 +1,5 @@
 #include "../lib/irc_fatstruct.hpp"
+#include "../lib/server.hpp"
 
 #include <sys/socket.h>
 #include <unistd.h> // for close()
@@ -19,7 +20,7 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 	for (std::unordered_map<int, t_IRC_Client>::iterator iterator = server.clients.begin();
 		iterator != server.clients.end(); )
 	{
-		if (!is_flag_set(server.state, SERVER_RUNNING))
+		if (requested_shutdown)
 			return;
 
 		t_IRC_Client	&client = iterator->second;
@@ -51,7 +52,7 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 			}
 			else
 			{
-				server.state &= ~SERVER_RUNNING;
+				requested_shutdown = 1;
 				return;
 			}
 		}

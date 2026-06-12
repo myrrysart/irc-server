@@ -16,7 +16,7 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 		return true;
 
 	if (is_flag_set(client.state, t_IRC_Client::DISCARD_MSG))
-		handle_message_to_discard(client, buf, received, server);
+		handle_message_to_discard(client, buf, received);
 	else
 		client.received_message_buffer.append(buf, received);
 
@@ -39,7 +39,7 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 				// WARN: Append error message to be sent to the client/ to all clients,
 				// and make sure that they receive it before shutting down?
 				// Or is it overkill in this case?
-				server.state &= ~SERVER_RUNNING;
+				requested_shutdown = 1;
 				return;
 			}
 		}
@@ -55,7 +55,7 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 				// WARN: Append error message to be sent to the client/ to all clients,
 				// and make sure that they receive it before shutting down?
 				// Or is it overkill in this case?
-				server.state &= ~SERVER_RUNNING;
+				requested_shutdown = 1;
 				return;
 			}
 		}
@@ -71,7 +71,7 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 			// WARN: Append error message to be sent to the client/ to all clients,
 			// and make sure that they receive it before shutting down?
 			// Or is it overkill in this case?
-			server.state &= ~SERVER_RUNNING;
+			requested_shutdown = 1;
 			return;
 
 		}

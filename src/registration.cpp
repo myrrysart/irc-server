@@ -3,12 +3,13 @@
 #include "../lib/commands.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
+#include "../lib/server.hpp"
 
 #include <string_view>
 #include <unordered_map>
-#include <new>            // for std::bad_alloc
-#include <string>         // for std::string's append()
-#include <algorithm>      // for std::min()
+#include <exception>
+#include <string> // for std::string's append()
+#include <algorithm> // for std::min()
 
 // TODO: Add the time checks!
 // Perhaps add some timer machine to t_IRC_Client (per client);
@@ -60,7 +61,7 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 		default: build_ERR_NOTREGISTERED(client); break;
 		case 0: execute_PASS_cmd(client, server); break;
 		case 1: execute_NICK_cmd(client, server); break;
-		case 2: execute_USER_cmd(client, server); break;
+		case 2: execute_USER_cmd(client);         break;
 		case 3: execute_QUIT_cmd(client);         break;
 	}
 
@@ -184,7 +185,7 @@ bool	is_or_was_password_provided_first(const t_bmask state)
 	return false;
 }
 
-void	execute_USER_cmd(t_IRC_Client &client, t_IRC_Server &server)
+void	execute_USER_cmd(t_IRC_Client &client)
 {
 	// check if already registered
 	if (is_flag_set(client.state, t_IRC_Client::REGISTERED))
@@ -215,11 +216,11 @@ void	execute_USER_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			/* as for parameters [1] & [2]: they are usually sent from the client
 			* as '0' and '*', respectively - but they do not really concern anything
 			* in the current scope, and the server can silently ignore these. */
-		} catch (const std::bad_alloc &e) {
+		} catch (const std::exception &e) {
 			// std::string often dynamically allocates and may fail
 			log_error(e.what(), __FILE__, __LINE__, 1);
 			client.state |= t_IRC_Client::DISCONNECT;
-			server.state &= ~SERVER_RUNNING;
+			requested_shutdown = 1;
 			return;
 		}
 	}

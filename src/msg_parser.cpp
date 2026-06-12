@@ -9,6 +9,7 @@
 
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
+#include "../lib/server.hpp"
 
 #include <string>
 #include <string_view>
@@ -81,7 +82,7 @@ void	tokenize_message(t_IRC_Client &client, const std::string_view msg)
 }
 
 void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
-            const ssize_t received, t_IRC_Server &server)
+            const ssize_t received)
 {
 	std::string	&msg = client.received_message_buffer;
 	ssize_t		pos = 0;
@@ -99,7 +100,7 @@ void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
 				msg.append(buf[pos + 1], received - pos - 1);
 			} catch (const std::exception &e) {
 				log_error(e.what(), __FILE__, __LINE__, 1);
-				server.state &= ~SERVER_RUNNING;
+				requested_shutdown = 1;
 			}
 		}
 		// unset DISCARD_MSG flag

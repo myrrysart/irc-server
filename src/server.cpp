@@ -25,7 +25,7 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 	client.nick_buf[0] = '*';
 	client.nick = std::string_view{client.nick_buf, 1};
 
-	// TODO: initialize hostname
+	// initialize hostname
 	if (!inet_ntop(AF_INET, &client_addr.sin_addr, client.hostname, INET_ADDRSTRLEN))
 	{
 		if (errno == EAFNOSUPPORT)
@@ -38,8 +38,8 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 			 __FILE__, __LINE__, 0);
 
 		disconnect_client(server, client.fd);
-		server.state &= ~SERVER_RUNNING;
-		return true;
+		requested_shutdown = 1;
+		return false;
 	}
 
 	return true;
@@ -98,7 +98,7 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 			disconnect_client(server, fd);
 			return true;
 		}
-		if (is_flag_set(server.state, SERVER_RUNNING))
+		if (!requested_shutdown)
 			handle_client_message(server.clients[fd], server);
 	}
 	return false;
@@ -137,7 +137,5 @@ void	server_loop(t_IRC_Server &server)
 
 		// send messages loop
 		send_messages_to_all_clients(server);
-		if (!is_flag_set(server.state, SERVER_RUNNING))
-			return;
 	}
 }

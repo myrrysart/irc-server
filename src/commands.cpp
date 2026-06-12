@@ -45,7 +45,7 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 			default: build_ERR_UNKNOWNCOMMAND(client); break;
 			case 0:  execute_PASS_cmd(client, server); break;
 			case 1:  execute_NICK_cmd(client, server); break;
-			case 2:  execute_USER_cmd(client, server); break;
+			case 2:  execute_USER_cmd(client);         break;
 			case 3:  execute_QUIT_cmd(client);         break;
 			// case 4:  execute_JOIN_cmd(client);         break;
 			// case 5:  execute_PART_cmd(client);         break;

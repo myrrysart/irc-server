@@ -13,7 +13,7 @@ typedef s_IRC_Client t_IRC_Client;
 
 /* Received bytes handling */
 void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
-            const ssize_t received, t_IRC_Server &server);
+            const ssize_t received);
 int		parse_message(const size_t pos, const std::string &buf,
             t_IRC_Client &client);
 
