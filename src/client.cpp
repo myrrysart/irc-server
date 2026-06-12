@@ -1,37 +1,87 @@
 #include <iostream>
+#include <exception>
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
 #include "../lib/parser.hpp"
+#include "../lib/commands.hpp"
+#include "../lib/numerics.hpp"
 
 bool	recv_from_client(t_IRC_Server &server, int fd)
 {
-	static char	buf[t_parser::buf_size];
+	static char		buf[t_parser::buf_size];
+	t_IRC_Client	&client = server.clients[fd]; // reference to the observed client
 
 	ssize_t	received = recv(fd, buf, sizeof(buf), 0);
 	if (received <= 0)
 		return true;
 
-	if (server.clients[fd].state & t_IRC_Client::Flags::DISCARD_MSG)
-		handle_message_to_discard(server.clients[fd], buf, received);
+	if (is_flag_set(client.state, t_IRC_Client::DISCARD_MSG))
+		handle_message_to_discard(client, buf, received);
 	else
-		server.clients[fd].received_message_buffer.append(buf, received);
+		client.received_message_buffer.append(buf, received);
 
 	return false;
 }
 
-void	handle_client_message(t_IRC_Client &client)
+void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 {
 	std::string	&buf = client.received_message_buffer;
-	size_t		pos;
+	size_t		pos = buf.find('\n');
 
-	while ((pos = buf.find('\n')) != std::string::npos)
+	if (pos != std::string::npos)
 	{
-		prepare_and_parse_message(pos, buf, client);
-    	send(client.fd, buf.substr(0, pos).c_str(), pos, 0); // reply placeholder
-		buf.erase(0, pos + 1);
-	}
+		if (parse_message(pos, buf, client) == -1)
+		{
+			try {
+				build_ERR_INPUTTOOLONG(client);
+			} catch (const std::exception &e) {
+				log_error(e.what(), __FILE__, __LINE__, 1);
+				// WARN: Append error message to be sent to the client/ to all clients,
+				// and make sure that they receive it before shutting down?
+				// Or is it overkill in this case?
+				requested_shutdown = 1;
+				return;
+			}
+		}
 
-	check_for_too_long_message(buf, client);
+		if (is_flag_set(client.state, t_IRC_Client::DISCARD_MSG)) // no need to dispatch
+			client.state &= ~t_IRC_Client::DISCARD_MSG;
+		else
+		{
+			try {
+				dispatch_client_command(client, server);
+			} catch (const std::exception &e) {
+				log_error(e.what(), __FILE__, __LINE__, 1);
+				// WARN: Append error message to be sent to the client/ to all clients,
+				// and make sure that they receive it before shutting down?
+				// Or is it overkill in this case?
+				requested_shutdown = 1;
+				return;
+			}
+		}
+		buf.erase(0, pos + 1);
+
+	}
+	else if (buf.length() >= t_parser::buf_size) // WARN: maybe this should be 'if', not 'else if'; but this might be good enough, since the buffer is cleared up from long input
+	{
+		try {
+			build_ERR_INPUTTOOLONG(client);
+		} catch (const std::exception &e) {
+			log_error(e.what(), __FILE__, __LINE__, 1);
+			// WARN: Append error message to be sent to the client/ to all clients,
+			// and make sure that they receive it before shutting down?
+			// Or is it overkill in this case?
+			requested_shutdown = 1;
+			return;
+
+		}
+		client.state |= t_IRC_Client::DISCARD_MSG;
+		buf.clear();
+		/* NOTE: If user sends an extremely long buffer with no newlines:
+		/ current behaviour would discard all of it, until they provide a '\n':
+		/ Only after that '\n' it would start to process bytes, looking for a
+		/ candidate message. */
+	}
 }
 
 void	disconnect_client(t_IRC_Server &server, int fd)

@@ -60,78 +60,90 @@ typedef struct	s_IRC_Channel
 	std::string					key;
 	int							user_limit;
 	t_IRC_ChannelMembership*	members;
+	// FIXME: ADD AN INT ARRAY FD of size clients_max macro - and a length. All fds connected to that channel will be in the array, and we update it as we go.
+	int							member_fds[MAX_CLIENTS]; // WARN: can we remove some of the other members from this struct, now that we have this array?
 	int							member_count;
 }								t_IRC_Channel;
-static_assert(sizeof(t_IRC_Channel) <= 2*CACHE_LINE_SIZE," t_IRC_Channel did not use 2 cache line" );
+static_assert(sizeof(t_IRC_Channel) <= 10*CACHE_LINE_SIZE," t_IRC_Channel did not use 10 cache line" );
 
 typedef struct	s_parser
 {
-	/* eventual PREFIX implementations */
-	// enum	Flags : uint8_t
-	// {
-	// 	HAS_TAGS     = BIT(0),
-	// 	HAS_SOURCE   = BIT(1),
-	// 	HAS_TRAILING = BIT(2)
-	// };
-	// WARN: is this used?
-
-	/* NOTE: max_params is currently set to 255, because the longest message the
-	 * server accepts is 512 bytes long, the last of which is either '\n' or "\r\n".
-	* Even in an improbable scenario where the message's command and each of the
-	* following parameters would be only 1 byte long (separated by a space),
-	* we could have as many as 254-255 arguments. */
-	static constexpr size_t		buf_size = 512;
-	static constexpr size_t		max_params = 255;
-
 	static constexpr const char	*commands[] = {
+		"PASS",
 		"NICK",
-		"PASS", // should align with the password for our server (argv[2])
 		"USER",
+		"QUIT",
 		"JOIN", // "lets users join a channel"// WARN: is this the exact command needed to be implemented for joining a channel?
+		"PART", // WARN: extra but nice to have: "lets users leave a channel."
+		"PRIVMSG", // "used to send private messages between users, as well as to send messages to channels"
+		"MODE",
 		"KICK",
 		"INVITE",
-		"PART", // WARN: extra but nice to have: "lets users leave a channel."
+		"TOPIC",
 		"PING",
 		"PONG",
-		"PRIVMSG" // "used to send private messages between users, as well as to send messages to channels"
+		"NAMES",
+		"LIST"
 	};
 	// NOTE: do not implement OPER: we need channel operators, not IRC operators.
+	// WARN: do we need to implement CAP? Is that what allows a user to become operator?
 
+	static constexpr size_t		n_valid_cmds = sizeof(commands) / sizeof(char *);
 	/* eventual PREFIX implementations */
 	// t_bmask			state;
 	//std::string_view	tags; // eventual tokens
 	//std::string_view	source; // eventual tokens
 	// WARN: is this used?
 
+	/* NOTE: max_params is currently set to 255, because the longest message the
+	* server accepts is 512 bytes long, the last of which is either '\n' or "\r\n".
+	* Even in an improbable scenario where the message's command and each of the
+	* following parameters would be only 1 byte long (separated by a space),
+	* we could have as many as 254-255 arguments. */
+	static constexpr size_t		buf_size = 512;
+	static constexpr size_t		max_params = 255;
+	static constexpr size_t		longest_cmd_size = sizeof("PRIVMSG") - 1;
+	// WARN: adapt to longest available Command in 'commands'. Currently it is: "PRIVMSG"
+
 	size_t				n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
-	std::string_view	verb; // WARN: can it ONLY be one single word / 3 digits?
+	std::string_view	verb;
 	std::string_view	params[max_params];
+	static char			verb_in_caps[longest_cmd_size]; // lives outside of the struct and shared between clients. WARN: If threads are introduced in this project, this will not be thread safe!
 
 }	t_parser;
 static_assert(sizeof(t_parser) <= 65*CACHE_LINE_SIZE, "t_parser did not use 65 cache lines");
 // WARN: this struct is quite large - is there a way to reduce it?
 
-// IRC_Client state bitmask definitions
-//NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in and chatting away. Anything else is an active state that needs to be resolved in some way.
+//NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in error state (or has asked to quit) and should be disconnected. Anything else is an active state that needs to be resolved in some way.
 typedef struct	s_IRC_Client
 {
-	enum Flags : uint8_t {
-		IS_OK         = BIT(0),
-		PASSWORD      = BIT(1),
-		NICK          = BIT(2),
-		USERNAME      = BIT(3),
-		ERROR         = BIT(4),
-		DISCARD_MSG   = BIT(5)
+	// IRC_Client state bitmask definitions
+	enum {
+		DISCONNECT   = BIT(0),
+		REGISTERED   = BIT(1),
+		PSWD_FIRST   = BIT(2),
+		PSWD_CORRECT = BIT(3),
+		NICK         = BIT(4),
+		USERNAME     = BIT(5),
+		DISCARD_MSG  = BIT(6)
 	};
+
+	// IRC protocol's username length parameter. Usually set to 5
+	static constexpr size_t	userlen = 5;
+
+	// "If <nickname> is longer than the server allows (...), it is silently truncated"
+	static constexpr size_t	max_nicklen = 30;
 
 	t_bmask				state;
 	struct sockaddr_in	addr;  //all the adress data. We'll trim it down as needed.
 	int					fd;
-	std::string			nick;
+	std::string_view	nick;
+	char				nick_buf[max_nicklen]; // not nullterminated, use 'nick' instead
 	std::string			username;
 	std::string			realname;
-	std::string			hostname;
+	char				hostname[INET_ADDRSTRLEN];
 	std::string			received_message_buffer;
+	std::string			send_message_buffer;
 	t_parser			parser;
 	t_IRC_Channel*		joined_channels;
 	int					joined_count;
@@ -139,17 +151,28 @@ typedef struct	s_IRC_Client
 static_assert(sizeof(t_IRC_Client) <= 68*CACHE_LINE_SIZE," t_IRC_Client did not use 68 cache line" );
 
 // IRC_Server state bitmask definitions
-//NOTE: state is essentially an error code catcher for the IRC_Server. BIT(0) means server is running smoothly, anything else is an error case.
+// NOTE: state is essentially an error code catcher for the IRC_Server. BIT(0) means server is running smoothly, anything else is an error case.
+// NOTE: 'static constexpr' within a struct does not increase struct's memory occupation: they are literals known at compile time.
 typedef struct	s_IRC_Server
 {
 	t_bmask									state; //Not in use in this version
+	static constexpr const char				name[] = "humble_server";
+	static constexpr int					poll_timeout = 1000;
+	static constexpr const char				version[] = "0.042"; // remember to update when upgrading ;-)
 	int										listen_fd;
 	int										port;
-	std::string								password;
+	std::string_view						password;
 	std::unordered_map<int, t_IRC_Client>	clients;
 	t_IRC_Channel							channels[MAX_CHANNELS];
 	int										channel_count;
 	std::vector<pollfd>						poll_fds;
 }											t_IRC_Server;
+
+/* Bit mask utils */
+bool	is_flag_set(const t_bmask state, const unsigned int mask);
+
+/* Error logging */
+void	log_error(const char *error, const char *filename, int line_number,
+            bool is_exception);
 
 #endif//IRC_FATSTRUCT_HPP
