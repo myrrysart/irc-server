@@ -13,13 +13,12 @@ typedef s_IRC_Client t_IRC_Client;
 
 /* Received bytes handling */
 void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
-            const ssize_t received);
-int		prepare_and_parse_message(const size_t pos, const std::string &buf,
+            const ssize_t received, t_IRC_Server &server);
+int		parse_message(const size_t pos, const std::string &buf,
             t_IRC_Client &client);
-int		check_for_too_long_message(std::string &buf, t_IRC_Client &client);
 
 /* Parsing */
-void	tokenize_message(t_IRC_Client &client, const std::string_view &msg);
+void	tokenize_message(t_IRC_Client &client, const std::string_view msg);
 
 /* Parsing utils */
 int		init_password(const char *src, std::string_view &dest);

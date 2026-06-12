@@ -75,6 +75,7 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 			client.state |= t_IRC_Client::REGISTERED;
 
 			build_RPL_WELCOME(client, server);
+			build_RPL_YOURHOST(client);
 			// TODO:
 			// missing steps here.
 
@@ -312,7 +313,7 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 // WARN: Review this function when CHANTYPES are chosen for channel handling!
 // Those characters have to be avoided here!
-bool	is_nickname_valid(const std::string_view &nickname)
+bool	is_nickname_valid(const std::string_view nickname)
 {
 	size_t	len = nickname.size();
 
@@ -335,7 +336,7 @@ bool	is_nickname_valid(const std::string_view &nickname)
 
 // uses 'ascii' CASEMAPPING, meaning case-insensitive checks: "tommy" == "ToMMY"
 bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients,
-            const int fd, const std::string_view &new_nick)
+            const int fd, const std::string_view new_nick)
 {
 	size_t	new_nicklen = new_nick.size();
 

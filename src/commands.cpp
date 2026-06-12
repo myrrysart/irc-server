@@ -27,8 +27,9 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 		i = t_parser::n_valid_cmds;
 
 
-	// WARN: Make 100% sure that the commands here match the ones in the commands array;
-	// And also, make sure that all of those commands are implemented / need to be implemented!
+	// WARN: Make 100% sure that the commands in the switch case match the ones
+	// in the commands array; Also, make sure that all of those commands are
+	// implemented / need to be implemented!
 
 	if (!is_flag_set(client.state, t_IRC_Client::REGISTERED))
 	{
@@ -73,7 +74,7 @@ void	execute_QUIT_cmd(t_IRC_Client &client)
 	// TODO:
 	// optional feature:
 	// assemble message to be sent to every single client that is on the same channel/s
-	// as the disconnecting client
+	// as the disconnecting client, informing them of their peer's leave
 
 
 	// set the disconnect flag

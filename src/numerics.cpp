@@ -1,10 +1,13 @@
 
 #include "../lib/irc_fatstruct.hpp"
 
-#include <iostream>
 #include <string>
 #include <string_view>
 #include <exception>
+
+
+static void	append_common_reply_prefix(std::string &buffer, const char *numeric,
+                const std::string_view nick);
 
 // NOTE: From the modern documentation, regarding numeric replies:
 // "Most messages sent from a client to a server generates a reply of some sort.
@@ -74,42 +77,40 @@ void	build_RPL_WELCOME(t_IRC_Client &client, t_IRC_Server &server)
 	}
 }
 
-/*
-// TODO:
 // RPL_YOURHOST (002)
-void	send_RPL_YOURHOST(const t_IRC_Client &client)
+// "<client> :Your host is <servername>, running version <version>"
+// "Part of the post-registration greeting, this numeric returns the name and
+// software/version of the server the client is currently connected to. The text
+// used in the last param of this message varies wildly."
+void	build_RPL_YOURHOST(t_IRC_Client &client)
 {
+	// WARN : exception UNPROTECTED!!!
+	std::string	&buffer = client.send_message_buffer;
 
+	append_common_reply_prefix(buffer, "002", client.nick);
+	buffer += ":Your host is ";
+	buffer += t_IRC_Server::name;
+	buffer += ", running version ";
+	buffer += t_IRC_Server::version;
+	buffer += "\r\n";
 }
-*/
-
 
 // ERR_INPUTTOOLONG (417)
 // "<client> :Input line was too long"
 // "Indicates a given line does not follow the specified size limits (512 bytes
 // for the main section, 4094 or 8191 bytes for the tag section)."
-// WARN: Placement of the calls to this function may need to be reviewed...
-int	build_ERR_INPUTTOOLONG(t_IRC_Client &client)
+// WARN: may throw std::exception and/or derived!
+void	build_ERR_INPUTTOOLONG(t_IRC_Client &client)
 {
 	std::string	&buffer = client.send_message_buffer;
 
-	// WARN: test that the catch would propagate properly!
-	try {
-		buffer += ':';
-		buffer += t_IRC_Server::name;
-		buffer += " 417 ";
-		buffer += client.nick;
-		buffer += " :Input line was too long\r\n";
-
-	} catch (const std::exception &e) {
-		log_error(e.what(), __FILE__, __LINE__, 1);
-		// WARN: should I send a message to indicate the failure?
-		return (-1);
-	}
-
-	return (0);
+	append_common_reply_prefix(buffer, "417", client.nick);
+	buffer += ":Input line was too long\r\n";
 }
 
+// WARN: If the message is extremely long but still within the 512 byte cap,
+// and there are no spaces: the command will be huge. Does the protocol allow
+// to send such long messages to the client? Research this.
 // ERR_UNKNOWNCOMMAND (421)
 // "<client> <command> :Unknown command"
 // "Sent to a registered client to indicate that the command they sent isn’t
@@ -119,11 +120,7 @@ void	build_ERR_UNKNOWNCOMMAND(t_IRC_Client &client, t_IRC_Server &server)
 	std::string	&buffer = client.send_message_buffer;
 
 	try {
-		buffer += ':';
-		buffer += t_IRC_Server::name;
-		buffer += " 421 ";
-		buffer += client.nick;
-		buffer += ' ';
+		append_common_reply_prefix(buffer, "421", client.nick);
 		buffer += client.parser.verb;
 		buffer += " :Unknown command\r\n";
 
@@ -144,11 +141,8 @@ void	build_ERR_NONICKNAMEGIVEN(t_IRC_Client &client, t_IRC_Server &server)
 	std::string	&buffer = client.send_message_buffer;
 
 	try {
-		buffer += ':';
-		buffer += t_IRC_Server::name;
-		buffer += " 431 ";
-		buffer += client.nick;
-		buffer += " :No nickname given\r\n";
+		append_common_reply_prefix(buffer, "431", client.nick);
+		buffer += ":No nickname given\r\n";
 
 	} catch (const std::exception &e) {
 		log_error(e.what(), __FILE__, __LINE__, 1);
@@ -165,7 +159,7 @@ void	build_ERR_NONICKNAMEGIVEN(t_IRC_Client &client, t_IRC_Server &server)
 // command for more information on characters which are allowed in various IRC
 // servers. The text used in the last param of this message may vary."
 void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,
-            const std::string_view &new_nick, t_IRC_Server &server)
+            const std::string_view new_nick, t_IRC_Server &server)
 {
 	// WARN: is the last parameter too long? Check IRC documentation regarding
 	// length of server-client messages.
@@ -174,11 +168,7 @@ void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,
 	std::string	&buffer = client.send_message_buffer;
 
 	try {
-		buffer += ':';
-		buffer += t_IRC_Server::name;
-		buffer += " 432 ";
-		buffer += client.nick;
-		buffer += ' ';
+		append_common_reply_prefix(buffer, "432", client.nick);
 		buffer += new_nick;
 		buffer += " :Erroneous nickname. Accepted characters: alphabetical "
 			"letters, digits, and the following symbols: \"[]{}\\|#&:$%<>_-\". "
@@ -199,16 +189,12 @@ void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,
 // nickname is already in use on the network. The text used in the last param of
 // this message may vary."
 void	build_ERR_NICKNAMEINUSE(t_IRC_Client &client,
-            const std::string_view &new_nick, t_IRC_Server &server)
+            const std::string_view new_nick, t_IRC_Server &server)
 {
 	std::string	&buffer = client.send_message_buffer;
 
 	try {
-		buffer += ':';
-		buffer += t_IRC_Server::name;
-		buffer += " 433 ";
-		buffer += client.nick;
-		buffer += ' ';
+		append_common_reply_prefix(buffer, "433", client.nick);
 		buffer += new_nick;
 		buffer += " :Nickname is already in use\r\n";
 
@@ -230,11 +216,8 @@ void	build_ERR_NOTREGISTERED(t_IRC_Client &client)
 	std::string	&buffer = client.send_message_buffer;
 
 	try {
-		buffer += ':';
-		buffer += t_IRC_Server::name;
-		buffer += " 451 ";
-		buffer += client.nick;
-		buffer += " :You have not registered\r\n";
+		append_common_reply_prefix(buffer, "451", client.nick);
+		buffer += ":You have not registered\r\n";
 
 	} catch (const std::exception &e) {
 		log_error(e.what(), __FILE__, __LINE__, 1);
@@ -260,11 +243,7 @@ void	build_ERR_NEEDMOREPARAMS(t_IRC_Client &client)
 	std::string	&buffer = client.send_message_buffer;
 
 	try {
-		buffer += ':';
-		buffer += t_IRC_Server::name;
-		buffer += " 461 ";
-		buffer += client.nick;
-		buffer += ' ';
+		append_common_reply_prefix(buffer, "461", client.nick);
 		buffer += capitalized_verb;
 		buffer += " :Not enough parameters\r\n";
 
@@ -288,11 +267,8 @@ void	build_ERR_ALREADYREGISTERED(t_IRC_Client &client)
 	std::string	&buffer = client.send_message_buffer;
 
 	try {
-		buffer += ':';
-		buffer += t_IRC_Server::name;
-		buffer += " 462 ";
-		buffer += client.nick;
-		buffer += " :You may not reregister\r\n";
+		append_common_reply_prefix(buffer, "462", client.nick);
+		buffer += ":You may not reregister\r\n";
 
 	} catch (const std::exception &e) {
 		log_error(e.what(), __FILE__, __LINE__, 1);
@@ -316,11 +292,8 @@ void	build_ERR_PASSWDMISMATCH(t_IRC_Client &client)
 	std::string	&buffer = client.send_message_buffer;
 
 	try {
-		buffer += ':';
-		buffer += t_IRC_Server::name;
-		buffer += " 464 ";
-		buffer += client.nick;
-		buffer += " :Password incorrect\r\n";
+		append_common_reply_prefix(buffer, "464", client.nick);
+		buffer += ":Password incorrect\r\n";
 
 	} catch (const std::exception &e) {
 		log_error(e.what(), __FILE__, __LINE__, 1);
@@ -329,4 +302,17 @@ void	build_ERR_PASSWDMISMATCH(t_IRC_Client &client)
 		// server.state &= ~SERVER_RUNNING;
 		// WARN: should I send a message to indicate the failure?
 	}
+}
+
+/* this function may throw std::exception and derived */
+void	append_common_reply_prefix(std::string &buffer, const char *numeric,
+            const std::string_view nick)
+{
+	buffer += ':';
+	buffer += (t_IRC_Server::name);
+	buffer += ' ';
+	buffer += numeric;
+	buffer += ' ';
+	buffer += nick;
+	buffer += ' ';
 }

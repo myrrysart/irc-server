@@ -1,70 +1,74 @@
 #include <iostream>
+#include <exception>
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
 #include "../lib/parser.hpp"
 #include "../lib/commands.hpp"
+#include "../lib/numerics.hpp"
 
 bool	recv_from_client(t_IRC_Server &server, int fd)
 {
 	static char		buf[t_parser::buf_size];
 	t_IRC_Client	&client = server.clients[fd]; // reference to the observed client
 
-	if (is_flag_set(client.state, t_IRC_Client::DISCONNECT))
-		return true;
-
 	ssize_t	received = recv(fd, buf, sizeof(buf), 0);
 	if (received <= 0)
 		return true;
 
 	if (is_flag_set(client.state, t_IRC_Client::DISCARD_MSG))
-		handle_message_to_discard(client, buf, received);
+		handle_message_to_discard(client, buf, received, server);
 	else
 		client.received_message_buffer.append(buf, received);
 
 	return false;
 }
 
-bool	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
+void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 {
 	std::string	&buf = client.received_message_buffer;
-	size_t		pos;
+	size_t		pos = buf.find('\n');
 
-	while ((pos = buf.find('\n')) != std::string::npos)
+	if (pos != std::string::npos)
 	{
-		if (prepare_and_parse_message(pos, buf, client) == -1)
+		if (parse_message(pos, buf, client) == -1)
 		{
-		// WARN: Shouldn't messages to the client that is about to be disconnected
-		// still be sent to them beforehand?
-			client.state |= client.DISCONNECT;
-			server.state &= ~SERVER_RUNNING;
-			return true;
+			try {
+				build_ERR_INPUTTOOLONG(client);
+			} catch (const std::exception &e) {
+				log_error(e.what(), __FILE__, __LINE__, 1);
+				server.state &= ~SERVER_RUNNING;
+				// WARN: Append error message to be sent to the client? Or this
+				// might be too great of an error?
+				return;
+			}
 		}
-		if (is_flag_set(client.state, t_IRC_Client::DISCARD_MSG))
+
+		if (is_flag_set(client.state, t_IRC_Client::DISCARD_MSG)) // no need to dispatch
 			client.state &= ~t_IRC_Client::DISCARD_MSG;
 		else
-		{
 			dispatch_client_command(client, server);
+		buf.erase(0, pos + 1);
 
-			// TODO: send messages here?
-
+	}
+	else if (buf.length() >= t_parser::buf_size) // WARN: maybe this should be 'if', not 'else if'; but this might be good enough, since the buffer is cleared up from long input
+	{
+		try {
+			build_ERR_INPUTTOOLONG(client);
+		} catch (const std::exception &e) {
+			log_error(e.what(), __FILE__, __LINE__, 1);
+			// WARN: Append error message to be sent to the client? Or this
+			// might be too great of an error?
+			server.state &= ~SERVER_RUNNING;
+			return;
 
 		}
-		buf.erase(0, pos + 1);
+		client.state |= t_IRC_Client::DISCARD_MSG;
+		buf.clear();
+		/* NOTE: If user sends an extremely long buffer with no newlines:
+		/ current behaviour would discard all of it, until they provide a '\n':
+		/ Only after that '\n' it would start to process bytes, looking for a
+		/ candidate message. */
 	}
-
-	if (check_for_too_long_message(buf, client) == -1)
-	{
-		// WARN: Shouldn't messages to the client that is about to be disconnected
-		// still be sent to them beforehand?
-		// WARN: Consider adding a flushing loop for sending messages to the all
-		// clients in the shutdown_server() function? And perhaps add a flag for
-		// fatal hardware issues, that would communicate that sending more messages
-		// is perhaps unnecessary in that extreme case?
-		client.state |= client.DISCONNECT;
-		server.state &= ~SERVER_RUNNING;
-		return true;
-	}
-	return false;
 }
 
 void	disconnect_client(t_IRC_Server &server, int fd)

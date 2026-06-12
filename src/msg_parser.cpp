@@ -9,43 +9,24 @@
 
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
-#include "../lib/numerics.hpp"
 
-#include <iostream>
 #include <string>
 #include <string_view>
 
 /* out-of-line zero initialization of shared static buffer in t_parser struct */
 char	t_parser::verb_in_caps[t_parser::longest_cmd_size];
 
-int	prepare_and_parse_message(const size_t pos, const std::string &buf, t_IRC_Client &client)
+int	parse_message(const size_t pos, const std::string &buf, t_IRC_Client &client)
 {
 	if (pos >= t_parser::buf_size)
 	{
 		// Too long message detected. Handling:
 		// - communicate: ERR_INPUTTOOLONG (417)
-		// - erase from buffer until after the newline (happpens at caller)
+		// - erase from buffer until after the newline
+		// (Both of these happen at the caller, as of this moment.)
 
-		// FIXME: adjust when ready - this next block does not make much sense in the
-		// grand scheme of things, try to centralize this with the rest of send loop.
-		// Especially clearing the buffer does not make sense: it might still hold
-		// previous partially unsent messages!
-		// WARN: The INPUTTOOLONG reply should be sent. But if there is a queue
-		// system, shouldn't all messages be sent from some centeralized section of the code?
-		if (build_ERR_INPUTTOOLONG(client) == -1)
-			return (-1);
-		if (send(client.fd, client.send_message_buffer.c_str(),
-			client.send_message_buffer.size(), 0) == -1)
-		{
-			// FIXME: handle the error. Many failure possibilities here...
-
-
-
-		}
-		client.send_message_buffer.clear();
 		client.state |= t_IRC_Client::DISCARD_MSG;
-
-		return (0);
+		return (-1);
 	}
 
 	// scan for carriage return (IRC message may end with '\n' or "\r\n")
@@ -54,7 +35,8 @@ int	prepare_and_parse_message(const size_t pos, const std::string &buf, t_IRC_Cl
 		has_carriage_return = 1;
 
 	// Check whether client sent an empty message:
-	// such a message is to be ignored, according to the IRC protocol.
+	// such a message is to be ignored (without sending any reply),
+	// according to the IRC protocol.
 	if (!pos || (pos == 1 && has_carriage_return))
 	{
 		client.state |= t_IRC_Client::DISCARD_MSG;
@@ -66,13 +48,10 @@ int	prepare_and_parse_message(const size_t pos, const std::string &buf, t_IRC_Cl
 	return (0);
 }
 
-void	tokenize_message(t_IRC_Client &client, const std::string_view &msg)
+void	tokenize_message(t_IRC_Client &client, const std::string_view msg)
 {
 	size_t	i = 0;
 	size_t	j = 0;
-
-	// WARN: just debugging:
-	std::cout	<< "Received from " << client.fd << " : " << msg << std::endl;
 
 	i = msg.find(' ');
 	if (i == std::string_view::npos)
@@ -101,50 +80,8 @@ void	tokenize_message(t_IRC_Client &client, const std::string_view &msg)
 	client.parser.n_params = j;
 }
 
-int	check_for_too_long_message(std::string &buf, t_IRC_Client &client)
-{
-	// when execution arrives here:
-	// - 'buf' holds only the trailing, non processed bytes. It does not contain
-	// a newline. But it can still hold a message larger than 512 bytes! And its
-	// message might not be ready!
-	if (buf.length() >= t_parser::buf_size)
-	{
-		// communicate: ERR_INPUTTOOLONG (417)
-		if (build_ERR_INPUTTOOLONG(client) == -1)
-			return (-1);
-
-		// FIXME: adjust when ready - this next block does not make much sense in the
-		// grand scheme of things, try to centralize this with the rest of send loop.
-		// Especially clearing the buffer does not make sense: it might still hold
-		// previous partially unsent messages!
-		// WARN: The reply should be sent at this moment. But if there is a queue
-		// system, shouldn't all messages be sent from some centeralized section of the code?
-		if (send(client.fd, client.send_message_buffer.c_str(),
-			client.send_message_buffer.size(), 0) == -1)
-		{
-			// FIXME: handle the error. Many failure possibilities here...
-
-
-
-		}
-		client.send_message_buffer.clear();
-
-		// set DISCARD_MSG flag
-		client.state |= t_IRC_Client::DISCARD_MSG;
-
-		// discard whole buffer
-		buf.clear();
-
-		/* NOTE: If user sends an extremely long buffer with no newlines:
-		/ current behaviour would discard all of it, until they provide a '\n':
-		/ Only after that '\n' it would start to process bytes, looking for a
-		/ candidate message. Is the team on board with this plan? */
-	}
-	return (0);
-}
-
 void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
-            const ssize_t received)
+            const ssize_t received, t_IRC_Server &server)
 {
 	std::string	&msg = client.received_message_buffer;
 	ssize_t		pos = 0;
@@ -157,18 +94,21 @@ void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
 		// newline has been found in the buffer.
 		// append the trailing part after the newline
 		if (pos < received - 1) // otherwise, there is nothing to append.
-			msg.append(buf[pos + 1], received - pos - 1);
+		{
+			try {
+				msg.append(buf[pos + 1], received - pos - 1);
+			} catch (const std::exception &e) {
+				log_error(e.what(), __FILE__, __LINE__, 1);
+				server.state &= ~SERVER_RUNNING;
+			}
+		}
 		// unset DISCARD_MSG flag
 		client.state &= ~t_IRC_Client::DISCARD_MSG;
 	}
-	// else: no newline in the received buffer; the buffer can be igonored,
-	// the received_message_buffer will remain empty, which will skip the loop
+	// else: no newline in the received buffer; it can therefore be igonored,
+	// 'received_message_buffer' will remain empty, which will skip the loop
 	// in the next function call (handle_client_message()), since no newline
-	// would be found.
-	// and DISCARD_MSG flag should not be unset, since the next batch should
-	// still be discarded.
-	// NOTE: the error message ERR_INPUTTOOLONG (417) should have been
-	// communicated to the client earlier.
-	// WARN: code should return false in this case - make sure it is the case
-	// after the call to this function.
+	// would be found, at the start of that function.
+	// DISCARD_MSG flag should not be unset after this call, since the next
+	// batch of received bytes should still be discarded, up to the next newline.
 }

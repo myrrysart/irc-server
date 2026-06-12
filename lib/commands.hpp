@@ -25,7 +25,7 @@ bool	is_or_was_password_provided_first(const t_bmask state);
 
 /* Utils */
 bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients,
-            const int fd, const std::string_view &new_nick);
-bool	is_nickname_valid(const std::string_view &nickname);
+            const int fd, const std::string_view new_nick);
+bool	is_nickname_valid(const std::string_view nickname);
 
 #endif

@@ -98,11 +98,8 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 			disconnect_client(server, fd);
 			return true;
 		}
-		if (handle_client_message(server.clients[fd], server))
-		{
-			disconnect_client(server, fd);
-			return true;
-		}
+		if (is_flag_set(server.state, SERVER_RUNNING))
+			handle_client_message(server.clients[fd], server);
 	}
 	return false;
 }
@@ -114,7 +111,8 @@ void	server_loop(t_IRC_Server &server)
 
 	while (!requested_shutdown)
 	{
-		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()), 1000) < 0)
+		if (poll(server.poll_fds.data(), static_cast<nfds_t>(server.poll_fds.size()),
+			t_IRC_Server::poll_timeout) < 0)
 		{
 			if (errno == EINTR)
 				continue;
