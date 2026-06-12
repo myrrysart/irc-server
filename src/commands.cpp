@@ -24,7 +24,7 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 		}
 	}
 	else
-		i = t_parser::n_valid_cmds;
+		i = t_parser::n_valid_cmds; // invalid command, will trigger default case
 
 
 	// WARN: Make 100% sure that the commands in the switch case match the ones
@@ -39,25 +39,25 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 	else
 	{
 		// dispatch for all commands
-		// TODO:
+		// TODO: Work in progress.
 		switch (i)
 		{
-			default: build_ERR_UNKNOWNCOMMAND(client, server); break;
-			case 0:  execute_PASS_cmd(client, server);         break;
-			case 1:  execute_NICK_cmd(client, server);         break;
-			case 2:  execute_USER_cmd(client, server);         break;
-			case 3:  execute_QUIT_cmd(client);                 break;
-			// case 4:  execute_JOIN_cmd(client);                 break;
-			// case 5:  execute_PART_cmd(client);                 break;
-			// case 6:  execute_PRIVMSG_cmd(client);              break;
-			// case 7:  execute_MODE_cmd(client);                 break;
-			// case 8:  execute_KICK_cmd(client);                 break;
-			// case 9:  execute_INVITE_cmd(client);               break;
-			// case 10: execute_TOPIC_cmd(client);                break;
-			// case 11: execute_PING_cmd(client);                 break;
-			// case 12: execute_PONG_cmd(client);                 break;
-			// case 13: execute_NAMES_cmd(client);                break;
-			// case 14: execute_LIST_cmd(client);                 break;
+			default: build_ERR_UNKNOWNCOMMAND(client); break;
+			case 0:  execute_PASS_cmd(client, server); break;
+			case 1:  execute_NICK_cmd(client, server); break;
+			case 2:  execute_USER_cmd(client, server); break;
+			case 3:  execute_QUIT_cmd(client);         break;
+			// case 4:  execute_JOIN_cmd(client);         break;
+			// case 5:  execute_PART_cmd(client);         break;
+			// case 6:  execute_PRIVMSG_cmd(client);      break;
+			// case 7:  execute_MODE_cmd(client);         break;
+			// case 8:  execute_KICK_cmd(client);         break;
+			// case 9:  execute_INVITE_cmd(client);       break;
+			// case 10: execute_TOPIC_cmd(client);        break;
+			// case 11: execute_PING_cmd(client);         break;
+			// case 12: execute_PONG_cmd(client);         break;
+			// case 13: execute_NAMES_cmd(client);        break;
+			// case 14: execute_LIST_cmd(client);         break;
 		}
 	}
 

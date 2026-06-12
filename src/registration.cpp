@@ -74,10 +74,10 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 
 			client.state |= t_IRC_Client::REGISTERED;
 
-			build_RPL_WELCOME(client, server);
+			build_RPL_WELCOME(client);
 			build_RPL_YOURHOST(client);
 			// TODO:
-			// missing steps here.
+			// missing steps here: more numeric replies are needed.
 
 		}
 		else
@@ -251,7 +251,7 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// no nickname / empty nickname provided
 	if (!client.parser.n_params || client.parser.params[0].empty())
 	{
-		build_ERR_NONICKNAMEGIVEN(client, server);
+		build_ERR_NONICKNAMEGIVEN(client);
 		return;
 	}
 
@@ -268,7 +268,7 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// this function checks whether it is already taken...
 	if (!is_nickname_valid(new_nick))
 	{
-		build_ERR_ERRONEOUSNICKNAME(client, new_nick, server);
+		build_ERR_ERRONEOUSNICKNAME(client, new_nick);
 		return;
 	}
 
@@ -282,7 +282,7 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// handle an already taken nickname
 	if (is_nick_already_in_use(server.clients, client.fd, new_nick))
 	{
-		build_ERR_NICKNAMEINUSE(client, new_nick, server);
+		build_ERR_NICKNAMEINUSE(client, new_nick);
 		return;
 	}
 

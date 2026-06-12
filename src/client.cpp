@@ -36,9 +36,10 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 				build_ERR_INPUTTOOLONG(client);
 			} catch (const std::exception &e) {
 				log_error(e.what(), __FILE__, __LINE__, 1);
+				// WARN: Append error message to be sent to the client/ to all clients,
+				// and make sure that they receive it before shutting down?
+				// Or is it overkill in this case?
 				server.state &= ~SERVER_RUNNING;
-				// WARN: Append error message to be sent to the client? Or this
-				// might be too great of an error?
 				return;
 			}
 		}
@@ -46,7 +47,18 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 		if (is_flag_set(client.state, t_IRC_Client::DISCARD_MSG)) // no need to dispatch
 			client.state &= ~t_IRC_Client::DISCARD_MSG;
 		else
-			dispatch_client_command(client, server);
+		{
+			try {
+				dispatch_client_command(client, server);
+			} catch (const std::exception &e) {
+				log_error(e.what(), __FILE__, __LINE__, 1);
+				// WARN: Append error message to be sent to the client/ to all clients,
+				// and make sure that they receive it before shutting down?
+				// Or is it overkill in this case?
+				server.state &= ~SERVER_RUNNING;
+				return;
+			}
+		}
 		buf.erase(0, pos + 1);
 
 	}
@@ -56,8 +68,9 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 			build_ERR_INPUTTOOLONG(client);
 		} catch (const std::exception &e) {
 			log_error(e.what(), __FILE__, __LINE__, 1);
-			// WARN: Append error message to be sent to the client? Or this
-			// might be too great of an error?
+			// WARN: Append error message to be sent to the client/ to all clients,
+			// and make sure that they receive it before shutting down?
+			// Or is it overkill in this case?
 			server.state &= ~SERVER_RUNNING;
 			return;
 
