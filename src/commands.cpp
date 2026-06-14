@@ -6,6 +6,9 @@
 #include <cstring> // for std::strncmp()
 #include <string_view>
 
+// WARN: To avoid bad invalid memory access surprises: Once PRIVMSG is implemented,
+// Test something like: "PRIVMSG :some message" followed by "PRIVMSS :whatever".
+
 void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 {
 	char	*verb_in_caps = client.parser.verb_in_caps;
@@ -19,7 +22,8 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 
 		for (i = 0; i < t_parser::n_valid_cmds; ++i)
 		{
-			if (!std::strncmp(t_parser::commands[i], verb_in_caps, verb_len))
+			if (verb_len == t_parser::commands[i].size() &&
+					!std::strncmp(t_parser::commands[i].data(), verb_in_caps, verb_len))
 				break ;
 		}
 	}

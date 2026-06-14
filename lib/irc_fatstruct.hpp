@@ -68,7 +68,7 @@ static_assert(sizeof(t_IRC_Channel) <= 10*CACHE_LINE_SIZE," t_IRC_Channel did no
 
 typedef struct	s_parser
 {
-	static constexpr const char	*commands[] = {
+	static constexpr std::string_view	commands[] = {
 		"PASS",
 		"NICK",
 		"USER",
@@ -88,12 +88,7 @@ typedef struct	s_parser
 	// NOTE: do not implement OPER: we need channel operators, not IRC operators.
 	// WARN: do we need to implement CAP? Is that what allows a user to become operator?
 
-	static constexpr size_t		n_valid_cmds = sizeof(commands) / sizeof(char *);
-	/* eventual PREFIX implementations */
-	// t_bmask			state;
-	//std::string_view	tags; // eventual tokens
-	//std::string_view	source; // eventual tokens
-	// WARN: is this used?
+	static constexpr size_t		n_valid_cmds = sizeof(commands) / sizeof(std::string_view);
 
 	/* NOTE: max_params is currently set to 255, because the longest message the
 	* server accepts is 512 bytes long, the last of which is either '\n' or "\r\n".
@@ -102,8 +97,21 @@ typedef struct	s_parser
 	* we could have as many as 254-255 arguments. */
 	static constexpr size_t		buf_size = 512;
 	static constexpr size_t		max_params = 255;
-	static constexpr size_t		longest_cmd_size = sizeof("PRIVMSG") - 1;
-	// WARN: adapt to longest available Command in 'commands'. Currently it is: "PRIVMSG"
+	// WARN: adapt to longest available Command in 'commands'. Currently it is: "PRIVMSG" -- or delete this entirely if we are allowed to keep the lambda logic following this!
+	// static constexpr size_t		longest_cmd_size = sizeof("PRIVMSG") - 1; delete this if the following is okay.
+
+	// FIXME: Are we allowed to have this lambda logic in the header?
+	// Computes the longest available command's length at compile time, so that
+	// future changes in the command list would adjust this value automatically.
+	static constexpr size_t		longest_cmd_size = [] {
+		size_t len = 0;
+		for (size_t i = 0; i < n_valid_cmds; ++i)
+		{
+			if (len < commands[i].size())
+				len = commands[i].size();
+		}
+		return len;
+	}();
 
 	size_t				n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
 	std::string_view	verb;
