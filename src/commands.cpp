@@ -2,6 +2,7 @@
 #include "../lib/commands.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
+#include "../lib/server.hpp"
 
 #include <cstring> // for std::strncmp()
 #include <string_view>
@@ -50,7 +51,7 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 			case 0:  execute_PASS_cmd(client, server); break;
 			case 1:  execute_NICK_cmd(client, server); break;
 			case 2:  execute_USER_cmd(client);         break;
-			case 3:  execute_QUIT_cmd(client);         break;
+			case 3:  execute_QUIT_cmd(client, server); break;
 			// case 4:  execute_JOIN_cmd(client);         break;
 			// case 5:  execute_PART_cmd(client);         break;
 			// case 6:  execute_PRIVMSG_cmd(client);      break;
@@ -69,17 +70,23 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 }
 
 // WARN: work in progress
-void	execute_QUIT_cmd(t_IRC_Client &client)
+void	execute_QUIT_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
-	// TODO:
-	// assemble reply ERROR message (follow modern Horse documentation for 'QUIT message')
-
-
 	// TODO:
 	// optional feature:
 	// assemble message to be sent to every single client that is on the same channel/s
 	// as the disconnecting client, informing them of their peer's leave
+	// WARN: just work in progress...
+	for (std::unordered_map<int, t_IRC_Client>::iterator iterator = server.clients.begin();
+		!requested_shutdown && iterator != server.clients.end(); ++iterator)
+	{
+		if (client.fd == iterator->second.fd) // no need to send message to the disconnecting client
+			continue;
 
+		// append_client_has_quit_message(iterator->second.send_message_buffer);
+		// client.buffer += "?????"
+
+	}
 
 	// set the disconnect flag
 	client.state |= t_IRC_Client::DISCONNECT;
