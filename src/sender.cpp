@@ -11,7 +11,7 @@
 #include <iostream>
 #include <exception>
 
-static void	disconnect_client_during_iterator_walk(t_IRC_Server &server, int fd,
+static void	disconnect_client_during_iterator_walk(t_IRC_Server &server,
                 std::unordered_map<int, t_IRC_Client>::iterator &iterator);
 static void	update_send_buffer_and_offset(std::string &send_buf, size_t &offset,
                 const size_t sent_bytes);
@@ -21,11 +21,8 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 	ssize_t	ret;
 
 	for (std::unordered_map<int, t_IRC_Client>::iterator iterator = server.clients.begin();
-		iterator != server.clients.end(); )
+		iterator != server.clients.end() && !requested_shutdown; )
 	{
-		if (requested_shutdown)
-			return;
-
 		t_IRC_Client	&client = iterator->second;
 		std::string		&send_buf = client.send_message_buffer;
 		if (client.send_offset >= send_buf.size()) // no bytes to send to this client
@@ -33,7 +30,7 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 			if (!is_flag_set(client.state, t_IRC_Client::DISCONNECT))
 				++iterator;
 			else
-				disconnect_client_during_iterator_walk(server, client.fd, iterator);
+				disconnect_client_during_iterator_walk(server, iterator);
 			continue;
 		}
 		ret = send(client.fd, send_buf.c_str() + client.send_offset,
@@ -51,7 +48,7 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 				// or by some socket flags), the kernel instead reports the error via:
 				// send() → -1
 				// errno = EPIPE
-				disconnect_client_during_iterator_walk(server, client.fd, iterator);
+				disconnect_client_during_iterator_walk(server, iterator);
 				continue;
 			}
 			else
@@ -72,7 +69,7 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 		if (is_flag_set(client.state, t_IRC_Client::DISCONNECT)
 			&& client.send_offset >= send_buf.size())
 		{
-			disconnect_client_during_iterator_walk(server, client.fd, iterator);
+			disconnect_client_during_iterator_walk(server, iterator);
 			continue;
 		}
 		++iterator;
@@ -99,9 +96,10 @@ static void	update_send_buffer_and_offset(std::string &send_buf, size_t &offset,
 }
 
 // WARN: Should check if this function is working as intended...
-static void	disconnect_client_during_iterator_walk(t_IRC_Server &server, int fd,
+static void	disconnect_client_during_iterator_walk(t_IRC_Server &server,
                 std::unordered_map<int, t_IRC_Client>::iterator &iterator)
 {
+	int	fd = iterator->second.fd;
 	// WARN: handle close() failure?
 	close(fd);
 
