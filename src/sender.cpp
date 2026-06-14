@@ -57,6 +57,7 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 				return;
 			}
 		}
+		// WARN: Is it 100% OK not to handle ret == 0?
 		try {
 			update_send_buffer_and_offset(send_buf, client.send_offset, ret);
 		} catch (const std::exception &e) {
