@@ -134,6 +134,10 @@ typedef struct	s_IRC_Client
 	// "If <nickname> is longer than the server allows (...), it is silently truncated"
 	static constexpr size_t	max_nicklen = 30;
 
+	// Allows reducing calls to std::string.erase() for the output buffer, since
+	// erasing string's beginning may require moving its tail to the front.
+	static constexpr size_t	offset_threshold = 8192;
+
 	t_bmask				state;
 	struct sockaddr_in	addr;  //all the adress data. We'll trim it down as needed.
 	int					fd;
@@ -144,6 +148,7 @@ typedef struct	s_IRC_Client
 	char				hostname[INET_ADDRSTRLEN];
 	std::string			received_message_buffer;
 	std::string			send_message_buffer;
+	size_t				send_offset;
 	t_parser			parser;
 	t_IRC_Channel*		joined_channels;
 	int					joined_count;

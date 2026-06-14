@@ -9,9 +9,12 @@
 #include <cstring> // for std::strerror()
 #include <cerrno>
 #include <iostream>
+#include <exception>
 
 static void	disconnect_client_during_iterator_walk(t_IRC_Server &server, int fd,
                 std::unordered_map<int, t_IRC_Client>::iterator &iterator);
+static void	update_send_buffer_and_offset(std::string &send_buf, size_t &offset,
+                const size_t sent_bytes);
 
 void	send_messages_to_all_clients(t_IRC_Server &server)
 {
@@ -25,7 +28,7 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 
 		t_IRC_Client	&client = iterator->second;
 		std::string		&send_buf = client.send_message_buffer;
-		if (send_buf.empty()) // no bytes to send to this client
+		if (client.send_offset >= send_buf.size()) // no bytes to send to this client
 		{
 			if (!is_flag_set(client.state, t_IRC_Client::DISCONNECT))
 				++iterator;
@@ -33,7 +36,8 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 				disconnect_client_during_iterator_walk(server, client.fd, iterator);
 			continue;
 		}
-		ret = send(client.fd, send_buf.c_str(), send_buf.size(), 0);
+		ret = send(client.fd, send_buf.c_str() + client.send_offset,
+			 send_buf.size() - client.send_offset, 0);
 		if (ret == -1)
 		{
 			log_error(std::strerror(errno), __FILE__, __LINE__, 0);
@@ -56,15 +60,41 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 				return;
 			}
 		}
-		send_buf.erase(0, ret);
-
-		if (is_flag_set(client.state, t_IRC_Client::DISCONNECT) && send_buf.empty())
+		try {
+			update_send_buffer_and_offset(send_buf, client.send_offset, ret);
+		} catch (const std::exception &e) {
+			log_error(e.what(), __FILE__, __LINE__, 1);
+			// WARN: Should an error message be sent to all clients? This exception
+			// is most probably an std::bad_alloc, which is fatal...
+			requested_shutdown = 1;
+			return;
+		}
+		if (is_flag_set(client.state, t_IRC_Client::DISCONNECT)
+			&& client.send_offset >= send_buf.size())
 		{
 			disconnect_client_during_iterator_walk(server, client.fd, iterator);
 			continue;
 		}
-
 		++iterator;
+	}
+}
+
+// std::string's erase() and clear() may throw std::bad_alloc
+static void	update_send_buffer_and_offset(std::string &send_buf, size_t &offset,
+                const size_t sent_bytes)
+{
+	size_t	buf_size = send_buf.size();
+
+	offset += sent_bytes;
+	if (offset >= buf_size)
+	{
+		send_buf.clear();
+		offset = 0;
+	}
+	else if (offset >= t_IRC_Client::offset_threshold && offset >= buf_size / 2)
+	{
+		send_buf.erase(0, offset);
+		offset = 0;
 	}
 }
 
