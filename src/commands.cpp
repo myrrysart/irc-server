@@ -76,16 +76,23 @@ void	execute_QUIT_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// optional feature:
 	// assemble message to be sent to every single client that is on the same channel/s
 	// as the disconnecting client, informing them of their peer's leave
-	// WARN: just work in progress...
+	// WARN: just work in progress... Maybe there could be a way to not walk through
+	// all of the clients, but rather pinpoint the clients of the channel/s that
+	// the quitting client was connected to, and only walk those clients, in a more
+	// efficient manner?
+
+	// WARN: Make sure that if a fellow client shares more than one channel
+	// membership with the quitting client, they would not get this message from
+	// the server more than once!
+
 	for (std::unordered_map<int, t_IRC_Client>::iterator iterator = server.clients.begin();
 		!requested_shutdown && iterator != server.clients.end(); ++iterator)
 	{
 		if (client.fd == iterator->second.fd) // no need to send message to the disconnecting client
 			continue;
 
-		// append_client_has_quit_message(iterator->second.send_message_buffer);
-		// client.buffer += "?????"
-
+		// TODO: check if the user is on at least one shared channel with the client.
+		append_client_quit_msg(iterator->second.send_message_buffer, client);
 	}
 
 	// set the disconnect flag
