@@ -99,10 +99,6 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 			// send ERROR ?
 
 
-			// WARN: for now, this flag update is fine. But when we introduce the
-			// queue system for sending replies to the client: Shouldn't the client
-			// FIRST receive the error messages, and only then be disconnected?
-
 			// set disconnect flag
 			client.state |= t_IRC_Client::DISCONNECT;
 		}

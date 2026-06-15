@@ -35,9 +35,6 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 				build_ERR_INPUTTOOLONG(client);
 			} catch (const std::exception &e) {
 				log_error(e.what(), __FILE__, __LINE__, 1);
-				// WARN: Append error message to be sent to the client/ to all clients,
-				// and make sure that they receive it before shutting down?
-				// Or is it overkill in this case?
 				requested_shutdown = 1;
 				return;
 			}
@@ -51,9 +48,6 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 				dispatch_client_command(client, server);
 			} catch (const std::exception &e) {
 				log_error(e.what(), __FILE__, __LINE__, 1);
-				// WARN: Append error message to be sent to the client/ to all clients,
-				// and make sure that they receive it before shutting down?
-				// Or is it overkill in this case?
 				requested_shutdown = 1;
 				return;
 			}
@@ -66,9 +60,6 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 			build_ERR_INPUTTOOLONG(client);
 		} catch (const std::exception &e) {
 			log_error(e.what(), __FILE__, __LINE__, 1);
-			// WARN: Append error message to be sent to the client/ to all clients,
-			// and make sure that they receive it before shutting down?
-			// Or is it overkill in this case?
 			requested_shutdown = 1;
 			return;
 

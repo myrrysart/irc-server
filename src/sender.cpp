@@ -71,8 +71,6 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 				update_send_buffer_and_offset(send_buf, client.send_offset, ret);
 			} catch (const std::exception &e) {
 				log_error(e.what(), __FILE__, __LINE__, 1);
-				// WARN: Should an error message be sent to all clients? This exception
-				// is most probably an std::bad_alloc, which is fatal...
 				requested_shutdown = 1;
 				return;
 			}
