@@ -6,6 +6,7 @@
 
 #include <cstring> // for std::strncmp()
 #include <string_view>
+#include <unordered_map>
 
 // WARN: To avoid bad invalid memory access surprises: Once PRIVMSG is implemented,
 // Test something like: "PRIVMSG :some message" followed by "PRIVMSS :whatever".
@@ -85,6 +86,10 @@ void	execute_QUIT_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// membership with the quitting client, they would not get this message from
 	// the server more than once!
 
+	// WARN: Just a placeholder: This would send a notification to ALL clients
+	// but the quitting client, about that client's leave. It should only be
+	// done to all fellow channelers - as part of the IRC protocol - but channel
+	// system is not yet in place.
 	for (std::unordered_map<int, t_IRC_Client>::iterator iterator = server.clients.begin();
 		!requested_shutdown && iterator != server.clients.end(); ++iterator)
 	{
