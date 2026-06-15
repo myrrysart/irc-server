@@ -10,6 +10,7 @@
 #include <exception>
 #include <string> // for std::string's append()
 #include <algorithm> // for std::min()
+#include <cctype> // for std::isdigit()
 
 // TODO: Add the time checks!
 // Perhaps add some timer machine to t_IRC_Client (per client);
@@ -318,7 +319,7 @@ bool	is_nickname_valid(const std::string_view nickname)
 	if (len)
 	{
 		char	c = nickname[0];
-		if (std::isdigit(c) || c == '#' || c == ':')
+		if (std::isdigit(static_cast<unsigned char>(c)) || c == '#' || c == ':')
 			return false;
 	}
 	if (len > 1 && nickname.compare(0, 2, "&#") == 0)

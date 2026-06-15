@@ -59,12 +59,12 @@ typedef struct	s_IRC_Channel
 	std::string					topic;
 	std::string					key;
 	int							user_limit;
-	t_IRC_ChannelMembership*	members;
+	t_IRC_ChannelMembership		members[MAX_CLIENTS]; // another option is to have a pointer
 	// FIXME: ADD AN INT ARRAY FD of size clients_max macro - and a length. All fds connected to that channel will be in the array, and we update it as we go.
-	int							member_fds[MAX_CLIENTS]; // WARN: can we remove some of the other members from this struct, now that we have this array?
+	int							member_fds[MAX_CLIENTS]; // WARN: can we remove some of the other elements from this struct, now that we have this array?
 	int							member_count;
 }								t_IRC_Channel;
-static_assert(sizeof(t_IRC_Channel) <= 10*CACHE_LINE_SIZE," t_IRC_Channel did not use 10 cache line" );
+static_assert(sizeof(t_IRC_Channel) <= 42*CACHE_LINE_SIZE," t_IRC_Channel did not use 42 cache line" );
 
 typedef struct	s_parser
 {
@@ -97,10 +97,7 @@ typedef struct	s_parser
 	* we could have as many as 254-255 arguments. */
 	static constexpr size_t		buf_size = 512;
 	static constexpr size_t		max_params = 255;
-	// WARN: adapt to longest available Command in 'commands'. Currently it is: "PRIVMSG" -- or delete this entirely if we are allowed to keep the lambda logic following this!
-	// static constexpr size_t		longest_cmd_size = sizeof("PRIVMSG") - 1; delete this if the following is okay.
 
-	// FIXME: Are we allowed to have this lambda logic in the header?
 	// Computes the longest available command's length at compile time, so that
 	// future changes in the command list would adjust this value automatically.
 	static constexpr size_t		longest_cmd_size = [] {
