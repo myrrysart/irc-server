@@ -35,9 +35,9 @@ int	parse_message(const size_t pos, const std::string &buf, t_IRC_Client &client
 	if (pos >= 1 && buf[pos - 1] == '\r')
 		has_carriage_return = 1;
 
-	// Move index i to the first character which is not a space
+	// Move index i to the first character which is not a space.
 	// This allows identifying a string containing only spaces and ignore it,
-	// but also to skip leading spaces and parse the command appropriately.
+	// and also skipping leading spaces and treating the first token appropriately.
 	size_t	i = 0;
 	while (buf[i] == ' ' && i < pos)
 		++i;
