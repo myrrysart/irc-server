@@ -26,9 +26,8 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 {
 	std::string	&buf = client.received_message_buffer;
-	size_t		pos = buf.find('\n');
-
-	if (pos != std::string::npos)
+	size_t		pos = std::string::npos;
+	while ((pos = buf.find('\n')) != std::string::npos)
 	{
 		if (parse_message(pos, buf, client) == -1)
 		{
@@ -60,9 +59,8 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 			}
 		}
 		buf.erase(0, pos + 1);
-
 	}
-	else if (buf.length() >= t_parser::buf_size) // WARN: maybe this should be 'if', not 'else if'; but this might be good enough, since the buffer is cleared up from long input
+	if (buf.length() >= t_parser::buf_size)
 	{
 		try {
 			build_ERR_INPUTTOOLONG(client);
