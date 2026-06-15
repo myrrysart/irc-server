@@ -4,8 +4,8 @@
 #include <string>
 #include <string_view>
 
-static void	append_common_reply_prefix(std::string &buffer, const char *numeric,
-                const std::string_view nick);
+void	append_common_reply_prefix(std::string &buffer,
+            const std::string_view numeric, const std::string_view nick);
 
 // NOTE: From the modern documentation, regarding numeric replies:
 // "Most messages sent from a client to a server generates a reply of some sort.
@@ -227,11 +227,11 @@ void	build_ERR_PASSWDMISMATCH(t_IRC_Client &client)
 	buffer += ":Password incorrect\r\n";
 }
 
-void	append_common_reply_prefix(std::string &buffer, const char *numeric,
-            const std::string_view nick)
+void	append_common_reply_prefix(std::string &buffer,
+            const std::string_view numeric, const std::string_view nick)
 {
 	buffer += ':';
-	buffer += (t_IRC_Server::name);
+	buffer += t_IRC_Server::name;
 	buffer += ' ';
 	buffer += numeric;
 	buffer += ' ';
