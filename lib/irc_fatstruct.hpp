@@ -8,7 +8,6 @@
 # include <vector>
 # include <new> // for hardware_constructive_interference_size
 # include <string_view>
-# include <cctype> // for std::isalnum()
 
 # define MAX_CLIENTS 128
 # define MAX_CHANNELS 64
