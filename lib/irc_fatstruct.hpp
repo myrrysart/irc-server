@@ -12,6 +12,7 @@
 # define MAX_CLIENTS 128
 # define MAX_CHANNELS 64
 # define MAX_PENDING_CONNECTIONS 32
+# define MAX_CHANNELS_PER_CLIENT 32
 
 #ifdef __cpp_lib_hardware_interference_size
 # define CACHE_LINE_SIZE std::hardware_constructive_interference_size
@@ -61,7 +62,6 @@ typedef struct	s_IRC_Channel
 	int							user_limit;
 	t_IRC_ChannelMembership		members[MAX_CLIENTS]; // another option is to have a pointer
 	// FIXME: ADD AN INT ARRAY FD of size clients_max macro - and a length. All fds connected to that channel will be in the array, and we update it as we go.
-	int							member_fds[MAX_CLIENTS]; // WARN: can we remove some of the other elements from this struct, now that we have this array?
 	int							member_count;
 }								t_IRC_Channel;
 static_assert(sizeof(t_IRC_Channel) <= 42*CACHE_LINE_SIZE," t_IRC_Channel did not use 42 cache line" );
@@ -176,28 +176,26 @@ typedef struct	s_IRC_Client
 	std::string			send_message_buffer;
 	size_t				send_offset;
 	t_parser			parser;
-	t_IRC_Channel*		joined_channels;
+	t_IRC_Channel*		joined_channels[MAX_CHANNELS_PER_CLIENT];
 	int					joined_count;
 }						t_IRC_Client;
-static_assert(sizeof(t_IRC_Client) <= 68*CACHE_LINE_SIZE," t_IRC_Client did not use 68 cache line" );
+static_assert(sizeof(t_IRC_Client) <= 128*CACHE_LINE_SIZE," t_IRC_Client did not use 128 cache line" );
 
 // IRC_Server state bitmask definitions
 // NOTE: state is essentially an error code catcher for the IRC_Server. BIT(0) means server is running smoothly, anything else is an error case.
 // NOTE: 'static constexpr' within a struct does not increase struct's memory occupation: they are literals known at compile time.
 typedef struct	s_IRC_Server
 {
-	t_bmask									state; //Not in use in this version
-	static constexpr const char				*name = "humble_server";
-	static constexpr int					poll_timeout = 1000;
-	static constexpr const char				*version = "0.042"; // remember to update when upgrading ;-)
-	int										listen_fd;
-	int										port;
-	std::string_view						password;
-	std::unordered_map<int, t_IRC_Client>	clients;
-	t_IRC_Channel							channels[MAX_CHANNELS];
-	int										channel_count;
-	std::vector<pollfd>						poll_fds;
-}											t_IRC_Server;
+	static constexpr const char						name[] = "humble_server";
+	static constexpr int							poll_timeout = 1000;
+	static constexpr const char						version[] = "0.042"; // remember to update when upgrading ;-)
+	int												listen_fd;
+	int												port;
+	std::string_view								password;
+	std::unordered_map<int, t_IRC_Client>			clients;
+	std::unordered_map<std::string, t_IRC_Channel>	channels;
+	std::vector<pollfd>								poll_fds;
+}													t_IRC_Server;
 
 /* Bit mask utils */
 bool	is_flag_set(const t_bmask state, const unsigned int mask);
