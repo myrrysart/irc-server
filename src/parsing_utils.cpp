@@ -50,9 +50,9 @@ size_t	skip_leading_spaces_and_check_for_empty_message(const std::string &buf,
 		++i;
 
 	/* returns true if the first message in the buffer is empty (i.e. containing only):
-	* • '\n'
-	* • "\r\n"
-	* • spaces culminating with '\n' or "\r\n" */
+	* • LF ('\n')
+	* • CRLF ("\r\n")
+	* • spaces culminating with LF or CRLF */
 	if (i == pos - has_carriage_return)
 		return (std::string::npos);
 
