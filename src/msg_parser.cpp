@@ -31,28 +31,19 @@ int	parse_message(const size_t pos, const std::string &buf, t_IRC_Client &client
 	}
 
 	// scan for carriage return (IRC message may end with '\n' or "\r\n")
-	bool	has_carriage_return = 0;
+	bool	has_cr = 0;
 	if (pos >= 1 && buf[pos - 1] == '\r')
-		has_carriage_return = 1;
+		has_cr = 1;
 
-	// Move index i to the first character which is not a space.
-	// This allows identifying a string containing only spaces and ignore it,
-	// and also skipping leading spaces and treating the first token appropriately.
-	size_t	i = 0;
-	while (buf[i] == ' ' && i < pos)
-		++i;
-
-	// Check whether client sent an empty message or a message containing only spaces.
-	// such a message is to be ignored (without sending any reply),
-	// according to the IRC protocol.
-	if (!pos || (pos == 1 && has_carriage_return) || (i == pos - has_carriage_return))
+	size_t i = skip_leading_spaces_and_check_for_empty_message(buf, pos, has_cr);
+	if (i == std::string::npos)
 	{
 		client.state |= t_IRC_Client::DISCARD_MSG;
 		return (0);
 	}
 
-	// Candidate message detected: send string_view for parsing.
-	tokenize_message(client, std::string_view{&buf[i], pos - i - has_carriage_return});
+	// Candidate message detected: send first message in buffer for tokenizing
+	tokenize_message(client, std::string_view{&buf[i], pos - i - has_cr});
 	return (0);
 }
 
