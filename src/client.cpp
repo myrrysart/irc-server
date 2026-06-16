@@ -33,21 +33,6 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 	{
 		if (buf[pos] == '\0') // a null-terminator was found in the message, unexpected
 		{
-			// WARN: just temporary:
-			std::cout << "Invalid IRC message, because null terminator was detected\n";
-			std::cout << "Buffer holds: \n\t<";
-
-			for (char c : buf ) {
-
-				if (c == '\0')
-					std::cout << "\\0";
-				else
-					std::cout << c;
-
-			}
-			std::cout << "\n\n";
-			// WARN: just temporary for debugging...
-
 			// handle the rest of the malformed message accordingly,
 			// silently ignoring the message up to the next newline
 			pos = buf.find('\n', pos);
