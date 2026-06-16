@@ -3,11 +3,28 @@
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
 #include "../lib/server.hpp"
+#include "../lib/channel.hpp"
 
 #include <cstring> // for std::strncmp()
 #include <string_view>
 #include <unordered_map>
 
+void	execute_PING_cmd(t_IRC_Client &client, t_IRC_Server &server)
+{
+	client.send_message_buffer += ":";
+	client.send_message_buffer += server.name;
+	client.send_message_buffer += " PONG ";
+	client.send_message_buffer += server.name;
+	client.send_message_buffer += " :";
+	client.send_message_buffer += server.name;
+	client.send_message_buffer += "\r\n";
+}
+
+void	execute_PONG_cmd(t_IRC_Client &client, t_IRC_Server &server)
+{
+	(void) server;
+	(void) client;
+}
 // WARN: To avoid bad invalid memory access surprises: Once PRIVMSG is implemented,
 // Test something like: "PRIVMSG :some message" followed by "PRIVMSS :whatever".
 
@@ -48,22 +65,22 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 		// TODO: Work in progress.
 		switch (i)
 		{
-			default: build_ERR_UNKNOWNCOMMAND(client); break;
-			case 0:  execute_PASS_cmd(client, server); break;
-			case 1:  execute_NICK_cmd(client, server); break;
-			case 2:  execute_USER_cmd(client);         break;
-			case 3:  execute_QUIT_cmd(client, server); break;
-			// case 4:  execute_JOIN_cmd(client);         break;
-			// case 5:  execute_PART_cmd(client);         break;
-			// case 6:  execute_PRIVMSG_cmd(client);      break;
-			// case 7:  execute_MODE_cmd(client);         break;
-			// case 8:  execute_KICK_cmd(client);         break;
-			// case 9:  execute_INVITE_cmd(client);       break;
-			// case 10: execute_TOPIC_cmd(client);        break;
-			// case 11: execute_PING_cmd(client);         break;
-			// case 12: execute_PONG_cmd(client);         break;
-			// case 13: execute_NAMES_cmd(client);        break;
-			// case 14: execute_LIST_cmd(client);         break;
+			default: build_ERR_UNKNOWNCOMMAND(client);		break;
+			case 0:  execute_PASS_cmd(client, server);		break;
+			case 1:  execute_NICK_cmd(client, server);		break;
+			case 2:  execute_USER_cmd(client);				break;
+			case 3:  execute_QUIT_cmd(client, server);		break;
+			case 4:  execute_JOIN_cmd(client, server);		break;
+			case 5:  execute_PART_cmd(client, server);		break;
+			case 6:  execute_PRIVMSG_cmd(client, server);	break;
+			case 7:  execute_MODE_cmd(client, server);		break;
+			case 8:  execute_KICK_cmd(client, server);		break;
+			case 9:  execute_INVITE_cmd(client, server);	break;
+			case 10: execute_TOPIC_cmd(client, server); 	break;
+			case 13: execute_NAMES_cmd(client, server); 	break;
+			case 14: execute_LIST_cmd(client, server);  	break;
+			case 11: execute_PING_cmd(client, server);		break;
+			case 12: execute_PONG_cmd(client, server);		break;
 		}
 	}
 
