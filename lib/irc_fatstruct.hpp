@@ -8,6 +8,7 @@
 # include <vector>
 # include <new> // for hardware_constructive_interference_size
 # include <string_view>
+# include <cctype> // for std::isalnum()
 
 # define MAX_CLIENTS 128
 # define MAX_CHANNELS 64
@@ -155,10 +156,10 @@ typedef struct	s_IRC_Client
 	// string_view into nick_whitelist's special symbol characters, allows to
 	// send those allowed symbols to clients, if they choose an erroneous nickname
 	static constexpr std::string_view	allowed_symbols_nick = [] {
-		size_t	cap = nick_whitelist.size();
 		size_t	i = 0;
 
-		while (i < cap && nick_whitelist[i] != '0')
+		while (i < nick_whitelist.size() &&
+				(nick_whitelist[i] < '0' || nick_whitelist[i] > '9'))
 			++i;
 
 		return (std::string_view{nick_whitelist.data(), i});
