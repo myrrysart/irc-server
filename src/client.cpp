@@ -50,15 +50,18 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 
 			// handle the rest of the malformed message accordingly,
 			// silently ignoring the message up to the next newline
-			pos = buf.find('\n');
+			pos = buf.find('\n', pos);
 			if (pos == std::string::npos)
 			{
 				client.state |= t_IRC_Client::DISCARD_MSG;
 				buf.clear();
+				return;
 			}
 			else
+			{
 				buf.erase(0, pos + 1);
-			return;
+				continue;
+			}
 		}
 
 		if (parse_message(pos, buf, client) == -1)
