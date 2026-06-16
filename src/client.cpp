@@ -24,6 +24,7 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 	return false;
 }
 
+// WARN: Add try-catch block/s to handle potential exceptions from std::string's clear() and erase()
 void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 {
 	std::string	&buf = client.received_message_buffer;
