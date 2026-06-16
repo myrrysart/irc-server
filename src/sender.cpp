@@ -49,9 +49,7 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 				}
 				else if (errno == EWOULDBLOCK)
 				{
-					// WARN: This check might be an issue, because of evaluation
-					// sheet bullet point that could be misinterpreted...
-					// Discuss this with the team on Thursday.
+					// WARN: Discuss this with teammates on the next meeting.
 
 					// identical to EAGAIN.
 					// This occurs for non-blocking sockets, "if space is not available

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <exception>
+#include <string_view>
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
 #include "../lib/parser.hpp"
@@ -27,8 +28,39 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 {
 	std::string	&buf = client.received_message_buffer;
 	size_t		pos = std::string::npos;
-	while ((pos = buf.find('\n')) != std::string::npos)
+
+	while((pos = buf.find_first_of(std::string_view{"\n\0", 2})) != std::string::npos)
 	{
+		if (buf[pos] == '\0') // a null-terminator was found in the message, unexpected
+		{
+			// WARN: just temporary:
+			std::cout << "Invalid IRC message, because null terminator was detected\n";
+			std::cout << "Buffer holds: \n\t<";
+
+			for (char c : buf ) {
+
+				if (c == '\0')
+					std::cout << "\\0";
+				else
+					std::cout << c;
+
+			}
+			std::cout << "\n\n";
+			// WARN: just temporary for debugging...
+
+			// handle the rest of the malformed message accordingly,
+			// silently ignoring the message up to the next newline
+			pos = buf.find('\n');
+			if (pos == std::string::npos)
+			{
+				client.state |= t_IRC_Client::DISCARD_MSG;
+				buf.clear();
+			}
+			else
+				buf.erase(0, pos + 1);
+			return;
+		}
+
 		if (parse_message(pos, buf, client) == -1)
 		{
 			try {

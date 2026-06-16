@@ -3,6 +3,7 @@
 // with 'nc'?), and inputting something and then ctrl + d twice in a row just
 // completely seems to break the server? This needs more testing. Is it SIGPIPE?
 
+// FIXME: delete this warning if you end up handling the null-terminators here.
 // WARN: Should the parser check for null-terminators - that are not 'supposed'
 // to be sent by an IRC client, but that may still be sent, as part of an attack
 // for example?
