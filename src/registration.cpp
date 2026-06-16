@@ -325,9 +325,7 @@ bool	is_nickname_valid(const std::string_view nickname)
 	if (len > 1 && nickname.compare(0, 2, "&#") == 0)
 		return false;
 
-	if (nickname.find_first_not_of("[]{}\\|#&:$%<>_-1234567890"
-			"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-			!= std::string_view::npos)
+	if (nickname.find_first_not_of(t_IRC_Client::nick_whitelist) != std::string_view::npos)
 		return false;
 	return true;
 }

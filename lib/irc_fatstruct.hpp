@@ -143,6 +143,27 @@ typedef struct	s_IRC_Client
 	// erasing string's beginning may require moving its tail to the front.
 	static constexpr size_t	offset_threshold = 8192;
 
+	// whitelist of allowed characters for clients' nickname
+	// Updating the allowed symbols in this array would carry over whole program.
+	static constexpr const std::string_view	nick_whitelist = {
+		"[]{}\\|#&:$%<>_-" // allowed symbols: can be modified safely.
+		"0123456789" // digits
+		"abcdefghijklmnopqrstuvwxyz" // lowercase alphabet
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ" // uppercase alphabet
+	};
+
+	// string_view into nick_whitelist's special symbol characters, allows to
+	// send those allowed symbols to clients, if they choose an erroneous nickname
+	static constexpr std::string_view	allowed_symbols_nick = [] {
+		size_t	cap = nick_whitelist.size();
+		size_t	i = 0;
+
+		while (i < cap && nick_whitelist[i] != '0')
+			++i;
+
+		return (std::string_view{nick_whitelist.data(), i});
+	}();
+
 	t_bmask				state;
 	struct sockaddr_in	addr;  //all the adress data. We'll trim it down as needed.
 	int					fd;
@@ -166,9 +187,9 @@ static_assert(sizeof(t_IRC_Client) <= 68*CACHE_LINE_SIZE," t_IRC_Client did not 
 typedef struct	s_IRC_Server
 {
 	t_bmask									state; //Not in use in this version
-	static constexpr const char				name[] = "humble_server";
+	static constexpr const char				*name = "humble_server";
 	static constexpr int					poll_timeout = 1000;
-	static constexpr const char				version[] = "0.042"; // remember to update when upgrading ;-)
+	static constexpr const char				*version = "0.042"; // remember to update when upgrading ;-)
 	int										listen_fd;
 	int										port;
 	std::string_view						password;

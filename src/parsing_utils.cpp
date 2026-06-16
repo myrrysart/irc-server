@@ -41,7 +41,7 @@ char	to_uppercase(char c)
 }
 
 size_t	skip_leading_spaces_and_check_for_empty_message(const std::string &buf,
-            const size_t pos, const bool has_carriage_return)
+            const size_t pos, const bool has_cr)
 {
 	size_t	i = 0;
 
@@ -53,7 +53,7 @@ size_t	skip_leading_spaces_and_check_for_empty_message(const std::string &buf,
 	* • LF ('\n')
 	* • CRLF ("\r\n")
 	* • spaces culminating with LF or CRLF */
-	if (i == pos - has_carriage_return)
+	if (i == pos - has_cr)
 		return (std::string::npos);
 
 	return i;

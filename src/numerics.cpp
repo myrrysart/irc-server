@@ -137,14 +137,15 @@ void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,
 {
 	// WARN: is the last parameter too long? Check IRC documentation regarding
 	// length of server-client messages.
-	// WARN: update all allowed symbols if they change!
 
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "432", client.nick);
 	buffer += new_nick;
 	buffer += " :Erroneous nickname. Accepted characters: alphabetical "
-		"letters, digits, and the following symbols: \"[]{}\\|#&:$%<>_-\". "
+		"letters, digits, and the following symbols: \"";
+	buffer += t_IRC_Client::allowed_symbols_nick;
+	buffer += "\". "
 		"First characters may not be: a digit, '#', ':' or \"&#\". "
 		"Only the first 30 characters will be considered.\r\n";
 }
