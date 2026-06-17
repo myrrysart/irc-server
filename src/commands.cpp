@@ -72,15 +72,15 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 			case 3:  execute_QUIT_cmd(client, server);		break;
 			case 4:  execute_JOIN_cmd(client, server);		break;
 			case 5:  execute_PART_cmd(client, server);		break;
-			case 6:  execute_PRIVMSG_cmd(client, server);	break;
-			case 7:  execute_MODE_cmd(client, server);		break;
-			case 8:  execute_KICK_cmd(client, server);		break;
-			case 9:  execute_INVITE_cmd(client, server);	break;
-			case 10: execute_TOPIC_cmd(client, server); 	break;
-			case 13: execute_NAMES_cmd(client, server); 	break;
-			case 14: execute_LIST_cmd(client, server);  	break;
-			case 11: execute_PING_cmd(client, server);		break;
-			case 12: execute_PONG_cmd(client, server);		break;
+			// case 6:  execute_PRIVMSG_cmd(client, server);	break;
+			// case 7:  execute_MODE_cmd(client, server);		break;
+			// case 8:  execute_KICK_cmd(client, server);		break;
+			// case 9:  execute_INVITE_cmd(client, server);	break;
+			// case 10: execute_TOPIC_cmd(client, server); 	break;
+			// case 13: execute_NAMES_cmd(client, server); 	break;
+			// case 14: execute_LIST_cmd(client, server);  	break;
+			// case 11: execute_PING_cmd(client, server);		break;
+			// case 12: execute_PONG_cmd(client, server);		break;
 		}
 	}
 
