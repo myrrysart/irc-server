@@ -7,6 +7,9 @@ void	create_listener(t_IRC_Server &server)
 	if (server.listen_fd < 0)
 		fatal_server_error("socket", -1);
 
+	if (fcntl(server.listen_fd, F_SETFL, O_NONBLOCK) < 0)
+		fatal_server_error("fcntl", server.listen_fd);
+
 	int	opt = 1;
 	if (setsockopt(server.listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		fatal_server_error("setsockopt", server.listen_fd);

@@ -3,6 +3,7 @@
 
 #include <cerrno>
 #include <csignal>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/poll.h>
 #include <arpa/inet.h>

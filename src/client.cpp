@@ -13,8 +13,14 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 	t_IRC_Client	&client = server.clients[fd]; // reference to the observed client
 
 	ssize_t	received = recv(fd, buf, sizeof(buf), 0);
-	if (received <= 0)
-		return true;
+	if (received == 0)
+		return true; // EOF -> disconnect
+	if (received < 0)
+	{
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return false; // no data ready -> try later
+		return true; // error -> disconnect
+	}
 
 	if (is_flag_set(client.state, t_IRC_Client::DISCARD_MSG))
 		handle_message_to_discard(client, buf, received);
