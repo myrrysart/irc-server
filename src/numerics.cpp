@@ -4,8 +4,8 @@
 #include <string>
 #include <string_view>
 
-static void	append_common_reply_prefix(std::string &buffer, const char *numeric,
-                const std::string_view nick);
+void	append_common_reply_prefix(std::string &buffer,
+            const std::string_view numeric, const std::string_view nick);
 
 // NOTE: From the modern documentation, regarding numeric replies:
 // "Most messages sent from a client to a server generates a reply of some sort.
@@ -137,14 +137,15 @@ void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,
 {
 	// WARN: is the last parameter too long? Check IRC documentation regarding
 	// length of server-client messages.
-	// WARN: update all allowed symbols if they change!
 
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "432", client.nick);
 	buffer += new_nick;
 	buffer += " :Erroneous nickname. Accepted characters: alphabetical "
-		"letters, digits, and the following symbols: \"[]{}\\|#&:$%<>_-\". "
+		"letters, digits, and the following symbols: \"";
+	buffer += t_IRC_Client::allowed_symbols_nick;
+	buffer += "\". "
 		"First characters may not be: a digit, '#', ':' or \"&#\". "
 		"Only the first 30 characters will be considered.\r\n";
 }
@@ -227,11 +228,11 @@ void	build_ERR_PASSWDMISMATCH(t_IRC_Client &client)
 	buffer += ":Password incorrect\r\n";
 }
 
-void	append_common_reply_prefix(std::string &buffer, const char *numeric,
-            const std::string_view nick)
+void	append_common_reply_prefix(std::string &buffer,
+            const std::string_view numeric, const std::string_view nick)
 {
 	buffer += ':';
-	buffer += (t_IRC_Server::name);
+	buffer += t_IRC_Server::name;
 	buffer += ' ';
 	buffer += numeric;
 	buffer += ' ';

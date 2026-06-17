@@ -123,7 +123,7 @@ void	server_loop(t_IRC_Server &server)
 			}
 		}
 
-		// poll loop
+		// pollin event loop
 		for (size_t i = 0; i < server.poll_fds.size(); )
 		{
 			if (requested_shutdown)

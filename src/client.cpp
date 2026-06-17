@@ -1,5 +1,6 @@
 #include <iostream>
 #include <exception>
+#include <string_view>
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
 #include "../lib/parser.hpp"
@@ -23,22 +24,38 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 	return false;
 }
 
+// WARN: Add try-catch block/s to handle potential exceptions from std::string's clear() and erase()
 void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 {
 	std::string	&buf = client.received_message_buffer;
-	size_t		pos = buf.find('\n');
+	size_t		pos = std::string::npos;
 
-	if (pos != std::string::npos)
+	while((pos = buf.find_first_of(std::string_view{"\n\0", 2})) != std::string::npos)
 	{
+		if (buf[pos] == '\0') // a null-terminator was found in the message, unexpected
+		{
+			// handle the rest of the malformed message accordingly,
+			// silently ignoring the message up to the next newline
+			pos = buf.find('\n', pos);
+			if (pos == std::string::npos)
+			{
+				client.state |= t_IRC_Client::DISCARD_MSG;
+				buf.clear();
+				return;
+			}
+			else
+			{
+				buf.erase(0, pos + 1);
+				continue;
+			}
+		}
+
 		if (parse_message(pos, buf, client) == -1)
 		{
 			try {
 				build_ERR_INPUTTOOLONG(client);
 			} catch (const std::exception &e) {
 				log_error(e.what(), __FILE__, __LINE__, 1);
-				// WARN: Append error message to be sent to the client/ to all clients,
-				// and make sure that they receive it before shutting down?
-				// Or is it overkill in this case?
 				requested_shutdown = 1;
 				return;
 			}
@@ -52,25 +69,18 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 				dispatch_client_command(client, server);
 			} catch (const std::exception &e) {
 				log_error(e.what(), __FILE__, __LINE__, 1);
-				// WARN: Append error message to be sent to the client/ to all clients,
-				// and make sure that they receive it before shutting down?
-				// Or is it overkill in this case?
 				requested_shutdown = 1;
 				return;
 			}
 		}
 		buf.erase(0, pos + 1);
-
 	}
-	else if (buf.length() >= t_parser::buf_size) // WARN: maybe this should be 'if', not 'else if'; but this might be good enough, since the buffer is cleared up from long input
+	if (buf.length() >= t_parser::buf_size)
 	{
 		try {
 			build_ERR_INPUTTOOLONG(client);
 		} catch (const std::exception &e) {
 			log_error(e.what(), __FILE__, __LINE__, 1);
-			// WARN: Append error message to be sent to the client/ to all clients,
-			// and make sure that they receive it before shutting down?
-			// Or is it overkill in this case?
 			requested_shutdown = 1;
 			return;
 

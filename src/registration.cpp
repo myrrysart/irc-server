@@ -10,6 +10,7 @@
 #include <exception>
 #include <string> // for std::string's append()
 #include <algorithm> // for std::min()
+#include <cctype> // for std::isdigit()
 
 // TODO: Add the time checks!
 // Perhaps add some timer machine to t_IRC_Client (per client);
@@ -62,7 +63,7 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 		case 0: execute_PASS_cmd(client, server); break;
 		case 1: execute_NICK_cmd(client, server); break;
 		case 2: execute_USER_cmd(client);         break;
-		case 3: execute_QUIT_cmd(client);         break;
+		case 3: execute_QUIT_cmd(client, server); break;
 	}
 
 	if (has_provided_user_and_nick_names(client.state))
@@ -98,10 +99,6 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 			// TODO:
 			// send ERROR ?
 
-
-			// WARN: for now, this flag update is fine. But when we introduce the
-			// queue system for sending replies to the client: Shouldn't the client
-			// FIRST receive the error messages, and only then be disconnected?
 
 			// set disconnect flag
 			client.state |= t_IRC_Client::DISCONNECT;
@@ -322,15 +319,13 @@ bool	is_nickname_valid(const std::string_view nickname)
 	if (len)
 	{
 		char	c = nickname[0];
-		if (std::isdigit(c) || c == '#' || c == ':')
+		if (std::isdigit(static_cast<unsigned char>(c)) || c == '#' || c == ':')
 			return false;
 	}
 	if (len > 1 && nickname.compare(0, 2, "&#") == 0)
 		return false;
 
-	if (nickname.find_first_not_of("[]{}\\|#&:$%<>_-1234567890"
-			"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-			!= std::string_view::npos)
+	if (nickname.find_first_not_of(t_IRC_Client::nick_whitelist) != std::string_view::npos)
 		return false;
 	return true;
 }

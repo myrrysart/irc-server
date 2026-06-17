@@ -59,16 +59,16 @@ typedef struct	s_IRC_Channel
 	std::string					topic;
 	std::string					key;
 	int							user_limit;
-	t_IRC_ChannelMembership*	members;
+	t_IRC_ChannelMembership		members[MAX_CLIENTS]; // another option is to have a pointer
 	// FIXME: ADD AN INT ARRAY FD of size clients_max macro - and a length. All fds connected to that channel will be in the array, and we update it as we go.
-	int							member_fds[MAX_CLIENTS]; // WARN: can we remove some of the other members from this struct, now that we have this array?
+	int							member_fds[MAX_CLIENTS]; // WARN: can we remove some of the other elements from this struct, now that we have this array?
 	int							member_count;
 }								t_IRC_Channel;
-static_assert(sizeof(t_IRC_Channel) <= 10*CACHE_LINE_SIZE," t_IRC_Channel did not use 10 cache line" );
+static_assert(sizeof(t_IRC_Channel) <= 42*CACHE_LINE_SIZE," t_IRC_Channel did not use 42 cache line" );
 
 typedef struct	s_parser
 {
-	static constexpr const char	*commands[] = {
+	static constexpr std::string_view	commands[] = {
 		"PASS",
 		"NICK",
 		"USER",
@@ -88,12 +88,7 @@ typedef struct	s_parser
 	// NOTE: do not implement OPER: we need channel operators, not IRC operators.
 	// WARN: do we need to implement CAP? Is that what allows a user to become operator?
 
-	static constexpr size_t		n_valid_cmds = sizeof(commands) / sizeof(char *);
-	/* eventual PREFIX implementations */
-	// t_bmask			state;
-	//std::string_view	tags; // eventual tokens
-	//std::string_view	source; // eventual tokens
-	// WARN: is this used?
+	static constexpr size_t		n_valid_cmds = sizeof(commands) / sizeof(std::string_view);
 
 	/* NOTE: max_params is currently set to 255, because the longest message the
 	* server accepts is 512 bytes long, the last of which is either '\n' or "\r\n".
@@ -102,8 +97,18 @@ typedef struct	s_parser
 	* we could have as many as 254-255 arguments. */
 	static constexpr size_t		buf_size = 512;
 	static constexpr size_t		max_params = 255;
-	static constexpr size_t		longest_cmd_size = sizeof("PRIVMSG") - 1;
-	// WARN: adapt to longest available Command in 'commands'. Currently it is: "PRIVMSG"
+
+	// Computes the longest available command's length at compile time, so that
+	// future changes in the command list would adjust this value automatically.
+	static constexpr size_t		longest_cmd_size = [] {
+		size_t len = 0;
+		for (size_t i = 0; i < n_valid_cmds; ++i)
+		{
+			if (len < commands[i].size())
+				len = commands[i].size();
+		}
+		return len;
+	}();
 
 	size_t				n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
 	std::string_view	verb;
@@ -134,6 +139,31 @@ typedef struct	s_IRC_Client
 	// "If <nickname> is longer than the server allows (...), it is silently truncated"
 	static constexpr size_t	max_nicklen = 30;
 
+	// Allows reducing calls to std::string.erase() for the output buffer, since
+	// erasing string's beginning may require moving its tail to the front.
+	static constexpr size_t	offset_threshold = 8192;
+
+	// whitelist of allowed characters for clients' nickname
+	// Updating the allowed symbols in this array would carry over whole program.
+	static constexpr const std::string_view	nick_whitelist = {
+		"[]{}\\|#&:$%<>_-" // allowed symbols: can be modified safely.
+		"0123456789" // digits
+		"abcdefghijklmnopqrstuvwxyz" // lowercase alphabet
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ" // uppercase alphabet
+	};
+
+	// string_view into nick_whitelist's special symbol characters, allows to
+	// send those allowed symbols to clients, if they choose an erroneous nickname
+	static constexpr std::string_view	allowed_symbols_nick = [] {
+		size_t	i = 0;
+
+		while (i < nick_whitelist.size() &&
+				(nick_whitelist[i] < '0' || nick_whitelist[i] > '9'))
+			++i;
+
+		return (std::string_view{nick_whitelist.data(), i});
+	}();
+
 	t_bmask				state;
 	struct sockaddr_in	addr;  //all the adress data. We'll trim it down as needed.
 	int					fd;
@@ -141,9 +171,10 @@ typedef struct	s_IRC_Client
 	char				nick_buf[max_nicklen]; // not nullterminated, use 'nick' instead
 	std::string			username;
 	std::string			realname;
-	char				hostname[INET_ADDRSTRLEN];
+	char				hostname[INET_ADDRSTRLEN]; // This array is null terminated when initialized by inet_ntop(). Change macro to 'INET6_ADDRSTRLEN' if server ever switches to TCP6 ('AF_INET6').
 	std::string			received_message_buffer;
 	std::string			send_message_buffer;
+	size_t				send_offset;
 	t_parser			parser;
 	t_IRC_Channel*		joined_channels;
 	int					joined_count;
@@ -156,9 +187,9 @@ static_assert(sizeof(t_IRC_Client) <= 68*CACHE_LINE_SIZE," t_IRC_Client did not 
 typedef struct	s_IRC_Server
 {
 	t_bmask									state; //Not in use in this version
-	static constexpr const char				name[] = "humble_server";
+	static constexpr const char				*name = "humble_server";
 	static constexpr int					poll_timeout = 1000;
-	static constexpr const char				version[] = "0.042"; // remember to update when upgrading ;-)
+	static constexpr const char				*version = "0.042"; // remember to update when upgrading ;-)
 	int										listen_fd;
 	int										port;
 	std::string_view						password;

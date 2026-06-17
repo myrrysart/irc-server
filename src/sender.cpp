@@ -1,89 +1,108 @@
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
 
-#include <sys/socket.h>
-#include <unistd.h> // for close()
-#include <unordered_map>
-#include <vector> // for std::erase_if()
+#include <sys/socket.h> // for send()
+#include <vector> // for the poll_fds vector
 #include <string>
 #include <cstring> // for std::strerror()
 #include <cerrno>
-#include <iostream>
+#include <exception>
 
-static void	disconnect_client_during_iterator_walk(t_IRC_Server &server, int fd,
-                std::unordered_map<int, t_IRC_Client>::iterator &iterator);
+static void	update_send_buffer_and_offset(std::string &send_buf, size_t &offset,
+                const size_t sent_bytes);
 
 void	send_messages_to_all_clients(t_IRC_Server &server)
 {
-	ssize_t	ret;
-
-	for (std::unordered_map<int, t_IRC_Client>::iterator iterator = server.clients.begin();
-		iterator != server.clients.end(); )
+	for (size_t i = 0; i < server.poll_fds.size(); )
 	{
-		if (requested_shutdown)
-			return;
-
-		t_IRC_Client	&client = iterator->second;
-		std::string		&send_buf = client.send_message_buffer;
-		if (send_buf.empty()) // no bytes to send to this client
+		if (server.listen_fd == server.poll_fds[i].fd)
 		{
-			if (!is_flag_set(client.state, t_IRC_Client::DISCONNECT))
-				++iterator;
-			else
-				disconnect_client_during_iterator_walk(server, client.fd, iterator);
+			++i;
 			continue;
 		}
-		ret = send(client.fd, send_buf.c_str(), send_buf.size(), 0);
-		if (ret == -1)
+		t_IRC_Client	&client = server.clients[server.poll_fds[i].fd];
+		std::string		&send_buf = client.send_message_buffer;
+
+		if (client.send_offset >= send_buf.size()) // no bytes to send to this client
 		{
-			log_error(std::strerror(errno), __FILE__, __LINE__, 0);
-			if (errno == EPIPE) // WARN: for this to work, signal handler should ignore SIGPIPE, or the sockets should use some flag for it
-			{
-				// FIXME: SIGPIPE is not being ignored right now, so if a SIGPIPE
-				// occurs during send(), the program would terminate and would
-				// not be able to check the return value of send().
-				// SIGPIPE is a signal triggered by writing to a broken pipe/socket
-				// if that signal is ignored (either by the global signal handler
-				// or by some socket flags), the kernel instead reports the error via:
-				// send() → -1
-				// errno = EPIPE
-				disconnect_client_during_iterator_walk(server, client.fd, iterator);
-				continue;
-			}
+			if (is_flag_set(client.state, t_IRC_Client::DISCONNECT))
+				disconnect_client(server, client.fd);
 			else
+				++i;
+			continue;
+		}
+		if (is_flag_set(server.poll_fds[i].revents, POLLOUT)) // check whether the fd is available for writing.
+		{
+			ssize_t	ret = send(client.fd, send_buf.c_str() + client.send_offset,
+				 send_buf.size() - client.send_offset, MSG_NOSIGNAL);
+			if (ret == -1)
 			{
+				if (errno == EPIPE)
+				{
+					/* The MSG_NOSIGNAL flag tells send() to avoid writing to
+					 * the socket if it is broken - which would trigger SIGPIPE
+					 * and, if that single is not handled, terminate the program.
+					 * In that case, send() returns -1 and sets errno to EPIPE */
+					log_error(std::strerror(errno), __FILE__, __LINE__, 0);
+					disconnect_client(server, client.fd);
+					continue;
+				}
+				else if (errno == EWOULDBLOCK)
+				{
+					// WARN: Discuss this with teammates on the next meeting.
+
+					// identical to EAGAIN.
+					// This occurs for non-blocking sockets, "if space is not available
+					// at the sending socket to hold the message to be transmitted",
+					// (from 'man 3 send')
+					++i;
+					continue;
+				}
+				else
+				{
+					log_error(std::strerror(errno), __FILE__, __LINE__, 0);
+					requested_shutdown = 1;
+					return;
+				}
+			}
+			try {
+				update_send_buffer_and_offset(send_buf, client.send_offset, ret);
+			} catch (const std::exception &e) {
+				log_error(e.what(), __FILE__, __LINE__, 1);
 				requested_shutdown = 1;
 				return;
 			}
 		}
-		send_buf.erase(0, ret);
+		if (client.send_offset < send_buf.size()) // indicate that we need to write to the client
+			server.poll_fds[i].events |= POLLOUT;
+		else
+			server.poll_fds[i].events &= ~POLLOUT;
 
-		if (is_flag_set(client.state, t_IRC_Client::DISCONNECT) && send_buf.empty())
+		if (is_flag_set(client.state, t_IRC_Client::DISCONNECT)
+			&& client.send_offset >= send_buf.size())
 		{
-			disconnect_client_during_iterator_walk(server, client.fd, iterator);
+			disconnect_client(server, client.fd);
 			continue;
 		}
-
-		++iterator;
+		++i;
 	}
 }
 
-// WARN: Should check if this function is working as intended...
-static void	disconnect_client_during_iterator_walk(t_IRC_Server &server, int fd,
-                std::unordered_map<int, t_IRC_Client>::iterator &iterator)
+// std::string's erase() and clear() may throw std::bad_alloc
+static void	update_send_buffer_and_offset(std::string &send_buf, size_t &offset,
+                const size_t sent_bytes)
 {
-	// WARN: handle close() failure?
-	close(fd);
+	size_t	buf_size = send_buf.size();
 
-	// erases the client object from the unordered_map, but returns and assigns
-	// the next valid iterator for the map
-	iterator = server.clients.erase(iterator);
-
-	// cleans up the corresponding poll_fd key in the vector
-	std::erase_if(server.poll_fds, [fd](const pollfd& pfd){ return pfd.fd == fd; });
-
-	std::cout
-		<< "Client disconnected.\n"
-		"total number of clients: " << server.clients.size()
-		<< std::endl;
+	offset += sent_bytes;
+	if (offset >= buf_size)
+	{
+		send_buf.clear();
+		offset = 0;
+	}
+	else if (offset >= t_IRC_Client::offset_threshold && offset >= buf_size / 2)
+	{
+		send_buf.erase(0, offset);
+		offset = 0;
+	}
 }

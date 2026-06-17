@@ -2,9 +2,14 @@
 #include "../lib/commands.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
+#include "../lib/server.hpp"
 
 #include <cstring> // for std::strncmp()
 #include <string_view>
+#include <unordered_map>
+
+// WARN: To avoid bad invalid memory access surprises: Once PRIVMSG is implemented,
+// Test something like: "PRIVMSG :some message" followed by "PRIVMSS :whatever".
 
 void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -19,7 +24,8 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 
 		for (i = 0; i < t_parser::n_valid_cmds; ++i)
 		{
-			if (!std::strncmp(t_parser::commands[i], verb_in_caps, verb_len))
+			if (verb_len == t_parser::commands[i].size() &&
+					!std::strncmp(t_parser::commands[i].data(), verb_in_caps, verb_len))
 				break ;
 		}
 	}
@@ -46,7 +52,7 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 			case 0:  execute_PASS_cmd(client, server); break;
 			case 1:  execute_NICK_cmd(client, server); break;
 			case 2:  execute_USER_cmd(client);         break;
-			case 3:  execute_QUIT_cmd(client);         break;
+			case 3:  execute_QUIT_cmd(client, server); break;
 			// case 4:  execute_JOIN_cmd(client);         break;
 			// case 5:  execute_PART_cmd(client);         break;
 			// case 6:  execute_PRIVMSG_cmd(client);      break;
@@ -65,17 +71,34 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 }
 
 // WARN: work in progress
-void	execute_QUIT_cmd(t_IRC_Client &client)
+void	execute_QUIT_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
-	// TODO:
-	// assemble reply ERROR message (follow modern Horse documentation for 'QUIT message')
-
-
 	// TODO:
 	// optional feature:
 	// assemble message to be sent to every single client that is on the same channel/s
 	// as the disconnecting client, informing them of their peer's leave
+	// WARN: just work in progress... Maybe there could be a way to not walk through
+	// all of the clients, but rather pinpoint the clients of the channel/s that
+	// the quitting client was connected to, and only walk those clients, in a more
+	// efficient manner?
 
+	// WARN: Make sure that if a fellow client shares more than one channel
+	// membership with the quitting client, they would not get this message from
+	// the server more than once!
+
+	// WARN: Just a placeholder: This would send a notification to ALL clients
+	// but the quitting client, about that client's leave. It should only be
+	// done to all fellow channelers - as part of the IRC protocol - but channel
+	// system is not yet in place.
+	for (std::unordered_map<int, t_IRC_Client>::iterator iterator = server.clients.begin();
+		!requested_shutdown && iterator != server.clients.end(); ++iterator)
+	{
+		if (client.fd == iterator->second.fd) // no need to send message to the disconnecting client
+			continue;
+
+		// TODO: check if the user is on at least one shared channel with the client.
+		append_client_quit_msg(iterator->second.send_message_buffer, client);
+	}
 
 	// set the disconnect flag
 	client.state |= t_IRC_Client::DISCONNECT;

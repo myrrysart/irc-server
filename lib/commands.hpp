@@ -4,6 +4,7 @@
 # include "irc_fatstruct.hpp"
 
 # include <unordered_map>
+# include <string>
 # include <string_view>
 
 /* Command handling dispatch */
@@ -16,7 +17,7 @@ void	execute_USER_cmd(t_IRC_Client &client);
 void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server);
 
 /* IRC Commands */
-void	execute_QUIT_cmd(t_IRC_Client &client); // WARN: work in progress
+void	execute_QUIT_cmd(t_IRC_Client &client, t_IRC_Server &server); // WARN: work in progress
 
 /* Bitmask check helpers */
 bool	has_provided_user_and_nick_names(t_bmask mask);
@@ -27,5 +28,7 @@ bool	is_or_was_password_provided_first(const t_bmask state);
 bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients,
             const int fd, const std::string_view new_nick);
 bool	is_nickname_valid(const std::string_view nickname);
+void	append_client_quit_msg(std::string &buffer, const t_IRC_Client &quitter);
+void	append_nick_user_host(std::string &buffer, const t_IRC_Client &client);
 
 #endif

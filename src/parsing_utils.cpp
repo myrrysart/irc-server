@@ -1,6 +1,7 @@
 #include "../lib/parser.hpp"
 
 #include <cctype> // for std::toupper() & std::iscntrl()
+#include <string>
 #include <string_view>
 
 int	init_password(const char *src, std::string_view &dest)
@@ -37,6 +38,25 @@ char	to_uppercase(char c)
 		static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
 
 	return (result);
+}
+
+size_t	skip_leading_spaces_and_check_for_empty_message(const std::string &buf,
+            const size_t pos, const bool has_cr)
+{
+	size_t	i = 0;
+
+	// skip leading spaces
+	while (i < pos && buf[i] == ' ')
+		++i;
+
+	/* returns true if the first message in the buffer is empty (i.e. containing only):
+	* • LF ('\n')
+	* • CRLF ("\r\n")
+	* • spaces culminating with LF or CRLF */
+	if (i == pos - has_cr)
+		return (std::string::npos);
+
+	return i;
 }
 
 bool	are_equal_strs_case_insensitive(const char *str1, const size_t len1,

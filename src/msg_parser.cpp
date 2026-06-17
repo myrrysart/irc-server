@@ -3,6 +3,7 @@
 // with 'nc'?), and inputting something and then ctrl + d twice in a row just
 // completely seems to break the server? This needs more testing. Is it SIGPIPE?
 
+// FIXME: delete this warning if you end up handling the null-terminators here.
 // WARN: Should the parser check for null-terminators - that are not 'supposed'
 // to be sent by an IRC client, but that may still be sent, as part of an attack
 // for example?
@@ -31,21 +32,19 @@ int	parse_message(const size_t pos, const std::string &buf, t_IRC_Client &client
 	}
 
 	// scan for carriage return (IRC message may end with '\n' or "\r\n")
-	bool	has_carriage_return = 0;
+	bool	has_cr = 0;
 	if (pos >= 1 && buf[pos - 1] == '\r')
-		has_carriage_return = 1;
+		has_cr = 1;
 
-	// Check whether client sent an empty message:
-	// such a message is to be ignored (without sending any reply),
-	// according to the IRC protocol.
-	if (!pos || (pos == 1 && has_carriage_return))
+	size_t i = skip_leading_spaces_and_check_for_empty_message(buf, pos, has_cr);
+	if (i == std::string::npos)
 	{
 		client.state |= t_IRC_Client::DISCARD_MSG;
 		return (0);
 	}
 
-	// Candidate message detected: send string_view for parsing.
-	tokenize_message(client, std::string_view{&buf[0], pos - has_carriage_return});
+	// Candidate message detected: send first message in buffer for tokenizing
+	tokenize_message(client, std::string_view{&buf[i], pos - i - has_cr});
 	return (0);
 }
 
