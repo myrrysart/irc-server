@@ -53,7 +53,6 @@ typedef struct	s_IRC_Channel
 	std::string									key;
 	int											user_limit;
 	std::unordered_map<t_IRC_Client*, t_bmask>	members;
-	int											member_count;
 }												t_IRC_Channel;
 static_assert(sizeof(t_IRC_Channel) <= 42*CACHE_LINE_SIZE," t_IRC_Channel did not use 42 cache line" );
 
