@@ -7,7 +7,6 @@
 # include <unordered_map>
 #include <unordered_set>
 # include <vector>
-# include <new> // for hardware_constructive_interference_size
 # include <string_view>
 
 # define MAX_CLIENTS 128
@@ -24,8 +23,6 @@
 // bitmask helper macro for declaring bit state macros
 # define BIT(x) (1u << (x))
 // bitmask assumption that if a state of bitmask is 0, it is still in setup phase and have just been created
-// # define SERVER_DOWN 0 //not used in this version
-// # define SERVER_RUNNING BIT(1)
 
 // bitmask typedefinition for fat struct bitfields.
 //NOTE: Create a new one if more bits are needed (ex. typedef unsigned long t_long_bmask;)
@@ -38,12 +35,6 @@ typedef s_IRC_Client t_IRC_Client;
 // the states of clients in individual channels
 # define IS_OPERATOR BIT(0)
 # define IS_BANNED	BIT(2)
-typedef struct	s_IRC_ChannelMembership
-{
-	t_bmask			state;
-	t_IRC_Client*	client;
-}					t_IRC_ChannelMembership;
-static_assert(sizeof(t_IRC_ChannelMembership) <= 1*CACHE_LINE_SIZE,"IRC_ChannelMembership did not use 1 cache line" );
 
 // IRC_Channel state bitmask definitions
 # define	IS_RUNNING BIT(0)
@@ -55,16 +46,15 @@ static_assert(sizeof(t_IRC_ChannelMembership) <= 1*CACHE_LINE_SIZE,"IRC_ChannelM
 # define	OPERATOR_PRIVILEGE BIT(4)
 typedef struct	s_IRC_Channel
 {
-	t_bmask						state;
-	t_bmask						mode;
-	std::string					name;
-	std::string					topic;
-	std::string					key;
-	int							user_limit;
-	t_IRC_ChannelMembership		members[MAX_CLIENTS]; // another option is to have a pointer
-	// FIXME: ADD AN INT ARRAY FD of size clients_max macro - and a length. All fds connected to that channel will be in the array, and we update it as we go.
-	int							member_count;
-}								t_IRC_Channel;
+	t_bmask										state;
+	t_bmask										mode;
+	std::string									name;
+	std::string									topic;
+	std::string									key;
+	int											user_limit;
+	std::unordered_map<t_IRC_Client*, t_bmask>	members;
+	int											member_count;
+}												t_IRC_Channel;
 static_assert(sizeof(t_IRC_Channel) <= 42*CACHE_LINE_SIZE," t_IRC_Channel did not use 42 cache line" );
 
 typedef struct	s_parser
