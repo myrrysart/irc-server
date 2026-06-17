@@ -95,8 +95,9 @@ void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
 		// append the trailing part after the newline
 		if (pos < received - 1) // otherwise, there is nothing to append.
 		{
+			ssize_t	len = received - pos - 1;
 			try {
-				msg.append(buf[pos + 1], received - pos - 1);
+				msg.append(&buf[pos + 1], static_cast<size_t>(len));
 			} catch (const std::exception &e) {
 				log_error(e.what(), __FILE__, __LINE__, 1);
 				requested_shutdown = 1;
