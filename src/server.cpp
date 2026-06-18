@@ -1,6 +1,27 @@
 #include <iostream>
+#include <cstring> // for std::memmove() and std::strerror()
 #include "../lib/server.hpp"
 #include "../lib/irc_fatstruct.hpp"
+
+static void	initialize_hostname(t_IRC_Client &client)
+{
+	if (!inet_ntop(AF_INET, &client.addr.sin_addr, client.hostname, INET_ADDRSTRLEN))
+	{
+		if (errno == EAFNOSUPPORT)
+			log_error("Failure to initialize hostname; "
+			"client's address is neither AF_INET nor AF_IFNET6. "
+			 "Setting as 'unknown'.",
+			 __FILE__, __LINE__, 0);
+		else
+			log_error("Failure to initialize hostname; "
+			"Size provided for string conversion is insufficient. "
+			"Setting as 'unkonwn'.",
+			 __FILE__, __LINE__, 0);
+
+		// sizeof() includes a '\0', making the array safe for appending
+		(void)std::memmove(client.hostname, "unknown", sizeof("unknown"));
+	}
+}
 
 static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in const &client_addr)
 {
@@ -30,23 +51,7 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 	* client side. */
 	client.nick_buf[0] = '*';
 	client.nick = std::string_view{client.nick_buf, 1};
-
-	// initialize hostname
-	if (!inet_ntop(AF_INET, &client_addr.sin_addr, client.hostname, INET_ADDRSTRLEN))
-	{
-		if (errno == EAFNOSUPPORT)
-			log_error("Failure to initialize hostname; "
-			"client's address is neither AF_INET nor AF_IFNET6",
-			 __FILE__, __LINE__, 0);
-		else
-			log_error("Failure to initialize hostname; "
-			"Size provided for string conversion is insufficient",
-			 __FILE__, __LINE__, 0);
-
-		disconnect_client(server, client.fd);
-		requested_shutdown = 1; //NOTE: Is this too heavyhanded here?
-		return false;
-	}
+	initialize_hostname(client);
 
 	return true;
 }

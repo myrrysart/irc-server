@@ -171,7 +171,7 @@ typedef struct	s_IRC_Client
 	char				nick_buf[max_nicklen]; // not nullterminated, use 'nick' instead
 	std::string			username;
 	std::string			realname;
-	char				hostname[INET_ADDRSTRLEN]; // This array is null terminated when initialized by inet_ntop(). Change macro to 'INET6_ADDRSTRLEN' if server ever switches to TCP6 ('AF_INET6').
+	char				hostname[INET_ADDRSTRLEN]; // null terminated when initialized by inet_ntop(), or, by default, when set to "unknown\0". Change macro to 'INET6_ADDRSTRLEN' if server ever switches to TCP6 ('AF_INET6').
 	std::string			received_message_buffer;
 	std::string			send_message_buffer;
 	size_t				send_offset;
