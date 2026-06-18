@@ -1,6 +1,17 @@
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/channel.hpp"
 #include "../lib/numerics.hpp"
+#include "../lib/parser.hpp"
+
+t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, const std::string_view nick)
+{
+	for (auto &[member_ptr, flags] : channel.members)
+	{
+		if (are_equal_strs_case_insensitive(nick.data(), nick.size(), member_ptr->nick.data(), member_ptr->nick.size()))
+			return member_ptr;
+	}
+	return nullptr;
+}
 
 void execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -63,16 +74,7 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 		// build_ERR_CHANOPRIVSNEEDED(kicker);
 		return;
 	}
-
-	for (auto &[member_ptr, flags] : channel.members)
-	{
-		if (member_ptr->nick == nick_to_be_kicked)
-		{
-			to_be_kicked = member_ptr;
-			break;
-		}
-	}
-
+	to_be_kicked = find_chmember_by_nick(channel, nick_to_be_kicked);
 	if (!to_be_kicked)
 	{
 		// send ERR_USERNOTINCHANNEL reply
