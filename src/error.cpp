@@ -31,3 +31,8 @@ void	log_error(const char *error, const char *context, const char *filename,
 		<< " (file: " << filename << ", line: " << line_num << ')'
 		<< std::endl;
 }
+
+void	log_exception(const char *what)
+{
+	std::cerr << "Exception caught: " << what << std::endl;
+}

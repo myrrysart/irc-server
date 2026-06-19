@@ -209,5 +209,6 @@ bool	is_flag_set(const t_bmask state, const unsigned int mask);
 /* Error logging */
 void	log_error(const char *error, const char *context, const char *filename,
             int line_num);
+void	log_exception(const char *what);
 
 #endif//IRC_FATSTRUCT_HPP
