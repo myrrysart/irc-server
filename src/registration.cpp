@@ -3,11 +3,9 @@
 #include "../lib/commands.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
-#include "../lib/server.hpp"
 
 #include <string_view>
 #include <unordered_map>
-#include <exception>
 #include <string> // for std::string's append()
 #include <algorithm> // for std::min()
 #include <cctype> // for std::isdigit()
@@ -206,20 +204,12 @@ void	execute_USER_cmd(t_IRC_Client &client)
 	if (is_flag_set(client.state, t_IRC_Client::PSWD_FIRST))
 	{
 		std::string_view	*params = client.parser.params;
-		try {
-			client.username = "~"; // a prefix indicating that 'username' is set by the user.
-			client.username.append(params[0].substr(0, t_IRC_Client::userlen)); // silently trim any characters after userlen
-			client.realname = params[3];
-			/* as for parameters [1] & [2]: they are usually sent from the client
-			* as '0' and '*', respectively - but they do not really concern anything
-			* in the current scope, and the server can silently ignore these. */
-		} catch (const std::exception &e) {
-			// std::string often dynamically allocates and may fail
-			log_error(e.what(), __FILE__, __LINE__, 1);
-			client.state |= t_IRC_Client::DISCONNECT;
-			requested_shutdown = 1;
-			return;
-		}
+		client.username = "~"; // a prefix indicating that 'username' is set by the user.
+		client.username.append(params[0].substr(0, t_IRC_Client::userlen)); // silently trim any characters after userlen
+		client.realname = params[3];
+		/* as for parameters [1] & [2]: they are usually sent from the client
+		* as '0' and '*', respectively - but they do not really concern anything
+		* in the current scope, and the server can silently ignore these. */
 	}
 	// NOTE:
 	// Server requires passowrd, which means that the user HAS to provide

@@ -1,5 +1,6 @@
 #include <iostream>
-#include <exception>
+#include <cstring> // std::strerror()
+#include <cerrno>
 #include <string_view>
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
@@ -19,6 +20,7 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return false; // no data ready -> try later
+		log_error(strerror(errno), "recv", __FILE__, __LINE__);
 		return true; // error -> disconnect
 	}
 
@@ -30,7 +32,6 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 	return false;
 }
 
-// WARN: Add try-catch block/s to handle potential exceptions from std::string's clear() and erase()
 void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 {
 	std::string	&buf = client.received_message_buffer;
@@ -57,40 +58,18 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 		}
 
 		if (parse_message(pos, buf, client) == -1)
-		{
-			try {
-				build_ERR_INPUTTOOLONG(client);
-			} catch (const std::exception &e) {
-				log_error(e.what(), __FILE__, __LINE__, 1);
-				requested_shutdown = 1;
-				return;
-			}
-		}
+			build_ERR_INPUTTOOLONG(client);
 
 		if (is_flag_set(client.state, t_IRC_Client::DISCARD_MSG)) // no need to dispatch
 			client.state &= ~t_IRC_Client::DISCARD_MSG;
 		else
-		{
-			try {
-				dispatch_client_command(client, server);
-			} catch (const std::exception &e) {
-				log_error(e.what(), __FILE__, __LINE__, 1);
-				requested_shutdown = 1;
-				return;
-			}
-		}
+			dispatch_client_command(client, server);
+
 		buf.erase(0, pos + 1);
 	}
 	if (buf.length() >= t_parser::buf_size)
 	{
-		try {
-			build_ERR_INPUTTOOLONG(client);
-		} catch (const std::exception &e) {
-			log_error(e.what(), __FILE__, __LINE__, 1);
-			requested_shutdown = 1;
-			return;
-
-		}
+		build_ERR_INPUTTOOLONG(client);
 		client.state |= t_IRC_Client::DISCARD_MSG;
 		buf.clear();
 		/* NOTE: If user sends an extremely long buffer with no newlines:

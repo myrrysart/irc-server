@@ -5,7 +5,6 @@
 
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
-#include "../lib/server.hpp"
 
 #include <string>
 #include <string_view>
@@ -91,13 +90,9 @@ void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
 		if (pos < received - 1) // otherwise, there is nothing to append.
 		{
 			ssize_t	len = received - pos - 1;
-			try {
-				msg.append(&buf[pos + 1], static_cast<size_t>(len));
-			} catch (const std::exception &e) {
-				log_error(e.what(), __FILE__, __LINE__, 1);
-				requested_shutdown = 1;
-			}
+			msg.append(&buf[pos + 1], static_cast<size_t>(len));
 		}
+
 		// unset DISCARD_MSG flag
 		client.state &= ~t_IRC_Client::DISCARD_MSG;
 	}

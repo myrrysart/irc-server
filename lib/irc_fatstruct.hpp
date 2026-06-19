@@ -186,6 +186,10 @@ static_assert(sizeof(t_IRC_Client) <= 68*CACHE_LINE_SIZE," t_IRC_Client did not 
 // NOTE: 'static constexpr' within a struct does not increase struct's memory occupation: they are literals known at compile time.
 typedef struct	s_IRC_Server
 {
+	enum {
+		FATAL_ERROR = BIT(0)
+	};
+
 	t_bmask									state; //Not in use in this version
 	static constexpr const char				*name = "humble_server";
 	static constexpr int					poll_timeout = 1000;
@@ -203,7 +207,7 @@ typedef struct	s_IRC_Server
 bool	is_flag_set(const t_bmask state, const unsigned int mask);
 
 /* Error logging */
-void	log_error(const char *error, const char *filename, int line_number,
-            bool is_exception);
+void	log_error(const char *error, const char *context, const char *filename,
+            int line_num);
 
 #endif//IRC_FATSTRUCT_HPP
