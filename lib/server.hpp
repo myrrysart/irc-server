@@ -14,8 +14,6 @@
 
 extern volatile sig_atomic_t requested_shutdown;
 
-void	shutdown_server(t_IRC_Server *server);
-
 void	create_listener(t_IRC_Server &server);
 
 void	server_loop(t_IRC_Server &server);

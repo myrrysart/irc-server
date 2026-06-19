@@ -36,33 +36,23 @@ int main(int argc, char **argv)
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 
-	// NOTE: nothing can throw up to this point, but from here on out, multiple
-	// container allocators could throw
+	t_IRC_Server	server = {};
+
+	server.port = atoi(argv[1]); // WARN: should we add some error handling for this?
+	server.password = std::string_view{argv[2], password_len};
+
 	try {
-		t_IRC_Server	server = {};
-
-		server.port = atoi(argv[1]); // WARN: should we add some error handling to this?
-		server.password = std::string_view{argv[2], password_len};
-
-		try {
-			create_listener(server);
-			if (!is_flag_set(server.state, server.FATAL_ERROR) && !requested_shutdown)
-				server_loop(server);
-
-		} catch (const std::exception &e) {
-			log_exception(e.what());
-			server.state |= t_IRC_Server::FATAL_ERROR;
-		}
-		shutdown_server(&server);
-		// FATAL_ERROR flag may be set by a caught exception or by syscall failures
-		if (is_flag_set(server.state, server.FATAL_ERROR))
-			return 1;
+		create_listener(server);
+		if (!is_flag_set(server.state, server.FATAL_ERROR) && !requested_shutdown)
+			server_loop(server);
 
 	} catch (const std::exception &e) {
-		// 'server' did not fully construct, no need for manual cleanup
-		log_exception(e.what());
-		return 1;
+		std::cerr << "Exception caught: " << e.what() << std::endl;
+		server.state |= t_IRC_Server::FATAL_ERROR;
 	}
+	// FATAL_ERROR flag may be set by a caught exception or by syscall failures
+	if (is_flag_set(server.state, server.FATAL_ERROR))
+		return 1;
 	return 0;
 }
 

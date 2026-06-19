@@ -1,21 +1,18 @@
-#include "../lib/server.hpp"
+#include "../lib/irc_fatstruct.hpp"
 #include <sys/socket.h>
-
+#include <unistd.h> // for close()
 #include <iostream> // for std::cerr and its insertion operator
 
-void	shutdown_server(t_IRC_Server *server)
+s_IRC_Server::~s_IRC_Server()
 {
-	if (!server)
-		return;
+	if (this->listen_fd >= 0)
+		close(this->listen_fd);
 
-	if (server->listen_fd >= 0)
-		close(server->listen_fd);
-
-	for (auto &[fd, client] : server->clients)
+	for (auto &[fd, client] : this->clients)
 		close(fd);
 
-	server->clients.clear();
-	server->poll_fds.clear();
+	// NOTE: No need to manually clear the std::vector and std::unordered_map
+	// containers: their own destructors will get called automatically.
 }
 
 /* When calling this function:
@@ -30,9 +27,4 @@ void	log_error(const char *error, const char *context, const char *filename,
 		<< "ERROR. " << context << ": " << error
 		<< " (file: " << filename << ", line: " << line_num << ')'
 		<< std::endl;
-}
-
-void	log_exception(const char *what)
-{
-	std::cerr << "Exception caught: " << what << std::endl;
 }
