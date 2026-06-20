@@ -11,6 +11,12 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 		close(client_fd);
 		return false;
 	}
+	if (fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0)
+	{
+		std::perror("fcntl");
+		close(client_fd);
+		return false;
+	}
 	server.poll_fds.push_back(pollfd{client_fd, POLLIN, 0});
 	server.clients[client_fd] = t_IRC_Client{};
 
@@ -38,7 +44,7 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 			 __FILE__, __LINE__, 0);
 
 		disconnect_client(server, client.fd);
-		requested_shutdown = 1;
+		requested_shutdown = 1; //NOTE: Is this too heavyhanded here?
 		return false;
 	}
 
@@ -50,6 +56,8 @@ void	accept_new_client(t_IRC_Server &server)
 	sockaddr_in client_addr{};
 	socklen_t	client_addr_len = sizeof(client_addr);
 	int			client_fd = accept(server.listen_fd, (sockaddr*)&client_addr, &client_addr_len);
+	if (client_fd < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+		return;
 	if (client_fd < 0)
 	{
 		std::perror("accept");
