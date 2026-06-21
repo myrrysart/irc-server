@@ -28,3 +28,10 @@ void	log_error(const char *error, const char *context, const char *filename,
 		<< " (file: " << filename << ", line: " << line_num << ')'
 		<< std::endl;
 }
+
+void	set_fatal_error_flag_and_log(t_bmask &state, const char *context,
+            const char *filename, const int line_num)
+{
+	state |= t_IRC_Server::FATAL_ERROR;
+	log_error(std::strerror(errno), context, filename, line_num);
+}
