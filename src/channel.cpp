@@ -23,7 +23,7 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	std::string		channel_name(client.parser.params[0]);
 
 	// TODO: validate channel name (# or &)
-	// TODO: Reject if flag and at MAX_CHANNELS_PER_CLIENT
+	// TODO: Reject if LIMIT (?) flag and at MAX_CHANNELS_PER_CLIENT
 
 	// Find existing channel, or create a new one
 	auto			ch_it = server.channels.find(channel_name);
@@ -40,20 +40,19 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	if (channel.members.find(&client) != channel.members.end())
 		return;
 
-	// reject if +i and not invited, +k and no key
+	// TODO: reject if +i and not invited, +k and no key
 
 	// Build member flags. first joiner becomes channel operator
 	t_bmask			flags = 0;
 	if (channel.members.empty())
 		flags |= IS_OPERATOR;
 
-	// Record membership on both sides (channel ↔ client)
+	// Record membership on channel and client
 	channel.members[&client] = flags;
 	client.joined_channels.insert(&channel);
 
 	// TODO: send response to all.
 }
-
 
 void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -78,6 +77,7 @@ void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
+	// Record membership on channel and client
 	client.joined_channels.erase(&channel);
 	channel.members.erase(it);
 	if (channel.members.empty())
@@ -122,6 +122,7 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 		return;
 	}
 
+	// Record membership on channel and client
 	to_be_kicked->joined_channels.erase(&channel);
 	channel.members.erase(to_be_kicked);
 	if (channel.members.empty())
