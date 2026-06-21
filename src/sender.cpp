@@ -35,35 +35,33 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 		{
 			ssize_t	ret = send(client.fd, send_buf.c_str() + client.send_offset,
 				 send_buf.size() - client.send_offset, MSG_NOSIGNAL);
-			if (ret == -1)
+			if (ret <= 0)
 			{
-				if (errno == EPIPE)
-				{
-					/* The MSG_NOSIGNAL flag tells send() to avoid writing to
-					 * the socket if it is broken - which would trigger SIGPIPE
-					 * and, if that single is not handled, terminate the program.
-					 * In that case, send() returns -1 and sets errno to EPIPE */
-					log_error(std::strerror(errno), __FILE__, __LINE__, 0);
-					disconnect_client(server, client.fd);
-					continue;
-				}
-				else if (errno == EWOULDBLOCK)
+				if (errno == EAGAIN || errno == EWOULDBLOCK)
 				{
 					// WARN: Discuss this with teammates on the next meeting.
 
-					// identical to EAGAIN.
-					// This occurs for non-blocking sockets, "if space is not available
-					// at the sending socket to hold the message to be transmitted",
-					// (from 'man 3 send')
+					/* This occurs for non-blocking sockets, if space is not
+					 * available at the sending socket to hold the message to
+					 * be transmitted. -> try again later */
 					++i;
-					continue;
 				}
 				else
 				{
+					/* errno might be set to EPIPE here.
+					* The MSG_NOSIGNAL flag tells send() to avoid writing to
+					* the socket if it is broken - which would trigger SIGPIPE
+					* and terminate the program, in case that signal is not
+					* handled by a custom signal handler.
+					* Instead, thanks to MSG_NOSIGNAL, send() returns -1 and
+					* sets errno to EPIPE.
+
+					* Other failures are possible here, but they all mean bad
+					* things for the connection -> time to disconnect client */
 					log_error(std::strerror(errno), __FILE__, __LINE__, 0);
-					requested_shutdown = 1;
-					return;
+					disconnect_client(server, client.fd);
 				}
+				continue;
 			}
 			try {
 				update_send_buffer_and_offset(send_buf, client.send_offset, ret);
