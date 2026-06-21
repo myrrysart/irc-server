@@ -21,7 +21,7 @@ s_IRC_Server::~s_IRC_Server()
 * • 'filename': pass the macro '__FILE__'
 * • 'line_number': pass the macro '__LINE__' */
 void	log_error(const char *error, const char *context, const char *filename,
-            int line_num)
+            const int line_num)
 {
 	std::cerr
 		<< "ERROR. " << context << ": " << error
