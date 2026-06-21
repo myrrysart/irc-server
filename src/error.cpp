@@ -2,6 +2,8 @@
 #include <sys/socket.h>
 #include <unistd.h> // for close()
 #include <iostream> // for std::cerr and its insertion operator
+#include <cstring>  // for std::strerror()
+#include <cerrno>
 
 s_IRC_Server::~s_IRC_Server()
 {
