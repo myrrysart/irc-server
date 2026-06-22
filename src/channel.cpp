@@ -13,6 +13,88 @@ t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, const std::string_vi
 	return nullptr;
 }
 
+t_IRC_Channel	*find_channel_by_name(t_IRC_Server &server, std::string ch_name)
+{
+	if (auto it = server.channels.find(ch_name); it != server.channels.end())
+		return &it->second;
+	return nullptr;
+}
+
+void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
+{
+	if (client.parser.n_params < 2)
+	{
+		build_ERR_NEEDMOREPARAMS(client);
+		return;
+	}
+	std::string		target(client.parser.params[0]);
+	std::string		message(client.parser.params[1]);
+
+	std::string		line;
+	line += ':';
+	line += client.nick;
+	line += '!';
+	line += client.username;
+	line += '@';
+	line += client.hostname;
+	line += " PRIVMSG ";
+
+	if (target[0] == '#' || target[0] == '&')
+	{
+		auto	ch_it = server.channels.find(target);
+		if (ch_it == server.channels.end())
+		{
+			// TODO: build_ERR_NOSUCHCHANNEL(client, target);
+			return;
+		}
+		t_IRC_Channel	&channel = ch_it->second;
+
+		if (!channel.members.contains(&client))
+		{
+			// TODO: build_ERR_CANNOTSENDTOCHAN(client, target);
+			return;
+		}
+
+		line += channel.name;
+		line += " :";
+		line += message;
+		line += "\r\n";
+
+		for (auto &[member_ptr, flags] : channel.members)
+			member_ptr->send_message_buffer += line;
+	}
+	else
+	{
+		t_IRC_Client	*target_client = nullptr;
+
+		for (auto &[fd, c] : server.clients)
+		{
+			(void)fd;
+			if (are_equal_strs_case_insensitive(
+					target.data(), target.size(),
+					c.nick.data(), c.nick.size()))
+			{
+				target_client = &c;
+				break;
+			}
+		}
+		if (!target_client)
+		{
+			// TODO: build_ERR_NOSUCHNICK(client, target);
+			return;
+		}
+
+		line += target_client->nick;
+		line += " :";
+		line += message;
+		line += "\r\n";
+
+		target_client->send_message_buffer += line;
+	}
+}
+
+
+
 void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
 	if (client.parser.n_params == 0)
@@ -84,7 +166,7 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	channel.members[&client] = flags;
 	client.joined_channels.insert(&channel);
 
-	// TODO: send response to all.
+	// TODO: build_RPL_JOIN(client, channel_name);
 }
 
 void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
@@ -115,7 +197,7 @@ void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	channel.members.erase(it);
 	if (channel.members.empty())
 		server.channels.erase(channel_it);
-	// TODO: send response to all.
+	// TODO: build_RPL_PART(client, channel_name);
 }
 
 void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
@@ -160,7 +242,7 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 	channel.members.erase(to_be_kicked);
 	if (channel.members.empty())
 		server.channels.erase(channel_it);
-	// TODO: send response to all.
+	// TODO: build_RPL_KICK(client, channel_name, victim);
 }
 
 void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
@@ -185,8 +267,8 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		// TODO: build_ERR_CHANOPRIVSNEEDED(client, channel_name);
 		return;
 	}
-	//TODO: build_RPL_UMODEIS with numeric replies neede pretty soon for irssi to work.
-	//no params->current mode
+	//TODO: build_RPL_UMODEIS with numeric replies. Needed pretty soon for irssi to work.
+	//no params->print current mode
 	if (client.parser.n_params == 1)
 	{
 		// TODO: build_RPL_CHANNELMODEIS(client, channel_name, mode(needs to be parsed));
