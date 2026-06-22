@@ -22,13 +22,24 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	}
 	std::string		channel_name(client.parser.params[0]);
 
-	// TODO: validate channel name (# or &)
-	// TODO: Reject if LIMIT (?) flag and at MAX_CHANNELS_PER_CLIENT
+	//validate channel name
+	if (channel_name.empty() || (channel_name[0] != '#' && channel_name[0] != '&'))
+	{
+		// TODO: build_ERR_INVALIDCHANNELNAME(client, channel_name);
+		return;
+	}
 
 	// Find existing channel, or create a new one
 	auto			ch_it = server.channels.find(channel_name);
-	if (ch_it == server.channels.end() && !(server.channels.size() >= MAX_CHANNELS))
+	if (ch_it == server.channels.end())
+	{
+		if (server.channels.size() >= MAX_CHANNELS)
+		{
+			// TODO: build_ERR_TOOMANYCHANNELS(client, channel_name);
+			return;
+		}
 		ch_it = server.channels.emplace(channel_name, t_IRC_Channel{}).first;
+	}
 
 	t_IRC_Channel	&channel = ch_it->second;
 
@@ -37,10 +48,30 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		channel.name = channel_name;
 
 	// Already a member -> return
-	if (channel.members.find(&client) != channel.members.end())
+	if (channel.members.contains(&client))
 		return;
 
-	// TODO: reject if +i and not invited, +k and no key
+	// Reject if LIMIT flag and at maximum channels per client
+	if (is_flag_set(channel.mode, LIMIT) && channel.members.size() >= static_cast<size_t>(channel.user_limit))
+   	{
+		// TODO: build_ERR_CHANNELISFULL` (471 — channel at user limit).
+		return;
+	}
+	// invite check
+	if (is_flag_set(channel.mode, INVITE) && !channel.invited.contains(&client))
+	{
+		// TODO: build_ERR_INVITEONLYCHAN(client, channel_name);
+		return;
+	}
+	// key check
+	if (is_flag_set(channel.mode, KEY))
+	{
+		if (client.parser.n_params < 2 || channel.key != client.parser.params[1])
+		{
+			// TODO: build_ERR_BADCHANNELKEY(client, channel_name);
+			return;
+		}
+	}
 
 	// Build member flags. first joiner becomes channel operator
 	t_bmask			flags = 0;
