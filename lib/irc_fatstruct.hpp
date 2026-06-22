@@ -37,7 +37,7 @@ typedef s_IRC_Client t_IRC_Client;
 # define IS_BANNED	BIT(2)
 
 // IRC_Channel state bitmask definitions
-# define	IS_RUNNING BIT(0)
+// # define	IS_RUNNING BIT(0) // is this needed?
 // IRC_Channel mode bitmask definitions
 # define	INVITE BIT(0)
 # define	TOPIC  BIT(1)
@@ -46,7 +46,7 @@ typedef s_IRC_Client t_IRC_Client;
 # define	OPERATOR_PRIVILEGE BIT(4)
 typedef struct	s_IRC_Channel
 {
-	t_bmask										state;
+	// t_bmask										state; //is this needed?
 	t_bmask										mode;
 	std::string									name;
 	std::string									topic;
