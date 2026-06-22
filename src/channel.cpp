@@ -76,8 +76,10 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// Build member flags. first joiner becomes channel operator
 	t_bmask			flags = 0;
 	if (channel.members.empty())
+	{
 		flags |= IS_OPERATOR;
-
+		channel.mode |= TOPIC;
+	}
 	// Record membership on channel and client
 	channel.members[&client] = flags;
 	client.joined_channels.insert(&channel);
@@ -159,4 +161,69 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 	if (channel.members.empty())
 		server.channels.erase(channel_it);
 	// TODO: send response to all.
+}
+
+void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
+{
+	if (client.parser.n_params == 0)
+	{
+		build_ERR_NEEDMOREPARAMS(client);
+		return;
+	}
+	std::string		target_nick(client.parser.params[0]);
+	std::string		channel_name(client.parser.params[1]);
+	auto			channel_it = server.channels.find(channel_name);
+	if (channel_it == server.channels.end())
+	{
+		// TODO: build_ERR_NOSUCHCHANNEL(client, channel_name);
+		return;
+	}
+	t_IRC_Channel	&channel = channel_it->second;
+
+	if (!channel.members.contains(&client))
+	{
+		// TODO: build_ERR_CHANOPRIVSNEEDED(client, channel_name);
+		return;
+	}
+	//TODO: build_RPL_UMODEIS with numeric replies neede pretty soon for irssi to work.
+	//no params->current mode
+	if (client.parser.n_params == 1)
+	{
+		// TODO: build_RPL_CHANNELMODEIS(client, channel_name, mode(needs to be parsed));
+		return;
+	}
+	//TODO: this needs to be a loop that goes trough all the parameters
+	// with + toggling set and - unset.
+	if (client.parser.n_params > 1 && is_flag_set(channel.members[&client], IS_OPERATOR)) //TODO: do this with iterator. [] makes a new item if not found
+	{
+		if (client.parser.params[1] == "+i")
+		{
+			channel.mode |= INVITE;
+			// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel.mode);
+		}
+		if (client.parser.params[1] == "+k")
+		{
+			channel.mode |= KEY;
+			// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel.mode);
+		}
+		if (client.parser.params[1] == "+t")
+		{
+			channel.mode |= TOPIC;
+			// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel.mode);
+		}
+		if (client.parser.params[1] == "+l")
+		{
+			channel.mode |= LIMIT;
+			// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel.mode);
+		}
+		if (client.parser.params[1] == "+o")
+			channel.members[&client] |= IS_OPERATOR;
+		// else if (client.parser.params[1] == "-o")
+		// 	channel.members[&client] &= ~IS_OPERATOR;
+		else
+		{
+			// TODO: build_ERR_CHANOPRIVSNEEDED(client, channel_name);
+			return;
+		}
+	}
 }
