@@ -43,7 +43,7 @@ typedef s_IRC_Client t_IRC_Client;
 # define	TOPIC  BIT(1)
 # define	KEY BIT(2)
 # define	LIMIT BIT(3)
-# define	OPERATOR_PRIVILEGE BIT(4)
+// define	OPERATOR_PRIVILEGE BIT(4) //not needed here? IS_OPERATOR should handle this?
 typedef struct	s_IRC_Channel
 {
 	// t_bmask										state; //is this needed?
