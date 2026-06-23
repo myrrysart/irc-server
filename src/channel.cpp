@@ -42,14 +42,6 @@ static t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, const std::string
 	return nullptr;
 }
 
-static void	append_privmsg_suffix(std::string &line, const std::string_view target, const std::string &message)
-{
-	line += target;
-	line += " :";
-	line += message;
-	line += "\r\n";
-}
-
 void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
 	if (client.parser.n_params < 2)
@@ -79,7 +71,10 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			return;
 		}
 
-		append_privmsg_suffix(line, channel->name, message);
+		line += channel->name;
+		line += " :";
+		line += message;
+		line += "\r\n";
 
 		for (auto &[member_ptr, flags] : channel->members)
 			member_ptr->send_message_buffer += line;
@@ -93,7 +88,10 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			return;
 		}
 
-		append_privmsg_suffix(line, target_client->nick, message);
+		line += target_client->nick;
+		line += " :";
+		line += message;
+		line += "\r\n";
 
 		target_client->send_message_buffer += line;
 	}
@@ -158,7 +156,6 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			return;
 		}
 	}
-
 	// Build member flags. first joiner becomes channel operator
 	t_bmask			flags = 0;
 	if (channel.members.empty())
