@@ -76,8 +76,10 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 
 			build_RPL_WELCOME(client);
 			build_RPL_YOURHOST(client);
-			// TODO:
-			// missing steps here: more numeric replies are needed.
+			build_RPL_CREATED(client);
+			build_RPL_MYINFO(client);
+			build_RPL_ISUPPORT(client);
+			build_ERR_NOMOTD(client);
 
 		}
 		else
