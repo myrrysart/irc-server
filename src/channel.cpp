@@ -3,6 +3,8 @@
 #include "../lib/commands.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
+#include <cstddef>
+#include <string>
 
 t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, const std::string_view nick)
 {
@@ -135,7 +137,7 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	if (channel.members.contains(&client))
 		return;
 
-	// Reject if LIMIT flag and at maximum channels per client
+	// limit check
 	if (is_flag_set(channel.mode, LIMIT) && channel.members.size() >= static_cast<size_t>(channel.user_limit))
    	{
 		// TODO: build_ERR_CHANNELISFULL` (471 — channel at user limit).
@@ -166,7 +168,6 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// Record membership on channel and client
 	channel.members[&client] = flags;
 	client.joined_channels.insert(&channel);
-
 	// TODO: build_RPL_JOIN(client, channel_name);
 }
 
@@ -243,85 +244,125 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		build_ERR_NEEDMOREPARAMS(client);
 		return;
 	}
-	std::string		target_nick(client.parser.params[0]);
-	std::string		channel_name(client.parser.params[1]);
 
+	std::string		channel_name(client.parser.params[0]);
 	t_IRC_Channel	*channel = find_channel_by_name(server, channel_name);
 	if (!channel)
 	{
 		// TODO: build_ERR_NOSUCHCHANNEL(client, channel_name);
 		return;
 	}
+	// on channel check
+	auto	member_it = channel->members.find(&client);
+	if (member_it == channel->members.end())
+	{
+		// TODO: build_ERR_NOTONCHANNEL(client, channel_name);
+		return;
+	}
 
-	if (!channel->members.contains(&client))
+	if (client.parser.n_params == 1)
+	{
+		// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel->mode);
+		return;
+	}
+
+	// check operator status
+	if (!is_flag_set(member_it->second, IS_OPERATOR))
 	{
 		// TODO: build_ERR_CHANOPRIVSNEEDED(client, channel_name);
 		return;
 	}
-	//TODO: build_RPL_UMODEIS with numeric replies. Needed pretty soon for irssi to work.
-	//no params->print current mode
-	if (client.parser.n_params == 1)
+
+	std::string_view	modes = client.parser.params[1];
+	size_t				param = 2;
+	char				sign = 0;
+	size_t				i = 0;
+
+	while (i < modes.size())
 	{
-		// TODO: build_RPL_CHANNELMODEIS(client, channel_name, mode(needs to be parsed));
-		return;
-	}
-	//TODO: this needs to be a loop that goes trough all the parameters and let's check for
-	if (client.parser.n_params > 1 && is_flag_set(channel->members[&client], IS_OPERATOR)) //TODO: do this with iterator. [] makes a new item if not found
-	{
-		if (client.parser.params[1] == "+i")
+		char	current_char = modes[i];
+		i++;
+
+		if (current_char == '+' || current_char == '-')
 		{
-			channel->mode |= INVITE;
-			// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel.mode);
+			sign = current_char;
+			continue;
 		}
-		if (client.parser.params[1] == "-i")
+		if (!sign)  // skip invalid
+			continue;
+
+		bool	set = (sign == '+');
+		if (current_char == 'i')
 		{
-			channel->mode &= ~INVITE;
-			// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel.mode);
+			if (set)
+				channel->mode |= INVITE;
+			else
+				channel->mode &= ~INVITE;
 		}
-		if (client.parser.params[1] == "+k")
+		else if (current_char == 't')
 		{
-			channel->mode |= KEY;
-			// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel.mode);
+			if (set)
+				channel->mode |= TOPIC;
+			else
+				channel->mode &= ~TOPIC;
 		}
-		if (client.parser.params[1] == "-k")
+		else if (current_char == 'k')
 		{
-			channel->mode &= ~KEY;
-			// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel.mode);
+			if (set)
+			{
+				if (param < client.parser.n_params)
+				{
+					channel->mode |= KEY;
+					channel->key = std::string(client.parser.params[param]);
+					param++;
+				}
+				// else: TODO: build_ERR_NEEDMOREPARAMS(client);
+			}
+			else
+			{
+				channel->mode &= ~KEY;
+				channel->key.clear();
+			}
 		}
-		if (client.parser.params[1] == "+t")
+		else if (current_char == 'l')
 		{
-			channel->mode |= TOPIC;
-			// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel.mode);
+			if (set)
+			{
+				if (param < client.parser.n_params)
+				{
+					channel->mode |= LIMIT;
+					channel->user_limit =
+						std::atoi(std::string(client.parser.params[param]).c_str());
+					param++;
+				}
+				// else: TODO: build_ERR_NEEDMOREPARAMS(client);
+			}
+			else
+			{
+				channel->mode &= ~LIMIT;
+			}
 		}
-		if (client.parser.params[1] == "-t")
+		else if (current_char == 'o')
 		{
-			channel->mode &= ~TOPIC;
-			// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel.mode);
-		}
-		if (client.parser.params[1] == "+l")
-		{
-			channel->mode |= LIMIT;
-			// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel.mode);
-		}
-		if (client.parser.params[1] == "-l")
-		{
-			channel->mode &= ~LIMIT;
-			// TODO: build_RPL_CHANNELMODEIS(client, channel_name, channel.mode);
-		}
-		if (client.parser.params[1] == "+o")
-		{
-			channel->members[&client] |= IS_OPERATOR;
-			// TODO: build_RPL_OPERATOR(client, channel_name, client.nick); (?)
-		}
-		if (client.parser.params[1] == "-o")
-		{
-			channel->members[&client] |= IS_OPERATOR;
-			// TODO: build_RPL_OPERATOR(client, channel_name, client.nick); (?)
+			if (param < client.parser.n_params)
+			{
+				t_IRC_Client	*target =
+					find_chmember_by_nick(*channel, client.parser.params[param]);
+				param++;
+				if (!target)
+				{
+					// TODO: build_ERR_USERNOTINCHANNEL(client, nick, channel_name);
+				}
+				else if (set)
+					channel->members[target] |= IS_OPERATOR;
+				else
+					channel->members[target] &= ~IS_OPERATOR;
+			}
+			// else: TODO: build_ERR_NEEDMOREPARAMS(client);
 		}
 		else
 		{
-			// TODO: build_ERR_CHANOPRIVSNEEDED(client, channel_name);
-			return;
+			// TODO: build_ERR_UNKNOWNMODE(client, current_char);
 		}
 	}
 }
