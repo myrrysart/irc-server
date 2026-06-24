@@ -321,24 +321,23 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		if (!sign)  // skip invalid
 			continue;
 
-		bool	set = (sign == '+');
 		if (current_char == 'i')
 		{
-			if (set)
+			if (sign == '+')
 				channel->mode |= INVITE;
 			else
 				channel->mode &= ~INVITE;
 		}
 		else if (current_char == 't')
 		{
-			if (set)
+			if (sign == '+')
 				channel->mode |= TOPIC;
 			else
 				channel->mode &= ~TOPIC;
 		}
 		else if (current_char == 'k')
 		{
-			if (set)
+			if (sign == '+')
 			{
 				if (param < client.parser.n_params)
 				{
@@ -356,7 +355,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		}
 		else if (current_char == 'l')
 		{
-			if (set)
+			if (sign == '+')
 			{
 				if (param < client.parser.n_params)
 				{
@@ -382,7 +381,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				param++;
 				if (!target)
 					build_ERR_USERNOTINCHANNEL(client, channel_name, target_nick);
-				else if (set)
+				else if (sign == '+')
 					channel->members[target] |= IS_OPERATOR;
 				else
 					channel->members[target] &= ~IS_OPERATOR;
