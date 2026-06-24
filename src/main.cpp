@@ -1,5 +1,6 @@
 #include <csignal>
 #include <iostream>
+#include <exception>
 #include "../lib/server.hpp"
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
@@ -20,16 +21,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	struct sigaction sa = {};
-	sa.sa_handler = signal_handler;
-	sigemptyset(&sa.sa_mask);
-	sigaction(SIGINT, &sa, NULL);
-	sigaction(SIGTERM, &sa, NULL);
-
-	t_IRC_Server server = {};
-	server.port = atoi(argv[1]);
-
-	if (init_password(argv[2], server.password) == -1)
+	size_t	password_len = validate_password_and_strlen(argv[2]);
+	if (password_len <= 0)
 	{
 		std::cerr
 			<< "Password '" << argv[2] << "' is either empty or contains "
@@ -37,11 +30,33 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	create_listener(server);
-	server_loop(server);
-	shutdown_server(&server);
+	struct sigaction sa = {};
+	sa.sa_handler = signal_handler;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+
+	t_IRC_Server	server = {};
+
+	server.port = atoi(argv[1]); // WARN: should we add some error handling for this?
+	server.password = std::string_view{argv[2], password_len};
+
+	try {
+		create_listener(server);
+		if (!is_flag_set(server.state, server.FATAL_ERROR) && !requested_shutdown)
+			server_loop(server);
+
+	} catch (const std::exception &e) {
+		std::cerr << "Exception caught: " << e.what() << std::endl;
+		server.state |= t_IRC_Server::FATAL_ERROR;
+	}
+	// FATAL_ERROR flag may be set by a caught exception or by syscall failures
+	if (is_flag_set(server.state, server.FATAL_ERROR))
+		return 1;
 	return 0;
 }
+
+// WARN: should sending SIGINT to the program return 0 (which is the case currently)?
 
 /*
  * steps to establish connection:

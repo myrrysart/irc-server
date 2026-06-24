@@ -6,14 +6,13 @@
 #include <string>
 #include <cstring> // for std::strerror()
 #include <cerrno>
-#include <exception>
 
 static void	update_send_buffer_and_offset(std::string &send_buf, size_t &offset,
                 const size_t sent_bytes);
 
 void	send_messages_to_all_clients(t_IRC_Server &server)
 {
-	for (size_t i = 0; i < server.poll_fds.size(); )
+	for (size_t i = 0; !requested_shutdown && i < server.poll_fds.size(); )
 	{
 		if (server.listen_fd == server.poll_fds[i].fd)
 		{
@@ -58,18 +57,13 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 
 					* Other failures are possible here, but they all mean bad
 					* things for the connection -> time to disconnect client */
-					log_error(std::strerror(errno), __FILE__, __LINE__, 0);
+					log_error(std::strerror(errno), "send", __FILE__, __LINE__);
 					disconnect_client(server, client.fd);
 				}
 				continue;
 			}
-			try {
-				update_send_buffer_and_offset(send_buf, client.send_offset, ret);
-			} catch (const std::exception &e) {
-				log_error(e.what(), __FILE__, __LINE__, 1);
-				requested_shutdown = 1;
-				return;
-			}
+
+			update_send_buffer_and_offset(send_buf, client.send_offset, ret);
 		}
 		if (client.send_offset < send_buf.size()) // indicate that we need to write to the client
 			server.poll_fds[i].events |= POLLOUT;

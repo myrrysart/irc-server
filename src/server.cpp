@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cstring> // for std::memmove() and std::strerror()
+#include <cerrno>
+#include <exception>
 #include "../lib/server.hpp"
 #include "../lib/irc_fatstruct.hpp"
 
@@ -10,13 +12,13 @@ static void	initialize_hostname(t_IRC_Client &client)
 		if (errno == EAFNOSUPPORT)
 			log_error("Failure to initialize hostname; "
 			"client's address is neither AF_INET nor AF_IFNET6. "
-			 "Setting as 'unknown'.",
-			 __FILE__, __LINE__, 0);
+			"Setting as 'unknown'.",
+			"inet_ntop", __FILE__, __LINE__);
 		else
 			log_error("Failure to initialize hostname; "
 			"Size provided for string conversion is insufficient. "
 			"Setting as 'unkonwn'.",
-			 __FILE__, __LINE__, 0);
+			"inet_ntop", __FILE__, __LINE__);
 
 		// sizeof() includes a '\0', making the array safe for appending
 		(void)std::memmove(client.hostname, "unknown", sizeof("unknown"));
@@ -28,18 +30,28 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 	int	one = 1;
 	if (setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) < 0)
 	{
-		std::perror("setsockopt");
+		log_error(std::strerror(errno), "setsockopt", __FILE__, __LINE__);
 		close(client_fd);
 		return false;
 	}
 	if (fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0)
 	{
-		std::perror("fcntl");
+		log_error(std::strerror(errno), "fcntl", __FILE__, __LINE__);
 		close(client_fd);
 		return false;
 	}
-	server.poll_fds.push_back(pollfd{client_fd, POLLIN, 0});
-	server.clients[client_fd] = t_IRC_Client{};
+
+	// WARN: both of the next calls may heap allocate via std::vector and std::unordered_map.
+	// These can throw exceptions, which previously would not be caught by our program.
+	// If either of those fails, the client_fd has to be closed here, as it might
+	// not have been integrated to the poll_fds vector.
+	try {
+		server.poll_fds.push_back(pollfd{client_fd, POLLIN, 0});
+		server.clients[client_fd] = t_IRC_Client{};
+	} catch (const std::exception &e) {
+		close(client_fd);
+		throw; // throws the same exception that was just caught
+	}
 
 	t_IRC_Client	&client = server.clients[client_fd];
 	client.fd = client_fd;
@@ -61,16 +73,18 @@ void	accept_new_client(t_IRC_Server &server)
 	sockaddr_in client_addr{};
 	socklen_t	client_addr_len = sizeof(client_addr);
 	int			client_fd = accept(server.listen_fd, (sockaddr*)&client_addr, &client_addr_len);
-	if (client_fd < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
-		return;
 	if (client_fd < 0)
 	{
-		std::perror("accept");
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return;
+		log_error(std::strerror(errno), "accept", __FILE__, __LINE__);
 		return;
 	}
 	if (server.clients.size() >= MAX_CLIENTS)
 	{
-		std::cout << "This server is full." << std::endl;
+		// WARN: Should this error be communicated to the client before disconnecting them?
+		// std::cout << "This server is full." << std::endl;
+		log_error("Server is full", "server", __FILE__, __LINE__);
 		close(client_fd);
 		return;
 	}
@@ -86,6 +100,9 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 	{
 		if (fd == server.listen_fd)
 		{
+			// WARN: What error log should be communicated in this case? Next line just a draft.
+			// log_error("Fatal failure", "listening socket", __FILE__, __LINE__);
+			server.state |= server.FATAL_ERROR;
 			requested_shutdown = 1;
 			return true;
 		}
@@ -131,6 +148,8 @@ void	server_loop(t_IRC_Server &server)
 				continue;
 			else
 			{
+				log_error(strerror(errno), "poll", __FILE__, __LINE__);
+				server.state |= server.FATAL_ERROR;
 				requested_shutdown = 1;
 				return ;
 			}
