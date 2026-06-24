@@ -274,7 +274,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	}
 
 	std::string_view	modes = client.parser.params[1];
-	size_t				param = 2;
+	size_t				param = 2; //read from param[2] onwards
 	char				sign = 0;
 	size_t				i = 0;
 
@@ -288,7 +288,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			sign = current_char;
 			continue;
 		}
-		if (!sign)  // skip invalid
+		if (!sign)  // skip non-sign
 			continue;
 
 		if (current_char == 'i')
