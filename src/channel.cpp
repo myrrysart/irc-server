@@ -330,8 +330,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				if (arg_idx < client.parser.n_params)
 				{
 					channel->mode |= LIMIT;
-					channel->user_limit =
-						std::atoi(std::string(client.parser.params[arg_idx]).c_str());
+					channel->user_limit = std::atoi(std::string(client.parser.params[arg_idx]).c_str());
 					arg_idx++;
 				}
 				// else: TODO: build_ERR_NEEDMOREPARAMS(client);
@@ -345,8 +344,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		{
 			if (arg_idx < client.parser.n_params)
 			{
-				t_IRC_Client	*target =
-					find_chmember_by_nick(*channel, client.parser.params[arg_idx]);
+				t_IRC_Client	*target = find_chmember_by_nick(*channel, client.parser.params[arg_idx]);
 				arg_idx++;
 				if (!target)
 				{
