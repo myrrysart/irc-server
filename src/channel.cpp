@@ -304,7 +304,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	}
 
 	std::string_view	modes = client.parser.params[1];
-	size_t				param = 2;
+	size_t				arg_idx = 2;
 	char				sign = 0;
 	size_t				i = 0;
 
@@ -339,11 +339,11 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		{
 			if (sign == '+')
 			{
-				if (param < client.parser.n_params)
+				if (arg_idx < client.parser.n_params)
 				{
 					channel->mode |= KEY;
-					channel->key = std::string(client.parser.params[param]);
-					param++;
+					channel->key = std::string(client.parser.params[arg_idx]);
+					arg_idx++;
 				}
 				else build_ERR_NEEDMOREPARAMS(client);
 			}
@@ -357,12 +357,12 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		{
 			if (sign == '+')
 			{
-				if (param < client.parser.n_params)
+				if (arg_idx < client.parser.n_params)
 				{
 					channel->mode |= LIMIT;
 					channel->user_limit =
-						std::atoi(std::string(client.parser.params[param]).c_str());
-					param++;
+						std::atoi(std::string(client.parser.params[arg_idx]).c_str());
+					arg_idx++;
 				}
 				else build_ERR_NEEDMOREPARAMS(client);
 			}
@@ -373,12 +373,12 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		}
 		else if (current_char == 'o')
 		{
-			if (param < client.parser.n_params)
+			if (arg_idx < client.parser.n_params)
 			{
-				std::string_view	target_nick = client.parser.params[param];
+				std::string_view	target_nick = client.parser.params[arg_idx];
 				t_IRC_Client		*target =
 					find_chmember_by_nick(*channel, target_nick);
-				param++;
+				arg_idx++;
 				if (!target)
 					build_ERR_USERNOTINCHANNEL(client, channel_name, target_nick);
 				else if (sign == '+')
