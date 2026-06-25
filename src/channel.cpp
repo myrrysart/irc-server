@@ -6,6 +6,56 @@
 #include <cstddef>
 #include <string>
 
+// message building utilities (maybe would have their own file in the future)
+void	append_JOIN_msg(std::string &buf, const t_IRC_Client &who, const std::string &chan)
+{
+	buf += ":";
+	append_nick_user_host(buf, who);
+	buf += " JOIN ";
+	buf += chan;
+	buf += "\r\n";
+}
+
+void	append_PART_msg(std::string &buf, const t_IRC_Client &who, const std::string &chan)
+{
+	buf += ":";
+	append_nick_user_host(buf, who);
+	buf += " PART ";
+	buf += chan;
+	buf += "\r\n";
+}
+
+void	append_KICK_msg(std::string &buf, const t_IRC_Client &kicker,
+		const std::string &chan, const std::string_view victim_nick,
+		const std::string_view reason = {})
+{
+	buf += ":";
+	append_nick_user_host(buf, kicker);
+	buf += " KICK ";
+	buf += chan;
+	buf += ' ';
+	buf += victim_nick;
+	if (!reason.empty())
+	{
+		buf += " :";
+		buf += reason;
+	}
+	buf += "\r\n";
+}
+
+
+void	append_MODE_msg(std::string &buf, const t_IRC_Client &who, const std::string &chan, const std::string &mode)
+{
+	buf += ":";
+	append_nick_user_host(buf, who);
+	buf += " MODE ";
+	buf += chan;
+	buf += " ";
+	buf += mode;
+	buf += "\r\n";
+}
+
+
 t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, const std::string_view nick)
 {
 	for (auto &[member_ptr, flags] : channel.members)
@@ -90,7 +140,7 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		line += message;
 		line += "\r\n";
 
-		broadcast_to_channel(*channel, line, client, false);
+		broadcast_to_channel(*channel, line, client, true);
 	}
 	else
 	{
@@ -180,11 +230,8 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	channel.members[&client] = flags;
 	client.joined_channels.insert(&channel);
 
-	std::string		line = ":";
-	append_nick_user_host(line, client);
-	line += " JOIN ";
-	line += channel_name;
-	line += "\r\n";
+	std::string		line;
+	append_JOIN_msg(line, client, channel_name);
 	broadcast_to_channel(channel, line, client, false);
 }
 
@@ -210,16 +257,8 @@ void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	std::string		line = ":";
-	append_nick_user_host(line, client);
-	line += " PART ";
-	line += channel_name;
-	if (client.parser.n_params >= 2)
-	{
-		line += " :";
-		line += client.parser.params[1];
-	}
-	line += "\r\n";
+	std::string		line;
+	append_PART_msg(line, client, channel_name);
 	broadcast_to_channel(*channel, line, client, false);
 	remove_client_from_channel(client, *channel, server);
 }
@@ -260,18 +299,11 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 		return;
 	}
 
-	std::string		line = ":";
-	append_nick_user_host(line, kicker);
-	line += " KICK ";
-	line += channel_name;
-	line += ' ';
-	line += to_be_kicked->nick;
+	std::string line;
+	std::string_view reason;
 	if (kicker.parser.n_params >= 3)
-	{
-		line += " :";
-		line += kicker.parser.params[2];
-	}
-	line += "\r\n";
+		reason = kicker.parser.params[2];
+	append_KICK_msg(line, kicker, channel_name, to_be_kicked->nick, reason);
 	broadcast_to_channel(*channel, line, kicker, false);
 	remove_client_from_channel(*to_be_kicked, *channel, server);
 }
@@ -313,6 +345,13 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	char				sign = 0;
 	size_t				i = 0;
 
+	// Accumulate only successfully-applied changes for the broadcast line.
+	// 'delta_chars' groups consecutive same-sign letters (e.g. "+it-o");
+	// 'delta_args' collects each letter's arg in the order it appears.
+	std::string			delta_chars;
+	std::string			delta_args;
+	char				last_sign = 0;
+
 	while (i < modes.size())
 	{
 		char	current_char = modes[i];
@@ -326,12 +365,16 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		if (!sign)  // skip invalid
 			continue;
 
+		bool				applied = false;
+		std::string_view	applied_arg;
+
 		if (current_char == 'i')
 		{
 			if (sign == '+')
 				channel->mode |= INVITE;
 			else
 				channel->mode &= ~INVITE;
+			applied = true;
 		}
 		else if (current_char == 't')
 		{
@@ -339,6 +382,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				channel->mode |= TOPIC;
 			else
 				channel->mode &= ~TOPIC;
+			applied = true;
 		}
 		else if (current_char == 'k')
 		{
@@ -348,7 +392,9 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				{
 					channel->mode |= KEY;
 					channel->key = std::string(client.parser.params[arg_idx]);
+					applied_arg = client.parser.params[arg_idx];
 					arg_idx++;
+					applied = true;
 				}
 				else build_ERR_NEEDMOREPARAMS(client);
 			}
@@ -356,6 +402,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			{
 				channel->mode &= ~KEY;
 				channel->key.clear();
+				applied = true;
 			}
 		}
 		else if (current_char == 'l')
@@ -367,13 +414,16 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					channel->mode |= LIMIT;
 					channel->user_limit =
 						std::atoi(std::string(client.parser.params[arg_idx]).c_str());
+					applied_arg = client.parser.params[arg_idx];
 					arg_idx++;
+					applied = true;
 				}
 				else build_ERR_NEEDMOREPARAMS(client);
 			}
 			else
 			{
 				channel->mode &= ~LIMIT;
+				applied = true;
 			}
 		}
 		else if (current_char == 'o')
@@ -386,14 +436,48 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				arg_idx++;
 				if (!target)
 					build_ERR_USERNOTINCHANNEL(client, channel_name, target_nick);
-				else if (sign == '+')
-					channel->members[target] |= IS_OPERATOR;
 				else
-					channel->members[target] &= ~IS_OPERATOR;
+				{
+					if (sign == '+')
+						channel->members[target] |= IS_OPERATOR;
+					else
+						channel->members[target] &= ~IS_OPERATOR;
+					applied_arg = target_nick;
+					applied = true;
+				}
 			}
 			else build_ERR_NEEDMOREPARAMS(client);
 		}
 		else
 			build_ERR_UNKNOWNMODE(client, channel_name, current_char);
+
+		if (applied)
+		{
+			if (sign != last_sign)
+			{
+				delta_chars += sign;
+				last_sign = sign;
+			}
+			delta_chars += current_char;
+			if (!applied_arg.empty())
+			{
+				if (!delta_args.empty())
+					delta_args += ' ';
+				delta_args += applied_arg;
+			}
+		}
+	}
+
+	if (!delta_chars.empty())
+	{
+		std::string	delta = delta_chars;
+		if (!delta_args.empty())
+		{
+			delta += ' ';
+			delta += delta_args;
+		}
+		std::string	line;
+		append_MODE_msg(line, client, channel_name, delta);
+		broadcast_to_channel(*channel, line, client, false);
 	}
 }
