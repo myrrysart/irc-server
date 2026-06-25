@@ -85,7 +85,10 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		line += "\r\n";
 
 		for (auto &[member_ptr, flags] : channel->members)
-			member_ptr->send_message_buffer += line;
+		{
+			if (member_ptr != &client)
+				member_ptr->send_message_buffer += line;
+		}
 	}
 	else
 	{
