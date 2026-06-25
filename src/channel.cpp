@@ -27,6 +27,7 @@ static void	remove_client_from_channel(t_IRC_Client &client, t_IRC_Channel &chan
 {
 	client.joined_channels.erase(&channel);
 	channel.members.erase(&client);
+	channel.invited.erase(&client);
 	if (channel.members.empty())
 		server.channels.erase(channel.name);
 }

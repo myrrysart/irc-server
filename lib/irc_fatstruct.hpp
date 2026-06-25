@@ -157,7 +157,6 @@ typedef struct	s_IRC_Client
 
 	t_bmask								state;
 	struct sockaddr_in					addr;  //NOTE: Is this needed here?
-	struct sockaddr_in					addr;  //Is this needed here?
 	int									fd;
 	std::string_view					nick;
 	char								nick_buf[max_nicklen]; // not nullterminated, use 'nick' instead
