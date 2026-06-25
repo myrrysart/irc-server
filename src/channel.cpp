@@ -45,10 +45,15 @@ static t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, const std::string
 	return nullptr;
 }
 
-static void	broadcast_to_channel(t_IRC_Channel &channel, const std::string &line)
+static void	broadcast_to_channel(t_IRC_Channel &channel, const std::string &line, t_IRC_Client &client, bool skip_sender)
 {
 	for (auto &[member_ptr, flags] : channel.members)
+	{
+		if (skip_sender && member_ptr == &client)
+			continue;
 		member_ptr->send_message_buffer += line;
+
+	}
 }
 
 void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
@@ -85,11 +90,7 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		line += message;
 		line += "\r\n";
 
-		for (auto &[member_ptr, flags] : channel->members)
-		{
-			if (member_ptr != &client)
-				member_ptr->send_message_buffer += line;
-		}
+		broadcast_to_channel(*channel, line, client, false);
 	}
 	else
 	{
@@ -184,7 +185,7 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	line += " JOIN ";
 	line += channel_name;
 	line += "\r\n";
-	broadcast_to_channel(channel, line);
+	broadcast_to_channel(channel, line, client, false);
 }
 
 void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
@@ -219,7 +220,7 @@ void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		line += client.parser.params[1];
 	}
 	line += "\r\n";
-	broadcast_to_channel(*channel, line);
+	broadcast_to_channel(*channel, line, client, false);
 	remove_client_from_channel(client, *channel, server);
 }
 
@@ -271,7 +272,7 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 		line += kicker.parser.params[2];
 	}
 	line += "\r\n";
-	broadcast_to_channel(*channel, line);
+	broadcast_to_channel(*channel, line, kicker, false);
 	remove_client_from_channel(*to_be_kicked, *channel, server);
 }
 
