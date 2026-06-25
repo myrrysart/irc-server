@@ -4,6 +4,7 @@
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
 #include <cstddef>
+#include <charconv>
 #include <string>
 
 // message building utilities (maybe would have their own file in the future)
@@ -414,7 +415,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				if (arg_idx < client.parser.n_params)
 				{
 					channel->mode |= KEY;
-					channel->key = std::string(client.parser.params[arg_idx]);
+					channel->key.assign(client.parser.params[arg_idx]);
 					plus_chars += 'k';
 					if (!plus_args.empty())
 						plus_args += ' ';
@@ -436,13 +437,15 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			{
 				if (arg_idx < client.parser.n_params)
 				{
+					std::string_view	limit = client.parser.params[arg_idx];
+
 					channel->mode |= LIMIT;
-					channel->user_limit =
-						std::atoi(std::string(client.parser.params[arg_idx]).c_str());
+					channel->user_limit = 0;
+					std::from_chars(limit.data(), limit.data() + limit.size(), channel->user_limit);
 					plus_chars += 'l';
 					if (!plus_args.empty())
 						plus_args += ' ';
-					plus_args += client.parser.params[arg_idx];
+					plus_args += limit;
 					arg_idx++;
 				}
 				else build_ERR_NEEDMOREPARAMS(client);
