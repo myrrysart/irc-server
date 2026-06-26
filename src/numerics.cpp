@@ -473,7 +473,7 @@ void	build_RPL_ENDOFNAMES(t_IRC_Client &client, const std::string_view channel)
 
 // RPL_LIST (322)
 // "<client> :<channel> :<number of users> :<topic>"
-void	build_RPL_LIST(t_IRC_Client &client, t_IRC_Channel &channel)
+void	build_RPL_LIST(t_IRC_Client &client, const t_IRC_Channel &channel)
 {
 	std::string		&buffer = client.send_message_buffer;
 
