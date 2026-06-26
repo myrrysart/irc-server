@@ -21,8 +21,6 @@ void	execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server);
 // /list
 void	execute_LIST_cmd(t_IRC_Client &client, t_IRC_Server &server);
 
-void 	execute_USER_cmd(t_IRC_Client &client);
-
 t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, const std::string_view nick);
 t_IRC_Channel	*find_channel_by_name(t_IRC_Server &server, const std::string &ch_name);
 t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, const std::string_view nick);
