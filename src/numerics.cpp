@@ -452,7 +452,7 @@ void	build_RPL_NAMES(t_IRC_Client &client, const std::string_view line)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "353", client.nick);
-	buffer += " = ";
+	buffer += "= ";
 	buffer += client.parser.params[0];
 	buffer += " :";
 	buffer += line;
@@ -466,7 +466,6 @@ void	build_RPL_ENDOFNAMES(t_IRC_Client &client, const std::string_view channel)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "366", client.nick);
-	buffer += " ";
 	buffer += channel;
 	buffer += " :End of /NAMES list\r\n";
 }
@@ -493,7 +492,7 @@ void	build_RPL_LISTEND(t_IRC_Client &client)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "323", client.nick);
-	buffer += " :End of /LIST\r\n";
+	buffer += ":End of /LIST\r\n";
 }
 
 // RPL_INVITING (341)
@@ -503,7 +502,6 @@ void	build_RPL_INVITING(t_IRC_Client &client, const std::string &target_nick, co
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "341", client.nick);
-	buffer += ' ';
 	buffer += target_nick;
 	buffer += ' ';
 	buffer += channel_name;
