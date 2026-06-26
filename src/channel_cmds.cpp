@@ -1,4 +1,3 @@
-#include "../lib/irc_fatstruct.hpp"
 #include "../lib/channel.hpp"
 #include "../lib/commands.hpp"
 #include "../lib/numerics.hpp"
@@ -70,7 +69,6 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	}
 	std::string		channel_name(client.parser.params[0]);
 
-	//validate channel name
 	if (channel_name.empty() || (channel_name[0] != '#' && channel_name[0] != '&'))
 	{
 		build_ERR_BADCHANMASK(client, channel_name);
@@ -91,27 +89,24 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 	t_IRC_Channel	&channel = ch_it->second;
 
-	// Set channel.name on first creation
 	if (channel.name.empty())
 		channel.name = channel_name;
 
-	// Already a member -> return
 	if (channel.members.contains(&client))
 		return;
 
-	// limit check
 	if (is_flag_set(channel.mode, LIMIT) && channel.members.size() >= static_cast<size_t>(channel.user_limit))
    	{
 		build_ERR_CHANNELISFULL(client, channel_name);
 		return;
 	}
-	// invite check
+
 	if (is_flag_set(channel.mode, INVITE) && !channel.invited.contains(&client))
 	{
 		build_ERR_INVITEONLYCHAN(client, channel_name);
 		return;
 	}
-	// key check
+
 	if (is_flag_set(channel.mode, KEY))
 	{
 		if (client.parser.n_params < 2 || channel.key != client.parser.params[1])
@@ -120,14 +115,14 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			return;
 		}
 	}
-	// Build member flags. first joiner becomes channel operator
+
 	t_bmask			flags = 0;
 	if (channel.members.empty())
 	{
 		flags |= IS_OPERATOR;
 		channel.mode |= TOPIC;
 	}
-	// Record membership on channel and client
+
 	channel.members[&client] = flags;
 	client.joined_channels.insert(&channel);
 

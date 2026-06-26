@@ -1,4 +1,3 @@
-#include "../lib/irc_fatstruct.hpp"
 #include "../lib/channel.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"

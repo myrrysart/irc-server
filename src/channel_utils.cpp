@@ -1,4 +1,3 @@
-#include "../lib/irc_fatstruct.hpp"
 #include "../lib/channel.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
@@ -31,11 +30,11 @@ void	remove_client_from_channel(t_IRC_Client &client, t_IRC_Channel &channel, t_
 		server.channels.erase(channel.name);
 }
 
- t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, const std::string_view nick)
+t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, const std::string_view nick)
 {
-	for (auto &[fd, client] : server.clients)
+	for (auto &entry : server.clients)
 	{
-		(void)fd;
+		t_IRC_Client	&client = entry.second;
 		if (are_equal_strs_case_insensitive(
 				nick.data(), nick.size(),
 				client.nick.data(), client.nick.size()))
