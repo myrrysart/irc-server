@@ -562,3 +562,11 @@ void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	build_RPL_NAMES(client, line);
 	build_RPL_ENDOFNAMES(client, channel_name);
 }
+
+void	execute_LIST_cmd(t_IRC_Client &client, t_IRC_Server &server)
+{
+	std::string	line;
+	for (const auto &[name, channel] : server.channels)
+		build_RPL_LIST(client, channel);
+	build_RPL_LISTEND(client);
+}

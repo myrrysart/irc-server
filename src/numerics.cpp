@@ -473,13 +473,16 @@ void	build_RPL_ENDOFNAMES(t_IRC_Client &client, const std::string_view channel)
 
 // RPL_LIST (322)
 // "<client> :<channel> :<number of users> :<topic>"
-void	build_RPL_LIST(t_IRC_Client &client, const std::string_view line)
+void	build_RPL_LIST(t_IRC_Client &client, t_IRC_Channel &channel)
 {
-	std::string	&buffer = client.send_message_buffer;
+	std::string		&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "322", client.nick);
+	buffer += channel.name;
+	buffer += ' ';
+	buffer += std::to_string(channel.members.size());
 	buffer += " :";
-	buffer += line;
+	buffer += channel.topic;
 	buffer += "\r\n";
 }
 
