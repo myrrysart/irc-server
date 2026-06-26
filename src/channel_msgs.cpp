@@ -24,8 +24,7 @@ void	append_PART_msg(std::string &buf, const t_IRC_Client &who, const std::strin
 }
 
 void	append_KICK_msg(std::string &buf, const t_IRC_Client &kicker,
-		const std::string &chan, const std::string_view victim_nick,
-		const std::string_view reason)
+		const std::string &chan, std::string_view victim_nick, std::string_view reason)
 {
 	buf += ":";
 	append_nick_user_host(buf, kicker);
@@ -52,7 +51,7 @@ void	append_MODE_msg(std::string &buf, const t_IRC_Client &who, const std::strin
 	buf += "\r\n";
 }
 
-void	append_TOPIC_msg(std::string &buf, const t_IRC_Client &who, const std::string_view topic)
+void	append_TOPIC_msg(std::string &buf, const t_IRC_Client &who, std::string_view topic)
 {
 	buf += ":";
 	append_nick_user_host(buf, who);
@@ -61,7 +60,7 @@ void	append_TOPIC_msg(std::string &buf, const t_IRC_Client &who, const std::stri
 	buf += "\r\n";
 }
 
-void	append_NAMES_reply(t_IRC_Client &client, const std::string_view line)
+void	append_NAMES_reply(t_IRC_Client &client, std::string_view line)
 {
 	std::string	&buf = client.send_message_buffer;
 	append_common_reply_prefix(buf, "353", client.nick);
