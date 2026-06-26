@@ -22,7 +22,7 @@ void	build_RPL_ISUPPORT(t_IRC_Client &client);                    // 005
 void	build_RPL_CHANNELMODEIS(t_IRC_Client &client,                 // 324
             const t_IRC_Channel &channel);
 void	build_RPL_NAMES(t_IRC_Client &client, const std::string_view line); // 353
-void	build_RPL_ENDOFNAMES(t_IRC_Client &client);                  // 366
+void	build_RPL_ENDOFNAMES(t_IRC_Client &client, const std::string_view channel);                  // 366
 void	build_RPL_LIST(t_IRC_Client &client, const std::string_view line); // 322
 void	build_RPL_LISTEND(t_IRC_Client &client);                    // 323
 
@@ -62,5 +62,9 @@ void	build_ERR_BADCHANMASK(t_IRC_Client &client,                  // 476
             const std::string_view channel);
 void	build_ERR_CHANOPRIVSNEEDED(t_IRC_Client &client,              // 482
             const std::string_view channel);
+
+
+void	append_common_reply_prefix(std::string &buffer,
+			const std::string_view code, const std::string_view nick);
 
 #endif
