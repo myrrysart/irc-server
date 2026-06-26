@@ -74,7 +74,7 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 			// case 9:  execute_INVITE_cmd(client, server);	break;
 			case 10: execute_TOPIC_cmd(client, server); 	break;
 			case 13: execute_NAMES_cmd(client, server); 	break; // all nicks on channel
-			// case 14: execute_LIST_cmd(client, server);  	break; // all channels on server
+			case 14: execute_LIST_cmd(client, server);  	break; // all channels on server
 			case 11: execute_PING_cmd(client, server);		break;
 			case 12: execute_PONG_cmd(client, server);		break;
 		}

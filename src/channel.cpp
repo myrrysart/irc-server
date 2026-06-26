@@ -547,7 +547,11 @@ void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 	std::string channel_name(client.parser.params[0]);
 	t_IRC_Channel *channel = find_channel_by_name(server, channel_name);
-	if (!channel) { build_ERR_NOSUCHCHANNEL(client, channel_name); return; }
+	if (!channel)
+	{
+		build_ERR_NOSUCHCHANNEL(client, channel_name);
+		return;
+	}
 
 	std::string line;
 	for (const auto &[member, flags] : channel->members)
