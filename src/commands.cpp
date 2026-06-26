@@ -2,12 +2,9 @@
 #include "../lib/commands.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
-#include "../lib/server.hpp"
 #include "../lib/channel.hpp"
-
 #include <cstring> // for std::strncmp()
 #include <string_view>
-#include <unordered_map>
 
 void	execute_PING_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -49,7 +46,6 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 	else
 		i = t_parser::n_valid_cmds; // invalid command, will trigger default case
 
-
 	// WARN: Make 100% sure that the commands in the switch case match the ones
 	// in the commands array; Also, make sure that all of those commands are
 	// implemented / need to be implemented!
@@ -76,9 +72,9 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 			case 7:  execute_MODE_cmd(client, server);		break;
 			case 8:  execute_KICK_cmd(client, server);		break;
 			// case 9:  execute_INVITE_cmd(client, server);	break;
-			// case 10: execute_TOPIC_cmd(client, server); 	break;
-			// case 13: execute_NAMES_cmd(client, server); 	break;
-			// case 14: execute_LIST_cmd(client, server);  	break;
+			case 10: execute_TOPIC_cmd(client, server); 	break;
+			case 13: execute_NAMES_cmd(client, server); 	break; // all nicks on channel
+			case 14: execute_LIST_cmd(client, server);  	break; // all channels on server
 			case 11: execute_PING_cmd(client, server);		break;
 			case 12: execute_PONG_cmd(client, server);		break;
 		}

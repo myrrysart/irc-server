@@ -1,6 +1,6 @@
 NAME	= ircserv
 CC		= c++
-CFLAGS	= -Wall -Wextra -Werror -Wshadow -std=c++20 -MMD -MP
+CFLAGS	= -Wall -Wextra -Werror -Wshadow -std=c++20 -MMD -MP -fdiagnostics-color=always
 SRC		= src/main.cpp src/server.cpp src/listener.cpp src/client.cpp \
 		  src/error.cpp src/msg_parser.cpp src/sender.cpp src/numerics.cpp \
 		  src/parsing_utils.cpp src/commands.cpp src/registration.cpp \

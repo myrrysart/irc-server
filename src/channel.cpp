@@ -56,6 +56,23 @@ void	append_MODE_msg(std::string &buf, const t_IRC_Client &who, const std::strin
 	buf += "\r\n";
 }
 
+void	append_TOPIC_msg(std::string &buf, const t_IRC_Client &who, const std::string_view topic)
+{
+	buf += ":";
+	append_nick_user_host(buf, who);
+	buf += " TOPIC ";
+	buf += topic;
+	buf += "\r\n";
+}
+
+void	append_NAMES_reply(t_IRC_Client &client, const std::string_view line)
+{
+	std::string	&buf = client.send_message_buffer;
+	append_common_reply_prefix(buf, "353", client.nick);
+	buf += " = ";
+	buf += line;
+	buf += "\r\n";
+}
 
 t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, const std::string_view nick)
 {
@@ -499,4 +516,45 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		append_MODE_msg(line, client, channel_name, delta);
 		broadcast_to_channel(*channel, line, client, false);
 	}
+}
+
+void	execute_TOPIC_cmd(t_IRC_Client &client, t_IRC_Server &server)
+{
+	if (client.parser.n_params < 1)
+	{
+		build_ERR_NEEDMOREPARAMS(client);
+		return;
+	}
+
+	std::string			channel_name(client.parser.params[0]);
+	std::string_view	topic = client.parser.params[1];
+
+	server.channels[channel_name].topic = topic;
+
+	std::string			line;
+	append_TOPIC_msg(line, client, topic);
+	broadcast_to_channel(server.channels[channel_name], line, client, false);
+
+}
+
+void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
+{
+	if (client.parser.n_params < 1)
+	{
+		build_ERR_NEEDMOREPARAMS(client);
+		return;
+	}
+
+	std::string channel_name(client.parser.params[0]);
+	t_IRC_Channel *channel = find_channel_by_name(server, channel_name);
+	if (!channel) { build_ERR_NOSUCHCHANNEL(client, channel_name); return; }
+
+	std::string line;
+	for (const auto &[member, flags] : channel->members)
+	{
+		line += member->nick;
+		line += ' ';
+	}
+	build_RPL_NAMES(client, line);
+	build_RPL_ENDOFNAMES(client, channel_name);
 }

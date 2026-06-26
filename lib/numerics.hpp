@@ -21,6 +21,11 @@ void	build_RPL_MYINFO(t_IRC_Client &client);                      // 004
 void	build_RPL_ISUPPORT(t_IRC_Client &client);                    // 005
 void	build_RPL_CHANNELMODEIS(t_IRC_Client &client,                 // 324
             const t_IRC_Channel &channel);
+void	build_RPL_NAMES(t_IRC_Client &client, const std::string_view line); // 353
+void	build_RPL_ENDOFNAMES(t_IRC_Client &client);                  // 366
+void	build_RPL_LIST(t_IRC_Client &client, const std::string_view line); // 322
+void	build_RPL_LISTEND(t_IRC_Client &client);                    // 323
+
 void	build_ERR_NOSUCHNICK(t_IRC_Client &client,                   // 401
             const std::string_view nick);
 void	build_ERR_NOSUCHCHANNEL(t_IRC_Client &client,                // 403

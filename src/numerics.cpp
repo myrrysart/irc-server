@@ -445,6 +445,54 @@ void	build_ERR_CHANOPRIVSNEEDED(t_IRC_Client &client, const std::string_view cha
 	buffer += " :You're not channel operator\r\n";
 }
 
+// RPL_NAMES (353)
+// "<client> = <channel> :<nick list>"
+void	build_RPL_NAMES(t_IRC_Client &client, const std::string_view line)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "353", client.nick);
+	buffer += " = ";
+	buffer += client.parser.params[0];
+	buffer += " :";
+	buffer += line;
+	buffer += "\r\n";
+}
+
+// RPL_ENDOFNAMES (366)
+// "<client> :End of /NAMES list"
+void	build_RPL_ENDOFNAMES(t_IRC_Client &client, const std::string_view channel)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "366", client.nick);
+	buffer += " ";
+	buffer += channel;
+	buffer += " :End of /NAMES list\r\n";
+}
+
+// RPL_LIST (322)
+// "<client> :<channel> :<number of users> :<topic>"
+void	build_RPL_LIST(t_IRC_Client &client, const std::string_view line)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "322", client.nick);
+	buffer += " :";
+	buffer += line;
+	buffer += "\r\n";
+}
+
+// RPL_LISTEND (323)
+// "<client> :End of /LIST"
+void	build_RPL_LISTEND(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "323", client.nick);
+	buffer += " :End of /LIST\r\n";
+}
+
 void	append_common_reply_prefix(std::string &buffer,
             const std::string_view numeric, const std::string_view nick)
 {
