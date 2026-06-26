@@ -75,7 +75,6 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	// Find existing channel, or create a new one
 	auto			ch_it = server.channels.find(channel_name);
 	if (ch_it == server.channels.end())
 	{
@@ -116,19 +115,22 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		}
 	}
 
-	t_bmask			flags = 0;
+	t_bmask			join_flags = 0;
 	if (channel.members.empty())
 	{
-		flags |= IS_OPERATOR;
+		join_flags |= IS_OPERATOR;
 		channel.mode |= TOPIC;
 	}
 
-	channel.members[&client] = flags;
+	channel.members[&client] = join_flags;
 	client.joined_channels.insert(&channel);
 
 	std::string		line;
 	append_JOIN_msg(line, client, channel_name);
 	broadcast_to_channel(channel, line, client, false);
+	if (!channel.topic.empty())
+		build_RPL_TOPIC(client, channel);
+	send_names_reply(client, channel);
 }
 
 void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
@@ -210,16 +212,43 @@ void	execute_TOPIC_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	std::string			channel_name(client.parser.params[0]);
-	std::string_view	topic = client.parser.params[1];
+	std::string		channel_name(client.parser.params[0]);
+	t_IRC_Channel	*channel = find_channel_by_name(server, channel_name);
+	if (!channel)
+	{
+		build_ERR_NOSUCHCHANNEL(client, channel_name);
+		return;
+	}
 
-	server.channels[channel_name].topic = topic;
+	auto	member_it = channel->members.find(&client);
+	if (member_it == channel->members.end())
+	{
+		build_ERR_NOTONCHANNEL(client, channel_name);
+		return;
+	}
 
-	std::string			line;
-	append_TOPIC_msg(line, client, topic);
-	broadcast_to_channel(server.channels[channel_name], line, client, false);
+	if (client.parser.n_params < 2)
+	{
+		if (channel->topic.empty())
+			build_RPL_NOTOPIC(client, channel_name);
+		else
+			build_RPL_TOPIC(client, *channel);
+		return;
+	}
 
+	if (is_flag_set(channel->mode, TOPIC) && !is_flag_set(member_it->second, IS_OPERATOR))
+	{
+		build_ERR_CHANOPRIVSNEEDED(client, channel_name);
+		return;
+	}
+
+	channel->topic.assign(client.parser.params[1]); // copy out of the receive buffer
+
+	std::string	line;
+	append_TOPIC_msg(line, client, channel_name, channel->topic);
+	broadcast_to_channel(*channel, line, client, false);
 }
+
 
 void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -237,14 +266,7 @@ void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	std::string line;
-	for (const auto &[member, flags] : channel->members)
-	{
-		line += member->nick;
-		line += ' ';
-	}
-	build_RPL_NAMES(client, line);
-	build_RPL_ENDOFNAMES(client, channel_name);
+	send_names_reply(client, *channel);
 }
 
 void	execute_LIST_cmd(t_IRC_Client &client, t_IRC_Server &server)
@@ -269,6 +291,18 @@ void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	if (!channel)
 	{
 		build_ERR_NOSUCHCHANNEL(client, channel_name);
+		return;
+	}
+
+	auto	inviter_it = channel->members.find(&client);
+	if (inviter_it == channel->members.end())
+	{
+		build_ERR_NOTONCHANNEL(client, channel_name);
+		return;
+	}
+	if (!is_flag_set(inviter_it->second, IS_OPERATOR))
+	{
+		build_ERR_CHANOPRIVSNEEDED(client, channel_name);
 		return;
 	}
 

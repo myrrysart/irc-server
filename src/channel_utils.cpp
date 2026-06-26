@@ -21,15 +21,6 @@ t_IRC_Channel	*find_channel_by_name(t_IRC_Server &server, const std::string &ch_
 	return nullptr;
 }
 
-void	remove_client_from_channel(t_IRC_Client &client, t_IRC_Channel &channel, t_IRC_Server &server)
-{
-	client.joined_channels.erase(&channel);
-	channel.members.erase(&client);
-	channel.invited.erase(&client);
-	if (channel.members.empty())
-		server.channels.erase(channel.name);
-}
-
 t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, const std::string_view nick)
 {
 	for (auto &entry : server.clients)
@@ -43,6 +34,15 @@ t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, const std::string_view n
 	return nullptr;
 }
 
+void	remove_client_from_channel(t_IRC_Client &client, t_IRC_Channel &channel, t_IRC_Server &server)
+{
+	client.joined_channels.erase(&channel);
+	channel.members.erase(&client);
+	channel.invited.erase(&client);
+	if (channel.members.empty())
+		server.channels.erase(channel.name);
+}
+
 void	broadcast_to_channel(t_IRC_Channel &channel, const std::string &line, t_IRC_Client &client, bool skip_sender)
 {
 	for (auto &[member_ptr, flags] : channel.members)
@@ -52,4 +52,21 @@ void	broadcast_to_channel(t_IRC_Channel &channel, const std::string &line, t_IRC
 		member_ptr->send_message_buffer += line;
 
 	}
+}
+
+void	send_names_reply(t_IRC_Client &client, const t_IRC_Channel &channel)
+{
+	std::string	names;
+
+	for (const auto &[member, member_flags] : channel.members)
+	{
+		if (is_flag_set(member_flags, IS_OPERATOR))
+			names += '@';
+		names += member->nick;
+		names += ' ';
+	}
+	if (!names.empty())
+		names.pop_back(); //getting rid of the space at the end
+	build_RPL_NAMES(client, channel.name, names);
+	build_RPL_ENDOFNAMES(client, channel.name);
 }

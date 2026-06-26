@@ -447,20 +447,21 @@ void	build_ERR_CHANOPRIVSNEEDED(t_IRC_Client &client, const std::string_view cha
 
 // RPL_NAMES (353)
 // "<client> = <channel> :<nick list>"
-void	build_RPL_NAMES(t_IRC_Client &client, const std::string_view line)
+void	build_RPL_NAMES(t_IRC_Client &client, std::string_view channel, std::string_view line)
 {
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "353", client.nick);
 	buffer += "= ";
-	buffer += client.parser.params[0];
+	buffer += channel;
 	buffer += " :";
 	buffer += line;
 	buffer += "\r\n";
 }
 
+
 // RPL_ENDOFNAMES (366)
-// "<client> :End of /NAMES list"
+// "<client> <channel> :End of /NAMES list`, not `<client> :End of /NAMES list`"
 void	build_RPL_ENDOFNAMES(t_IRC_Client &client, const std::string_view channel)
 {
 	std::string	&buffer = client.send_message_buffer;
@@ -505,6 +506,25 @@ void	build_RPL_INVITING(t_IRC_Client &client, const std::string &target_nick, co
 	buffer += target_nick;
 	buffer += ' ';
 	buffer += channel_name;
+	buffer += "\r\n";
+}
+
+void	build_RPL_NOTOPIC(t_IRC_Client &client, const std::string_view channel)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "331", client.nick);
+	buffer += channel;
+	buffer += " :No topic is set\r\n";
+}
+void	build_RPL_TOPIC(t_IRC_Client &client, const t_IRC_Channel &channel)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "332", client.nick);
+	buffer += channel.name;
+	buffer += " :";
+	buffer += channel.topic;
 	buffer += "\r\n";
 }
 
