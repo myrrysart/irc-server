@@ -570,3 +570,31 @@ void	execute_LIST_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		build_RPL_LIST(client, channel);
 	build_RPL_LISTEND(client);
 }
+
+void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
+{
+	if (client.parser.n_params < 2)
+	{
+		build_ERR_NEEDMOREPARAMS(client);
+		return;
+	}
+
+	std::string		target_nick(client.parser.params[0]);
+	std::string		channel_name(client.parser.params[1]);
+	t_IRC_Channel	*channel = find_channel_by_name(server, channel_name);
+	if (!channel)
+	{
+		build_ERR_NOSUCHCHANNEL(client, channel_name);
+		return;
+	}
+
+	t_IRC_Client *target = find_client_by_nick(server, target_nick);
+	if (!target)
+	{
+		build_ERR_NOSUCHNICK(client, target_nick);
+		return;
+	}
+
+	channel->invited.insert(target);
+	build_RPL_INVITING(client, target_nick, channel_name);
+}
