@@ -92,9 +92,8 @@ void	disconnect_client(t_IRC_Server &server, int fd)
 		if (channel->members.empty())
 			server.channels.erase(channel->name);
 	}
-	// TODO: once INVITE is implemented, a client can sit in a channel's 'invited'
-	// set without having joined it (so it won't be in joined_channels). Clean
-	// those too, e.g. by sweeping server.channels or adding a reverse index.
+	for (auto &[name, channel] : server.channels)
+		channel.invited.erase(&client);
 	close(fd);
 	server.clients.erase(fd);
 	std::erase_if(server.poll_fds, [fd](const pollfd& pfd){ return pfd.fd == fd; });
