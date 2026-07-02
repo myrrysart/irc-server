@@ -226,6 +226,21 @@ void	build_ERR_NEEDMOREPARAMS(t_IRC_Client &client)
 	buffer += " :Not enough parameters\r\n";
 }
 
+// RPL_UMODEIS (221) "<client> <user modes>"
+void	build_RPL_UMODEIS(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+	append_common_reply_prefix(buffer, "221", client.nick);
+	buffer += "+\r\n";
+}
+
+// ERR_USERSDONTMATCH (502) "<client> :Cant change mode for other users"
+void	build_ERR_USERSDONTMATCH(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+	append_common_reply_prefix(buffer, "502", client.nick);
+	buffer += ":Cant change mode for other users\r\n";
+}
 
 // ERR_ALREADYREGISTERED (462)
 // "<client> :You may not reregister"

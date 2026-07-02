@@ -34,6 +34,8 @@ void	build_RPL_NAMREPLY(t_IRC_Client &client,					// 353
 			std::string_view channel, std::string_view line);
 void	build_RPL_ENDOFNAMES(t_IRC_Client &client,					// 366
 			std::string_view channel);
+void	build_RPL_UMODEIS(t_IRC_Client &client);					// 221
+void	build_ERR_USERSDONTMATCH(t_IRC_Client &client);				// 502
 
 
 void	build_ERR_NOSUCHNICK(t_IRC_Client &client,                   // 401

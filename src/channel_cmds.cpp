@@ -279,10 +279,33 @@ void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 void	execute_LIST_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
-	for (const auto &[name, channel] : server.channels)
-		build_RPL_LIST(client, channel);
+	//No target
+	if (client.parser.n_params == 0)
+	{
+		for (const auto &[name, channel] : server.channels)
+			build_RPL_LIST(client, channel);
+	}
+	else
+	{
+		std::string_view	targets = client.parser.params[0];
+		size_t				start = 0;
+
+		while (start <= targets.size())
+		{
+			size_t			end = targets.find(',', start);
+			if (end == std::string_view::npos)
+				end = targets.size();
+
+			std::string		name(targets.substr(start, end - start));
+			t_IRC_Channel	*channel = find_channel_by_name(server, name);
+			if (channel)
+				build_RPL_LIST(client, *channel);
+			start = end + 1;
+		}
+	}
 	build_RPL_LISTEND(client);
 }
+
 
 void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
