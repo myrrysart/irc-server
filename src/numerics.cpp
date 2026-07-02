@@ -373,6 +373,40 @@ void	build_ERR_NOMOTD(t_IRC_Client &client)
 	buffer += ":MOTD File is missing\r\n";
 }
 
+// RPL_MOTDSTART (375)
+// "<client> :- <server> Message of the day - "
+void	build_RPL_MOTDSTART(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "375", client.nick);
+	buffer += ":- ";
+	buffer += t_IRC_Server::name;
+	buffer += " Message of the day -\r\n";
+}
+
+// RPL_MOTD (372)
+// "<client> :<line of the motd>"
+void	build_RPL_MOTD(t_IRC_Client &client, const std::string_view line)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "372", client.nick);
+	buffer += ":- ";
+	buffer += line;
+	buffer += "\r\n";
+}
+
+// RPL_ENDOFMOTD (376)
+// "<client> :End of /MOTD command"
+void	build_RPL_ENDOFMOTD(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "376", client.nick);
+	buffer += ":End of /MOTD command\r\n";
+}
+
 // ERR_USERNOTINCHANNEL (441)
 // "<client> <channel> <nick> :They aren't on that channel"
 void	build_ERR_USERNOTINCHANNEL(t_IRC_Client &client,

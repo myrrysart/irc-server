@@ -46,6 +46,10 @@ void	build_ERR_CANNOTSENDTOCHAN(t_IRC_Client &client,             // 404
             std::string_view channel);
 void	build_ERR_TOOMANYCHANNELS(t_IRC_Client &client,              // 405
             std::string_view channel);
+void	build_RPL_MOTDSTART(t_IRC_Client &client);                   // 375
+void	build_RPL_MOTD(t_IRC_Client &client,                         // 372
+			std::string_view line);
+void	build_RPL_ENDOFMOTD(t_IRC_Client &client);                   // 376
 void	build_ERR_INPUTTOOLONG(t_IRC_Client &client);                // 417
 void	build_ERR_UNKNOWNCOMMAND(t_IRC_Client &client);              // 421
 void	build_ERR_NOMOTD(t_IRC_Client &client);                      // 422
