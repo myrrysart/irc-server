@@ -7,7 +7,7 @@ SRC		= src/main.cpp src/server.cpp src/listener.cpp src/client.cpp \
 		  src/command_utils.cpp
 OBJS	= $(SRC:.cpp=.o)
 DEPS	= $(SRC:.cpp=.d)
-SANS	= -fsanitize=address,undefined,leak
+SANS	= -fsanitize=address,undefined
 
 all: $(NAME)
 
