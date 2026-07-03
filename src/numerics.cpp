@@ -280,7 +280,9 @@ void	build_RPL_ISUPPORT(t_IRC_Client &client)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "005", client.nick);
-	buffer += "CHANTYPES=#& PREFIX=(o)@ NETWORK=Hive CASEMAPPING=ascii "
+	buffer += "CHANTYPES=#,& CHANLIMIT=#&:";
+	buffer += std::to_string(MAX_CHANNELS_PER_CLIENT);
+	buffer += " PREFIX=(o)@ NETWORK=Hive CASEMAPPING=ascii "
 		":are supported by this server\r\n";
 }
 

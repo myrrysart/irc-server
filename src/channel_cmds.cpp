@@ -94,6 +94,12 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	if (channel.members.contains(&client))
 		return;
 
+	if (client.joined_channels.size() >= MAX_CHANNELS_PER_CLIENT)
+	{
+		build_ERR_TOOMANYCHANNELS(client, channel_name);
+		return;
+	}
+
 	if (is_flag_set(channel.mode, LIMIT) && channel.members.size() >= channel.user_limit)
    	{
 		build_ERR_CHANNELISFULL(client, channel_name);
