@@ -3,6 +3,7 @@
 
 # include <string>
 # include <string_view>
+# include <cstdint>     // fixed width data types
 
 /* Forward declarations */
 struct	s_IRC_Server;

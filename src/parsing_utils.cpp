@@ -3,7 +3,6 @@
 #include <cctype>       // for std::toupper() & std::iscntrl()
 #include <string>
 #include <string_view>
-#include <cstdint>      // for uint16_t data type
 #include <charconv>     // for std::from_chars() and std::from_chars_result
 #include <system_error> // for std::errc (from_chars() error codes)
 
