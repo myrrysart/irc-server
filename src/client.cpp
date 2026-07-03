@@ -83,17 +83,14 @@ void	disconnect_client(t_IRC_Server &server, int fd)
 {
 	// Drop the client's raw pointer from every channel it belongs to before the
 	// t_IRC_Client object is destroyed, otherwise those pointers would dangle.
-	auto	it = server.clients.find(fd);
-	if (it != server.clients.end())
+	// disconnect_client is only called for fds already in server.clients
+	t_IRC_Client	&client = server.clients[fd];
+	for (t_IRC_Channel *channel : client.joined_channels)
 	{
-		t_IRC_Client	&client = it->second;
-		for (t_IRC_Channel *channel : client.joined_channels)
-		{
-			channel->members.erase(&client);
-			channel->invited.erase(&client);
-			if (channel->members.empty())
-				server.channels.erase(channel->name);
-		}
+		channel->members.erase(&client);
+		channel->invited.erase(&client);
+		if (channel->members.empty())
+			server.channels.erase(channel->name);
 	}
 	// TODO: once INVITE is implemented, a client can sit in a channel's 'invited'
 	// set without having joined it (so it won't be in joined_channels). Clean
