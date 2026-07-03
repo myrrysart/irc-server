@@ -25,58 +25,58 @@ void	build_RPL_NAMREPLY(t_IRC_Client &client,					// 353
 			std::string_view channel, std::string_view line);
 
 void	build_RPL_ENDOFNAMES(t_IRC_Client &client,					// 366
-			const std::string_view channel);
+			std::string_view channel);
 void	build_RPL_LIST(t_IRC_Client &client,						// 322
 			const t_IRC_Channel &channel);
 void	build_RPL_LISTEND(t_IRC_Client &client);                    // 323
 void	build_RPL_INVITING(t_IRC_Client &client,					// 341
-			const std::string_view target_nick,
-			const std::string_view channel_name);
+			std::string_view target_nick,
+			std::string_view channel_name);
 void	build_RPL_NOTOPIC(t_IRC_Client &client,						// 331
-			const std::string_view channel);
+			std::string_view channel);
 void	build_RPL_TOPIC(t_IRC_Client &client, 						// 332
 			const t_IRC_Channel &channel);
 
 
 void	build_ERR_NOSUCHNICK(t_IRC_Client &client,                   // 401
-            const std::string_view nick);
+            std::string_view nick);
 void	build_ERR_NOSUCHCHANNEL(t_IRC_Client &client,                // 403
-            const std::string_view channel);
+            std::string_view channel);
 void	build_ERR_CANNOTSENDTOCHAN(t_IRC_Client &client,             // 404
-            const std::string_view channel);
+            std::string_view channel);
 void	build_ERR_TOOMANYCHANNELS(t_IRC_Client &client,              // 405
-            const std::string_view channel);
+            std::string_view channel);
 void	build_ERR_NOMOTD(t_IRC_Client &client);                      // 422
 void	build_ERR_INPUTTOOLONG(t_IRC_Client &client);                // 417
 void	build_ERR_UNKNOWNCOMMAND(t_IRC_Client &client);              // 421
 void	build_ERR_NONICKNAMEGIVEN(t_IRC_Client &client);             // 431
 void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,            // 432
-            const std::string_view new_nick);
+            std::string_view new_nick);
 void	build_ERR_NICKNAMEINUSE(t_IRC_Client &client,                // 433
-            const std::string_view new_nick);
+            std::string_view new_nick);
 void	build_ERR_USERNOTINCHANNEL(t_IRC_Client &client,             // 441
-            const std::string_view channel, const std::string_view nick);
+            std::string_view channel, std::string_view nick);
 void	build_ERR_NOTONCHANNEL(t_IRC_Client &client,                 // 442
-            const std::string_view channel);
+            std::string_view channel);
 void	build_ERR_NOTREGISTERED(t_IRC_Client &client);               // 451
 void	build_ERR_NEEDMOREPARAMS(t_IRC_Client &client);              // 461
 void	build_ERR_ALREADYREGISTERED(t_IRC_Client &client);           // 462
 void	build_ERR_PASSWDMISMATCH(t_IRC_Client &client);              // 464
 void	build_ERR_CHANNELISFULL(t_IRC_Client &client,                // 471
-			const std::string_view channel);
+			std::string_view channel);
 void	build_ERR_UNKNOWNMODE(t_IRC_Client &client,					// 472
-			const std::string_view channel, char mode_char);
+			std::string_view channel, char mode_char);
 void	build_ERR_INVITEONLYCHAN(t_IRC_Client &client,				// 473
-			const std::string_view channel);
+			std::string_view channel);
 void	build_ERR_BADCHANNELKEY(t_IRC_Client &client,				// 475
-			const std::string_view channel);
+			std::string_view channel);
 void	build_ERR_BADCHANMASK(t_IRC_Client &client,					// 476
-			const std::string_view channel);
+			std::string_view channel);
 void	build_ERR_CHANOPRIVSNEEDED(t_IRC_Client &client,			// 482
-            const std::string_view channel);
+            std::string_view channel);
 
 
 void	append_common_reply_prefix(std::string &buffer,
-			const std::string_view code, const std::string_view nick);
+			std::string_view code, std::string_view nick);
 
 #endif

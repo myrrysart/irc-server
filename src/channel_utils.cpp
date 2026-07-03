@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, const std::string_view nick)
+t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, std::string_view nick)
 {
 	for (auto &[member_ptr, flags] : channel.members)
 	{
@@ -15,7 +15,7 @@ t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, const std::string_vi
 	return nullptr;
 }
 
-t_IRC_Channel	*find_channel_by_name(t_IRC_Server &server, const std::string_view &ch_name)
+t_IRC_Channel	*find_channel_by_name(t_IRC_Server &server, std::string_view ch_name)
 {
 	if (auto name_it = server.channels.find(std::string(ch_name));
 		name_it != server.channels.end())
@@ -23,7 +23,7 @@ t_IRC_Channel	*find_channel_by_name(t_IRC_Server &server, const std::string_view
 	return nullptr;
 }
 
-t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, const std::string_view nick)
+t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, std::string_view nick)
 {
 	for (auto &entry : server.clients)
 	{

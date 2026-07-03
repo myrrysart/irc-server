@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-void	append_JOIN_msg(std::string &buf, const t_IRC_Client &who, const std::string &chan)
+void	append_JOIN_msg(std::string &buf, const t_IRC_Client &who, std::string_view chan)
 {
 	buf += ":";
 	append_nick_user_host(buf, who);
@@ -14,7 +14,7 @@ void	append_JOIN_msg(std::string &buf, const t_IRC_Client &who, const std::strin
 	buf += "\r\n";
 }
 
-void	append_PART_msg(std::string &buf, const t_IRC_Client &who, const std::string_view &chan)
+void	append_PART_msg(std::string &buf, const t_IRC_Client &who, std::string_view chan)
 {
 	buf += ":";
 	append_nick_user_host(buf, who);
@@ -52,7 +52,7 @@ void	append_MODE_msg(std::string &buf, const t_IRC_Client &who,  std::string_vie
 }
 
 void append_TOPIC_msg(std::string &buf, const t_IRC_Client &who,
-		const std::string_view &chan, std::string_view topic)
+		std::string_view chan, std::string_view topic)
 {
 	buf += ":";
 	append_nick_user_host(buf, who);
