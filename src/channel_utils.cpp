@@ -3,8 +3,9 @@
 #include "../lib/parser.hpp"
 
 #include <string>
+#include <string_view>
 
-t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, const std::string_view nick)
+t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, std::string_view nick)
 {
 	for (auto &[member_ptr, flags] : channel.members)
 	{
@@ -14,15 +15,15 @@ t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, const std::string_vi
 	return nullptr;
 }
 
-t_IRC_Channel	*find_channel_by_name(t_IRC_Server &server, const std::string &ch_name)
+t_IRC_Channel	*find_channel_by_name(t_IRC_Server &server, std::string_view ch_name)
 {
-	auto	name_it = server.channels.find(ch_name);
+	auto	name_it = server.channels.find(std::string(ch_name));
 	if (name_it != server.channels.end())
 		return &name_it->second;
 	return nullptr;
 }
 
-t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, const std::string_view nick)
+t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, std::string_view nick)
 {
 	for (auto &entry : server.clients)
 	{

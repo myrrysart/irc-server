@@ -29,7 +29,7 @@ void	build_RPL_NOTOPIC(t_IRC_Client &client,						// 331
 void	build_RPL_TOPIC(t_IRC_Client &client, 						// 332
 			const t_IRC_Channel &channel);
 void	build_RPL_INVITING(t_IRC_Client &client,					// 341
-			const std::string &target_nick, const std::string &channel_name);
+			std::string_view target_nick, std::string_view channel_name);
 void	build_RPL_NAMREPLY(t_IRC_Client &client,					// 353
 			std::string_view channel, std::string_view line);
 void	build_RPL_ENDOFNAMES(t_IRC_Client &client,					// 366
@@ -75,6 +75,6 @@ void	build_ERR_CHANOPRIVSNEEDED(t_IRC_Client &client,			// 482
 
 
 void	append_common_reply_prefix(std::string &buffer,
-			const std::string_view code, const std::string_view nick);
+			std::string_view code, std::string_view nick);
 
 #endif

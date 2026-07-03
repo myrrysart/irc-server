@@ -29,8 +29,8 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	std::string		channel_name(client.parser.params[0]);
-	t_IRC_Channel	*channel = find_channel_by_name(server, channel_name);
+	std::string_view	channel_name(client.parser.params[0]);
+	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 	if (!channel)
 	{
 		build_ERR_NOSUCHCHANNEL(client, channel_name);
@@ -39,7 +39,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	auto	member_it = channel->members.find(&client);
 	if (member_it == channel->members.end())
 	{
-		build_ERR_NOTONCHANNEL(client, channel_name);
+		build_ERR_NOTONCHANNEL(client, channel->name);
 		return;
 	}
 	if (client.parser.n_params == 1)
@@ -49,7 +49,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	}
 	if (!is_flag_set(member_it->second, IS_OPERATOR))
 	{
-		build_ERR_CHANOPRIVSNEEDED(client, channel_name);
+		build_ERR_CHANOPRIVSNEEDED(client, channel->name);
 		return;
 	}
 
@@ -161,7 +161,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					find_chmember_by_nick(*channel, target_nick);
 				arg_idx++;
 				if (!target)
-					build_ERR_USERNOTINCHANNEL(client, channel_name, target_nick);
+					build_ERR_USERNOTINCHANNEL(client, channel->name, target_nick);
 				else if (sign == '+')
 				{
 					channel->members[target] |= IS_OPERATOR;
@@ -182,7 +182,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			else build_ERR_NEEDMOREPARAMS(client);
 		}
 		else
-			build_ERR_UNKNOWNMODE(client, channel_name, current_char);
+			build_ERR_UNKNOWNMODE(client, channel->name, current_char);
 	}
 
 	std::string	delta;
@@ -192,7 +192,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	if (!delta.empty())
 	{
 		std::string	line;
-		append_MODE_msg(line, client, channel_name, delta);
+		append_MODE_msg(line, client, channel->name, delta);
 		broadcast_to_channel(*channel, line, client, false);
 	}
 }

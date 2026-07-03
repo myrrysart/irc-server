@@ -5,7 +5,7 @@
 #include <string_view>
 
 void	append_common_reply_prefix(std::string &buffer,
-            const std::string_view numeric, const std::string_view nick);
+            std::string_view numeric, std::string_view nick);
 
 static void	append_channel_modes(std::string &buffer, const t_IRC_Channel &channel)
 {
@@ -156,7 +156,7 @@ void	build_ERR_NONICKNAMEGIVEN(t_IRC_Client &client)
 // command for more information on characters which are allowed in various IRC
 // servers. The text used in the last param of this message may vary."
 void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,
-            const std::string_view new_nick)
+            std::string_view new_nick)
 {
 	// WARN: is the last parameter too long? Check IRC documentation regarding
 	// length of server-client messages.
@@ -179,7 +179,7 @@ void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,
 // nickname is already in use on the network. The text used in the last param of
 // this message may vary."
 void	build_ERR_NICKNAMEINUSE(t_IRC_Client &client,
-            const std::string_view new_nick)
+            std::string_view new_nick)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -301,7 +301,7 @@ void	build_RPL_CHANNELMODEIS(t_IRC_Client &client, const t_IRC_Channel &channel)
 
 // ERR_NOSUCHNICK (401)
 // "<client> <nick> :No such nick/channel"
-void	build_ERR_NOSUCHNICK(t_IRC_Client &client, const std::string_view nick)
+void	build_ERR_NOSUCHNICK(t_IRC_Client &client, std::string_view nick)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -312,7 +312,7 @@ void	build_ERR_NOSUCHNICK(t_IRC_Client &client, const std::string_view nick)
 
 // ERR_NOSUCHCHANNEL (403)
 // "<client> <channel name> :No such channel"
-void	build_ERR_NOSUCHCHANNEL(t_IRC_Client &client, const std::string_view channel)
+void	build_ERR_NOSUCHCHANNEL(t_IRC_Client &client, std::string_view channel)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -323,7 +323,7 @@ void	build_ERR_NOSUCHCHANNEL(t_IRC_Client &client, const std::string_view channe
 
 // ERR_CANNOTSENDTOCHAN (404)
 // "<client> <channel name> :Cannot send to channel"
-void	build_ERR_CANNOTSENDTOCHAN(t_IRC_Client &client, const std::string_view channel)
+void	build_ERR_CANNOTSENDTOCHAN(t_IRC_Client &client, std::string_view channel)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -334,7 +334,7 @@ void	build_ERR_CANNOTSENDTOCHAN(t_IRC_Client &client, const std::string_view cha
 
 // ERR_TOOMANYCHANNELS (405)
 // "<client> <channel name> :You have joined too many channels"
-void	build_ERR_TOOMANYCHANNELS(t_IRC_Client &client, const std::string_view channel)
+void	build_ERR_TOOMANYCHANNELS(t_IRC_Client &client, std::string_view channel)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -356,7 +356,7 @@ void	build_ERR_NOMOTD(t_IRC_Client &client)
 // ERR_USERNOTINCHANNEL (441)
 // "<client> <channel> <nick> :They aren't on that channel"
 void	build_ERR_USERNOTINCHANNEL(t_IRC_Client &client,
-            const std::string_view channel, const std::string_view nick)
+            std::string_view channel, std::string_view nick)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -369,7 +369,7 @@ void	build_ERR_USERNOTINCHANNEL(t_IRC_Client &client,
 
 // ERR_NOTONCHANNEL (442)
 // "<client> <channel name> :You're not on that channel"
-void	build_ERR_NOTONCHANNEL(t_IRC_Client &client, const std::string_view channel)
+void	build_ERR_NOTONCHANNEL(t_IRC_Client &client, std::string_view channel)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -380,7 +380,7 @@ void	build_ERR_NOTONCHANNEL(t_IRC_Client &client, const std::string_view channel
 
 // ERR_CHANNELISFULL (471)
 // "<client> <channel name> :Cannot join channel (+l)"
-void	build_ERR_CHANNELISFULL(t_IRC_Client &client, const std::string_view channel)
+void	build_ERR_CHANNELISFULL(t_IRC_Client &client, std::string_view channel)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -392,7 +392,7 @@ void	build_ERR_CHANNELISFULL(t_IRC_Client &client, const std::string_view channe
 // ERR_UNKNOWNMODE (472)
 // "<client> <channel> <char> :is unknown mode char to me"
 void	build_ERR_UNKNOWNMODE(t_IRC_Client &client,
-            const std::string_view channel, char mode_char)
+            std::string_view channel, char mode_char)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -405,7 +405,7 @@ void	build_ERR_UNKNOWNMODE(t_IRC_Client &client,
 
 // ERR_INVITEONLYCHAN (473)
 // "<client> <channel name> :Cannot join channel (+i)"
-void	build_ERR_INVITEONLYCHAN(t_IRC_Client &client, const std::string_view channel)
+void	build_ERR_INVITEONLYCHAN(t_IRC_Client &client, std::string_view channel)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -416,7 +416,7 @@ void	build_ERR_INVITEONLYCHAN(t_IRC_Client &client, const std::string_view chann
 
 // ERR_BADCHANNELKEY (475)
 // "<client> <channel name> :Cannot join channel (+k)"
-void	build_ERR_BADCHANNELKEY(t_IRC_Client &client, const std::string_view channel)
+void	build_ERR_BADCHANNELKEY(t_IRC_Client &client, std::string_view channel)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -427,7 +427,7 @@ void	build_ERR_BADCHANNELKEY(t_IRC_Client &client, const std::string_view channe
 
 // ERR_BADCHANMASK (476)
 // "<client> <channel> :Bad Channel Mask"
-void	build_ERR_BADCHANMASK(t_IRC_Client &client, const std::string_view channel)
+void	build_ERR_BADCHANMASK(t_IRC_Client &client, std::string_view channel)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -438,7 +438,7 @@ void	build_ERR_BADCHANMASK(t_IRC_Client &client, const std::string_view channel)
 
 // ERR_CHANOPRIVSNEEDED (482)
 // "<client> <channel name> :You're not channel operator"
-void	build_ERR_CHANOPRIVSNEEDED(t_IRC_Client &client, const std::string_view channel)
+void	build_ERR_CHANOPRIVSNEEDED(t_IRC_Client &client, std::string_view channel)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -464,7 +464,7 @@ void	build_RPL_NAMREPLY(t_IRC_Client &client, std::string_view channel, std::str
 
 // RPL_ENDOFNAMES (366)
 // "<client> <channel> :End of /NAMES list`, not `<client> :End of /NAMES list`"
-void	build_RPL_ENDOFNAMES(t_IRC_Client &client, const std::string_view channel)
+void	build_RPL_ENDOFNAMES(t_IRC_Client &client, std::string_view channel)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -500,7 +500,7 @@ void	build_RPL_LISTEND(t_IRC_Client &client)
 
 // RPL_INVITING (341)
 // "<client> <target> <channel>"
-void	build_RPL_INVITING(t_IRC_Client &client, const std::string &target_nick, const std::string &channel_name)
+void	build_RPL_INVITING(t_IRC_Client &client, std::string_view target_nick, std::string_view channel_name)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -511,7 +511,7 @@ void	build_RPL_INVITING(t_IRC_Client &client, const std::string &target_nick, co
 	buffer += "\r\n";
 }
 
-void	build_RPL_NOTOPIC(t_IRC_Client &client, const std::string_view channel)
+void	build_RPL_NOTOPIC(t_IRC_Client &client, std::string_view channel)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -532,7 +532,7 @@ void	build_RPL_TOPIC(t_IRC_Client &client, const t_IRC_Channel &channel)
 
 
 void	append_common_reply_prefix(std::string &buffer,
-            const std::string_view numeric, const std::string_view nick)
+            std::string_view numeric, std::string_view nick)
 {
 	buffer += ':';
 	buffer += t_IRC_Server::name;

@@ -3,8 +3,9 @@
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
 #include <string>
+#include <string_view>
 
-void	append_JOIN_msg(std::string &buf, const t_IRC_Client &who, const std::string &chan)
+void	append_JOIN_msg(std::string &buf, const t_IRC_Client &who, std::string_view chan)
 {
 	buf += ":";
 	append_nick_user_host(buf, who);
@@ -13,7 +14,7 @@ void	append_JOIN_msg(std::string &buf, const t_IRC_Client &who, const std::strin
 	buf += "\r\n";
 }
 
-void	append_PART_msg(std::string &buf, const t_IRC_Client &who, const std::string &chan)
+void	append_PART_msg(std::string &buf, const t_IRC_Client &who, std::string_view chan)
 {
 	buf += ":";
 	append_nick_user_host(buf, who);
@@ -23,7 +24,7 @@ void	append_PART_msg(std::string &buf, const t_IRC_Client &who, const std::strin
 }
 
 void	append_KICK_msg(std::string &buf, const t_IRC_Client &kicker,
-		const std::string &chan, std::string_view victim_nick, std::string_view reason)
+		std::string_view chan, std::string_view victim_nick, std::string_view reason)
 {
 	buf += ":";
 	append_nick_user_host(buf, kicker);
@@ -39,7 +40,7 @@ void	append_KICK_msg(std::string &buf, const t_IRC_Client &kicker,
 	buf += "\r\n";
 }
 
-void	append_MODE_msg(std::string &buf, const t_IRC_Client &who, const std::string &chan, const std::string &mode)
+void	append_MODE_msg(std::string &buf, const t_IRC_Client &who,  std::string_view chan, std::string_view mode)
 {
 	buf += ":";
 	append_nick_user_host(buf, who);
@@ -51,7 +52,7 @@ void	append_MODE_msg(std::string &buf, const t_IRC_Client &who, const std::strin
 }
 
 void append_TOPIC_msg(std::string &buf, const t_IRC_Client &who,
-		const std::string &chan, std::string_view topic)
+		std::string_view chan, std::string_view topic)
 {
 	buf += ":";
 	append_nick_user_host(buf, who);
