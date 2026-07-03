@@ -8,6 +8,7 @@
 
 /* exception-free numeric parsing function.
 *  Accepts the range [1, UINT16_MAX] inclusive, suitable for a port.
+*  Accepting port 0 would be asking from the kernel to grant any available port.
 *  Rejects any non-numeric character. */
 bool	convert_port_string_to_sixteen_bit_uint(std::string_view str, uint16_t &result)
 {
