@@ -57,12 +57,11 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			return;
 		}
 
-		line += target_client->nick;
-		line += " :";
-		line += message;
-		line += "\r\n";
-
 		target_client->send_message_buffer += line;
+		target_client->send_message_buffer += target_client->nick;
+		target_client->send_message_buffer += " :";
+		target_client->send_message_buffer += message;
+		target_client->send_message_buffer += "\r\n";
 	}
 }
 
