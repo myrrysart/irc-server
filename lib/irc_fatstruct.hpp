@@ -36,8 +36,8 @@ typedef s_IRC_Client t_IRC_Client;
 # define IS_OPERATOR BIT(0)
 # define IS_BANNED	BIT(2)
 
-// IRC_Channel state bitmask definitions
-// # define	IS_RUNNING BIT(0) // is this needed?
+
+
 // IRC_Channel mode bitmask definitions
 # define	INVITE BIT(0)
 # define	TOPIC  BIT(1)
@@ -51,7 +51,7 @@ typedef struct	s_IRC_Channel
 	std::string									name;
 	std::string									topic;
 	std::string									key;
-	int											user_limit;
+	size_t										user_limit;
 	std::unordered_map<t_IRC_Client*, t_bmask>	members;
 	std::unordered_set<t_IRC_Client*>			invited;
 }												t_IRC_Channel;

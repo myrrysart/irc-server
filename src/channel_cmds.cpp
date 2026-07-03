@@ -94,7 +94,7 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	if (channel.members.contains(&client))
 		return;
 
-	if (is_flag_set(channel.mode, LIMIT) && channel.members.size() >= static_cast<size_t>(channel.user_limit))
+	if (is_flag_set(channel.mode, LIMIT) && channel.members.size() >= channel.user_limit)
    	{
 		build_ERR_CHANNELISFULL(client, channel_name);
 		return;

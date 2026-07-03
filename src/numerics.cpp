@@ -447,7 +447,7 @@ void	build_ERR_CHANOPRIVSNEEDED(t_IRC_Client &client, const std::string_view cha
 
 // RPL_NAMES (353)
 // "<client> = <channel> :<nick list>"
-void	build_RPL_NAMES(t_IRC_Client &client, std::string_view channel, std::string_view line)
+void	build_RPL_NAMREPLY(t_IRC_Client &client, std::string_view channel, std::string_view line)
 {
 	std::string	&buffer = client.send_message_buffer;
 
@@ -472,7 +472,7 @@ void	build_RPL_ENDOFNAMES(t_IRC_Client &client, const std::string_view channel)
 }
 
 // RPL_LIST (322)
-// "<client> :<channel> :<number of users> :<topic>"
+// "<client> <channel> <number of users> :<topic>"
 void	build_RPL_LIST(t_IRC_Client &client, const t_IRC_Channel &channel)
 {
 	std::string		&buffer = client.send_message_buffer;

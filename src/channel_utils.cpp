@@ -67,6 +67,6 @@ void	send_names_reply(t_IRC_Client &client, const t_IRC_Channel &channel)
 	}
 	if (!names.empty())
 		names.pop_back(); //getting rid of the space at the end
-	build_RPL_NAMES(client, channel.name, names);
+	build_RPL_NAMREPLY(client, channel.name, names);
 	build_RPL_ENDOFNAMES(client, channel.name);
 }
