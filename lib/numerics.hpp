@@ -19,23 +19,21 @@ void	build_RPL_YOURHOST(t_IRC_Client &client);                   // 002
 void	build_RPL_CREATED(t_IRC_Client &client);                   	// 003
 void	build_RPL_MYINFO(t_IRC_Client &client);                     // 004
 void	build_RPL_ISUPPORT(t_IRC_Client &client);                   // 005
-void	build_RPL_CHANNELMODEIS(t_IRC_Client &client,               // 324
-            const t_IRC_Channel &channel);
-void	build_RPL_NAMREPLY(t_IRC_Client &client,					// 353
-			std::string_view channel, std::string_view line);
-
-void	build_RPL_ENDOFNAMES(t_IRC_Client &client,					// 366
-			std::string_view channel);
 void	build_RPL_LIST(t_IRC_Client &client,						// 322
 			const t_IRC_Channel &channel);
 void	build_RPL_LISTEND(t_IRC_Client &client);                    // 323
-void	build_RPL_INVITING(t_IRC_Client &client,					// 341
-			std::string_view target_nick,
-			std::string_view channel_name);
+void	build_RPL_CHANNELMODEIS(t_IRC_Client &client,               // 324
+            const t_IRC_Channel &channel);
 void	build_RPL_NOTOPIC(t_IRC_Client &client,						// 331
 			std::string_view channel);
 void	build_RPL_TOPIC(t_IRC_Client &client, 						// 332
 			const t_IRC_Channel &channel);
+void	build_RPL_INVITING(t_IRC_Client &client,					// 341
+			std::string_view target_nick, std::string_view channel_name);
+void	build_RPL_NAMREPLY(t_IRC_Client &client,					// 353
+			std::string_view channel, std::string_view line);
+void	build_RPL_ENDOFNAMES(t_IRC_Client &client,					// 366
+			std::string_view channel);
 
 
 void	build_ERR_NOSUCHNICK(t_IRC_Client &client,                   // 401
@@ -46,9 +44,9 @@ void	build_ERR_CANNOTSENDTOCHAN(t_IRC_Client &client,             // 404
             std::string_view channel);
 void	build_ERR_TOOMANYCHANNELS(t_IRC_Client &client,              // 405
             std::string_view channel);
-void	build_ERR_NOMOTD(t_IRC_Client &client);                      // 422
 void	build_ERR_INPUTTOOLONG(t_IRC_Client &client);                // 417
 void	build_ERR_UNKNOWNCOMMAND(t_IRC_Client &client);              // 421
+void	build_ERR_NOMOTD(t_IRC_Client &client);                      // 422
 void	build_ERR_NONICKNAMEGIVEN(t_IRC_Client &client);             // 431
 void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,            // 432
             std::string_view new_nick);
