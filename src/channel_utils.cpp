@@ -16,7 +16,8 @@ t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, const std::string_vi
 
 t_IRC_Channel	*find_channel_by_name(t_IRC_Server &server, const std::string &ch_name)
 {
-	if (auto name_it = server.channels.find(ch_name); name_it != server.channels.end())
+	auto	name_it = server.channels.find(ch_name);
+	if (name_it != server.channels.end())
 		return &name_it->second;
 	return nullptr;
 }
