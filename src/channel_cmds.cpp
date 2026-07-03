@@ -13,8 +13,8 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		build_ERR_NEEDMOREPARAMS(client);
 		return;
 	}
-	std::string		target(client.parser.params[0]);
-	std::string		message(client.parser.params[1]);
+	std::string_view	target(client.parser.params[0]);
+	std::string_view	message(client.parser.params[1]);
 
 	std::string		line = ":";
 	append_nick_user_host(line, client);
@@ -146,8 +146,8 @@ void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		build_ERR_NEEDMOREPARAMS(client);
 		return;
 	}
-	std::string		channel_name(client.parser.params[0]);
-	t_IRC_Channel	*channel = find_channel_by_name(server, channel_name);
+	std::string_view	channel_name(client.parser.params[0]);
+	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 	if (!channel)
 	{
 		build_ERR_NOSUCHCHANNEL(client, channel_name);
@@ -173,9 +173,9 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 		build_ERR_NEEDMOREPARAMS(kicker);
 		return;
 	}
-	std::string		channel_name(kicker.parser.params[0]);
-	std::string		victim(kicker.parser.params[1]);
-	t_IRC_Channel	*channel = find_channel_by_name(server, channel_name);
+	std::string_view	channel_name(kicker.parser.params[0]);
+	std::string_view	victim(kicker.parser.params[1]);
+	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 	if (!channel)
 	{
 		build_ERR_NOSUCHCHANNEL(kicker, channel_name);
@@ -218,8 +218,8 @@ void	execute_TOPIC_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	std::string		channel_name(client.parser.params[0]);
-	t_IRC_Channel	*channel = find_channel_by_name(server, channel_name);
+	std::string_view	channel_name(client.parser.params[0]);
+	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 	if (!channel)
 	{
 		build_ERR_NOSUCHCHANNEL(client, channel_name);
@@ -264,8 +264,8 @@ void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	std::string channel_name(client.parser.params[0]);
-	t_IRC_Channel *channel = find_channel_by_name(server, channel_name);
+	std::string_view	channel_name(client.parser.params[0]);
+	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 	if (!channel)
 	{
 		build_ERR_NOSUCHCHANNEL(client, channel_name);
@@ -291,9 +291,9 @@ void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	std::string		target_nick(client.parser.params[0]);
-	std::string		channel_name(client.parser.params[1]);
-	t_IRC_Channel	*channel = find_channel_by_name(server, channel_name);
+	std::string_view	target_nick(client.parser.params[0]);
+	std::string_view	channel_name(client.parser.params[1]);
+	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 	if (!channel)
 	{
 		build_ERR_NOSUCHCHANNEL(client, channel_name);

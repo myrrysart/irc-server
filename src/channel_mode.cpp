@@ -29,8 +29,8 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	std::string		channel_name(client.parser.params[0]);
-	t_IRC_Channel	*channel = find_channel_by_name(server, channel_name);
+	std::string_view	channel_name(client.parser.params[0]);
+	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 	if (!channel)
 	{
 		build_ERR_NOSUCHCHANNEL(client, channel_name);

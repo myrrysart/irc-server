@@ -30,8 +30,8 @@ void	build_RPL_LIST(t_IRC_Client &client,						// 322
 			const t_IRC_Channel &channel);
 void	build_RPL_LISTEND(t_IRC_Client &client);                    // 323
 void	build_RPL_INVITING(t_IRC_Client &client,					// 341
-			const std::string &target_nick,
-			const std::string &channel_name);
+			const std::string_view target_nick,
+			const std::string_view channel_name);
 void	build_RPL_NOTOPIC(t_IRC_Client &client,						// 331
 			const std::string_view channel);
 void	build_RPL_TOPIC(t_IRC_Client &client, 						// 332

@@ -500,7 +500,7 @@ void	build_RPL_LISTEND(t_IRC_Client &client)
 
 // RPL_INVITING (341)
 // "<client> <target> <channel>"
-void	build_RPL_INVITING(t_IRC_Client &client, const std::string &target_nick, const std::string &channel_name)
+void	build_RPL_INVITING(t_IRC_Client &client, std::string_view target_nick, std::string_view channel_name)
 {
 	std::string	&buffer = client.send_message_buffer;
 
