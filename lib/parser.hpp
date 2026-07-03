@@ -21,6 +21,7 @@ int		parse_message(const size_t pos, const std::string &buf,
 void	tokenize_message(t_IRC_Client &client, const std::string_view msg);
 
 /* Parsing utils */
+bool	convert_port_string_to_sixteen_bit_uint(std::string_view str, uint16_t &result);
 size_t	validate_password_and_strlen(const char *str);
 char	to_uppercase(char c);
 size_t	skip_leading_spaces_and_check_for_empty_message(const std::string &buf,

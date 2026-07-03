@@ -1,7 +1,27 @@
 #include "../lib/parser.hpp"
 
-#include <cctype> // for std::toupper() & std::iscntrl()
+#include <cctype>       // for std::toupper() & std::iscntrl()
 #include <string>
+#include <string_view>
+#include <cstdint>      // for uint16_t data type
+#include <charconv>     // for std::from_chars() and std::from_chars_result
+#include <system_error> // for std::errc (from_chars() error codes)
+
+/* exception-free numeric parsing function.
+*  Accepts the range [1, UINT16_MAX] inclusive, suitable for a port.
+*  Rejects any non-numeric character. */
+bool	convert_port_string_to_sixteen_bit_uint(std::string_view str, uint16_t &result)
+{
+	std::from_chars_result	conversion_info =
+		std::from_chars(str.cbegin(), str.cend(), result);
+
+	if (conversion_info.ptr != str.cend() ||
+			conversion_info.ec == std::errc::invalid_argument ||
+			conversion_info.ec == std::errc::result_out_of_range ||
+			result == 0)
+		return false;
+	return true;
+}
 
 /* Return values:
  * • The length of the string
