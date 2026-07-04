@@ -6,6 +6,7 @@
 # include <poll.h>
 # include <unordered_map>
 # include <vector>
+# include <cstdint> // for fixed width integer data types
 # include <new> // for hardware_constructive_interference_size
 # include <string_view>
 
@@ -195,7 +196,7 @@ typedef struct	s_IRC_Server
 	static constexpr int					poll_timeout = 1000;
 	static constexpr const char				*version = "0.042"; // remember to update when upgrading ;-)
 	int										listen_fd;
-	int										port;
+	uint16_t								port;
 	std::string_view						password;
 	std::unordered_map<int, t_IRC_Client>	clients;
 	t_IRC_Channel							channels[MAX_CHANNELS];
