@@ -291,7 +291,7 @@ void	build_RPL_MYINFO(t_IRC_Client &client)
 	buffer += t_IRC_Server::name;
 	buffer += ' ';
 	buffer += t_IRC_Server::version;
-	buffer += "  itkl\r\n";
+	buffer += " o itkl\r\n";
 }
 
 // RPL_ISUPPORT (005)
@@ -513,7 +513,6 @@ void	build_RPL_NAMREPLY(t_IRC_Client &client, std::string_view channel, std::str
 	buffer += "\r\n";
 }
 
-
 // RPL_ENDOFNAMES (366)
 // "<client> <channel> :End of /NAMES list`, not `<client> :End of /NAMES list`"
 void	build_RPL_ENDOFNAMES(t_IRC_Client &client, std::string_view channel)
@@ -571,6 +570,7 @@ void	build_RPL_NOTOPIC(t_IRC_Client &client, std::string_view channel)
 	buffer += channel;
 	buffer += " :No topic is set\r\n";
 }
+
 void	build_RPL_TOPIC(t_IRC_Client &client, const t_IRC_Channel &channel)
 {
 	std::string	&buffer = client.send_message_buffer;
@@ -581,7 +581,6 @@ void	build_RPL_TOPIC(t_IRC_Client &client, const t_IRC_Channel &channel)
 	buffer += channel.topic;
 	buffer += "\r\n";
 }
-
 
 void	append_common_reply_prefix(std::string &buffer,
             std::string_view numeric, std::string_view nick)
