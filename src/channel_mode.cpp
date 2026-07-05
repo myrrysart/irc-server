@@ -53,8 +53,12 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 	auto	member_it = channel->members.find(&client);
-	if (member_it == channel->members.end()
-		|| !is_flag_set(member_it->second, IS_OPERATOR))
+	if (member_it == channel->members.end())
+	{
+		build_ERR_NOTONCHANNEL(client, channel->name);
+		return;
+	}
+	if (!is_flag_set(member_it->second, IS_OPERATOR))
 	{
 		build_ERR_CHANOPRIVSNEEDED(client, channel->name);
 		return;
@@ -145,15 +149,19 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				if (arg_idx < client.parser.n_params)
 				{
 					std::string_view	limit = client.parser.params[arg_idx];
+					arg_idx++;
+
+					size_t	parsed_limit = 0;
+					std::from_chars(limit.data(), limit.data() + limit.size(), parsed_limit);
+					if (parsed_limit == 0)
+						continue;
 
 					channel->mode |= LIMIT;
-					channel->user_limit = 0;
-					std::from_chars(limit.data(), limit.data() + limit.size(), channel->user_limit);
+					channel->user_limit = parsed_limit;
 					plus_chars += 'l';
 					if (!plus_args.empty())
 						plus_args += ' ';
 					plus_args += limit;
-					arg_idx++;
 				}
 				else
 					continue;
@@ -161,6 +169,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			else
 			{
 				channel->mode &= ~LIMIT;
+				channel->user_limit = 0;
 				minus_chars += 'l';
 			}
 		}

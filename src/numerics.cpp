@@ -300,9 +300,11 @@ void	build_RPL_ISUPPORT(t_IRC_Client &client)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "005", client.nick);
-	buffer += "CHANTYPES=#,& CHANLIMIT=#&: CHANMODES=beI,k,l,psit";
+	buffer += "CHANTYPES=#,& CHANLIMIT=#&:";
 	buffer += std::to_string(MAX_CHANNELS_PER_CLIENT);
-	buffer += " PREFIX=(o)@ NETWORK=Hive CASEMAPPING=ascii "
+	// CHANMODES=A,B,C,D — which channel modes take a param when set:
+	// B=kl (key, limit), C=o (nick on +o only), D=it (no param)
+	buffer += " CHANMODES=,kl,o,it PREFIX=(o)@ NETWORK=Hive CASEMAPPING=ascii "
 		":are supported by this server\r\n";
 }
 
