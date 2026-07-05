@@ -63,7 +63,7 @@ void	build_ERR_PASSWDMISMATCH(t_IRC_Client &client);              // 464
 void	build_ERR_CHANNELISFULL(t_IRC_Client &client,                // 471
 			std::string_view channel);
 void	build_ERR_UNKNOWNMODE(t_IRC_Client &client,					// 472
-			std::string_view channel, char mode_char);
+			char mode_char);
 void	build_ERR_INVITEONLYCHAN(t_IRC_Client &client,				// 473
 			std::string_view channel);
 void	build_ERR_BADCHANNELKEY(t_IRC_Client &client,				// 475

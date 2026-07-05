@@ -80,6 +80,7 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
+	bool			just_created = false;
 	auto			ch_it = server.channels.find(channel_name);
 	if (ch_it == server.channels.end())
 	{
@@ -89,12 +90,12 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			return;
 		}
 		ch_it = server.channels.emplace(channel_name, t_IRC_Channel{}).first;
+		ch_it->second.name = channel_name;
+		ch_it->second.mode |= TOPIC;
+		just_created = true;
 	}
 
 	t_IRC_Channel	&channel = ch_it->second;
-
-	if (channel.name.empty())
-		channel.name = channel_name;
 
 	if (channel.members.contains(&client))
 		return;
@@ -127,11 +128,8 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	}
 
 	t_bmask			join_flags = 0;
-	if (channel.members.empty())
-	{
+	if (just_created)
 		join_flags |= IS_OPERATOR;
-		channel.mode |= TOPIC;
-	}
 
 	channel.members[&client] = join_flags;
 	client.joined_channels.insert(&channel);
@@ -252,7 +250,6 @@ void	execute_TOPIC_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		build_ERR_CHANOPRIVSNEEDED(client, channel->name);
 		return;
 	}
-
 	channel->topic.assign(client.parser.params[1]); // copy out of the receive buffer
 
 	std::string	line;
@@ -273,7 +270,7 @@ void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 	if (!channel)
 	{
-		build_ERR_NOSUCHCHANNEL(client, channel_name);
+		build_RPL_ENDOFNAMES(client, channel_name);
 		return;
 	}
 

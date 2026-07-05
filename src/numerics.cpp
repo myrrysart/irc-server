@@ -9,15 +9,20 @@ void	append_common_reply_prefix(std::string &buffer,
 
 static void	append_channel_modes(std::string &buffer, const t_IRC_Channel &channel)
 {
-	buffer += '+';
+	std::string	modes;
 	if (is_flag_set(channel.mode, INVITE))
-		buffer += 'i';
+		modes += 'i';
 	if (is_flag_set(channel.mode, TOPIC))
-		buffer += 't';
-	if (is_flag_set(channel.mode, KEY))
-		buffer += 'k';
+		modes += 't';
+	if (is_flag_set(channel.mode, KEY) && !channel.key.empty())
+		modes += 'k';
 	if (is_flag_set(channel.mode, LIMIT))
-		buffer += 'l';
+		modes += 'l';
+	if (modes.empty())
+		return;
+
+	buffer += '+';
+	buffer += modes;
 	if (is_flag_set(channel.mode, KEY) && !channel.key.empty())
 	{
 		buffer += ' ';
@@ -390,14 +395,12 @@ void	build_ERR_CHANNELISFULL(t_IRC_Client &client, std::string_view channel)
 }
 
 // ERR_UNKNOWNMODE (472)
-// "<client> <channel> <char> :is unknown mode char to me"
-void	build_ERR_UNKNOWNMODE(t_IRC_Client &client,
-            std::string_view channel, char mode_char)
+// "<client> <char> :is unknown mode char to me"
+void	build_ERR_UNKNOWNMODE(t_IRC_Client &client, char mode_char)
 {
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "472", client.nick);
-	buffer += channel;
 	buffer += ' ';
 	buffer += mode_char;
 	buffer += " :is unknown mode char to me\r\n";

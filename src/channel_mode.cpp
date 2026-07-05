@@ -36,18 +36,14 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		build_ERR_NOSUCHCHANNEL(client, channel_name);
 		return;
 	}
-	auto	member_it = channel->members.find(&client);
-	if (member_it == channel->members.end())
-	{
-		build_ERR_NOTONCHANNEL(client, channel->name);
-		return;
-	}
 	if (client.parser.n_params == 1)
 	{
 		build_RPL_CHANNELMODEIS(client, *channel);
 		return;
 	}
-	if (!is_flag_set(member_it->second, IS_OPERATOR))
+	auto	member_it = channel->members.find(&client);
+	if (member_it == channel->members.end()
+		|| !is_flag_set(member_it->second, IS_OPERATOR))
 	{
 		build_ERR_CHANOPRIVSNEEDED(client, channel->name);
 		return;
@@ -110,15 +106,19 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			{
 				if (arg_idx < client.parser.n_params)
 				{
+					std::string_view	key = client.parser.params[arg_idx];
+					arg_idx++;
+					if (key.empty())
+						continue;
 					channel->mode |= KEY;
-					channel->key.assign(client.parser.params[arg_idx]);
+					channel->key.assign(key);
 					plus_chars += 'k';
 					if (!plus_args.empty())
 						plus_args += ' ';
-					plus_args += client.parser.params[arg_idx];
-					arg_idx++;
+					plus_args += key;
 				}
-				else build_ERR_NEEDMOREPARAMS(client);
+				else
+					continue;
 			}
 			else
 			{
@@ -144,7 +144,8 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					plus_args += limit;
 					arg_idx++;
 				}
-				else build_ERR_NEEDMOREPARAMS(client);
+				else
+					continue;
 			}
 			else
 			{
@@ -179,10 +180,11 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					minus_args += target_nick;
 				}
 			}
-			else build_ERR_NEEDMOREPARAMS(client);
+			else
+				continue;
 		}
 		else
-			build_ERR_UNKNOWNMODE(client, channel->name, current_char);
+			build_ERR_UNKNOWNMODE(client, current_char);
 	}
 
 	std::string	delta;
