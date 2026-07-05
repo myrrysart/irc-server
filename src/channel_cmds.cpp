@@ -75,75 +75,96 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		build_ERR_NEEDMOREPARAMS(client);
 		return;
 	}
-	std::string		channel_name(client.parser.params[0]);
+	std::string_view	channels(client.parser.params[0]);
+	std::string_view	keys;
+	size_t				channel_pos = 0;
+	size_t				key_pos = 0;
+	bool				has_channel = false;
 
-	if (channel_name.empty() || (channel_name[0] != '#' && channel_name[0] != '&'))
+	if (client.parser.n_params >= 2)
+		keys = client.parser.params[1];
+	while (channel_pos <= channels.size())
 	{
-		build_ERR_BADCHANMASK(client, channel_name);
-		return;
-	}
+		std::string_view	channel_token = next_comma_token(channels, channel_pos);
+		std::string_view	key;
 
-	bool			just_created = false;
-	auto			ch_it = server.channels.find(channel_name);
-	if (ch_it == server.channels.end())
-	{
-		if (server.channels.size() >= MAX_CHANNELS)
+		if (client.parser.n_params >= 2 && key_pos <= keys.size())
+			key = next_comma_token(keys, key_pos);
+		if (channel_token.empty())
+			continue;
+		has_channel = true;
+
+		std::string	channel_name(channel_token);
+		if (channel_name.empty() || (channel_name[0] != '#' && channel_name[0] != '&'))
 		{
-			build_ERR_TOOMANYCHANNELS(client, channel_name);
-			return;
+			build_ERR_BADCHANMASK(client, channel_name);
+			continue;
 		}
-		ch_it = server.channels.emplace(channel_name, t_IRC_Channel{}).first;
-		ch_it->second.name = channel_name;
-		ch_it->second.mode |= TOPIC;
-		just_created = true;
-	}
 
-	t_IRC_Channel	&channel = ch_it->second;
-
-	if (channel.members.contains(&client))
-		return;
-
-	if (client.joined_channels.size() >= MAX_CHANNELS_PER_CLIENT)
-	{
-		build_ERR_TOOMANYCHANNELS(client, channel.name);
-		return;
-	}
-
-	if (is_flag_set(channel.mode, LIMIT) && channel.members.size() >= channel.user_limit)
-   	{
-		build_ERR_CHANNELISFULL(client, channel.name);
-		return;
-	}
-
-	if (is_flag_set(channel.mode, INVITE) && !channel.invited.contains(&client))
-	{
-		build_ERR_INVITEONLYCHAN(client, channel.name);
-		return;
-	}
-
-	if (is_flag_set(channel.mode, KEY))
-	{
-		if (client.parser.n_params < 2 || channel.key != client.parser.params[1])
+		bool			just_created = false;
+		auto			ch_it = server.channels.find(channel_name);
+		if (ch_it == server.channels.end())
 		{
-			build_ERR_BADCHANNELKEY(client, channel.name);
-			return;
+			if (server.channels.size() >= MAX_CHANNELS)
+			{
+				build_ERR_TOOMANYCHANNELS(client, channel_name);
+				continue;
+			}
+			ch_it = server.channels.emplace(channel_name, t_IRC_Channel{}).first;
+			ch_it->second.name = channel_name;
+			ch_it->second.mode |= TOPIC;
+			just_created = true;
 		}
+
+		t_IRC_Channel	&channel = ch_it->second;
+
+		if (channel.members.contains(&client))
+			continue;
+
+		if (client.joined_channels.size() >= MAX_CHANNELS_PER_CLIENT)
+		{
+			build_ERR_TOOMANYCHANNELS(client, channel.name);
+			continue;
+		}
+
+		if (is_flag_set(channel.mode, LIMIT) && channel.members.size() >= channel.user_limit)
+		{
+			build_ERR_CHANNELISFULL(client, channel.name);
+			continue;
+		}
+
+		if (is_flag_set(channel.mode, INVITE) && !channel.invited.contains(&client))
+		{
+			build_ERR_INVITEONLYCHAN(client, channel.name);
+			continue;
+		}
+
+		if (is_flag_set(channel.mode, KEY))
+		{
+			if (key.empty() || channel.key != key)
+			{
+				build_ERR_BADCHANNELKEY(client, channel.name);
+				continue;
+			}
+		}
+
+		t_bmask			join_flags = 0;
+		if (just_created)
+			join_flags |= IS_OPERATOR;
+
+		channel.members[&client] = join_flags;
+		client.joined_channels.insert(&channel);
+		channel.invited.erase(&client);
+
+		std::string		line;
+		append_JOIN_msg(line, client, channel.name);
+		broadcast_to_channel(channel, line, client, false);
+		if (!channel.topic.empty())
+			build_RPL_TOPIC(client, channel);
+		send_names_reply(client, channel);
 	}
-
-	t_bmask			join_flags = 0;
-	if (just_created)
-		join_flags |= IS_OPERATOR;
-
-	channel.members[&client] = join_flags;
-	client.joined_channels.insert(&channel);
-	channel.invited.erase(&client);
-
-	std::string		line;
-	append_JOIN_msg(line, client, channel.name);
-	broadcast_to_channel(channel, line, client, false);
-	if (!channel.topic.empty())
-		build_RPL_TOPIC(client, channel);
-	send_names_reply(client, channel);
+	if (!has_channel)
+		build_ERR_BADCHANMASK(client, channels);
 }
 
 void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
@@ -153,24 +174,40 @@ void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		build_ERR_NEEDMOREPARAMS(client);
 		return;
 	}
-	std::string_view	channel_name(client.parser.params[0]);
-	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
-	if (!channel)
-	{
-		build_ERR_NOSUCHCHANNEL(client, channel_name);
-		return;
-	}
+	std::string_view	channels(client.parser.params[0]);
+	std::string_view	reason;
+	size_t				channel_pos = 0;
+	bool				has_channel = false;
 
-	if (!channel->members.contains(&client))
+	if (client.parser.n_params >= 2)
+		reason = client.parser.params[1];
+	while (channel_pos <= channels.size())
 	{
-		build_ERR_NOTONCHANNEL(client, channel->name);
-		return;
-	}
+		std::string_view	channel_name = next_comma_token(channels, channel_pos);
+		if (channel_name.empty())
+			continue;
+		has_channel = true;
 
-	std::string		line;
-	append_PART_msg(line, client, channel->name);
-	broadcast_to_channel(*channel, line, client, false);
-	remove_client_from_channel(client, *channel, server);
+		t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
+		if (!channel)
+		{
+			build_ERR_NOSUCHCHANNEL(client, channel_name);
+			continue;
+		}
+
+		if (!channel->members.contains(&client))
+		{
+			build_ERR_NOTONCHANNEL(client, channel->name);
+			continue;
+		}
+
+		std::string		line;
+		append_PART_msg(line, client, channel->name, reason);
+		broadcast_to_channel(*channel, line, client, false);
+		remove_client_from_channel(client, *channel, server);
+	}
+	if (!has_channel)
+		build_ERR_NEEDMOREPARAMS(client);
 }
 
 void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
@@ -181,7 +218,7 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 		return;
 	}
 	std::string_view	channel_name(kicker.parser.params[0]);
-	std::string_view	victim(kicker.parser.params[1]);
+	std::string_view	victims(kicker.parser.params[1]);
 	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 	if (!channel)
 	{
@@ -201,20 +238,35 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 		return;
 	}
 
-	t_IRC_Client	*to_be_kicked = find_chmember_by_nick(*channel, victim);
-	if (!to_be_kicked)
-	{
-		build_ERR_USERNOTINCHANNEL(kicker, channel->name, victim);
-		return;
-	}
-
-	std::string line;
 	std::string_view reason;
 	if (kicker.parser.n_params >= 3) //there's a reason specified
 		reason = kicker.parser.params[2];
-	append_KICK_msg(line, kicker, channel->name, to_be_kicked->nick, reason);
-	broadcast_to_channel(*channel, line, kicker, false);
-	remove_client_from_channel(*to_be_kicked, *channel, server);
+	size_t				victim_pos = 0;
+	bool				has_victim = false;
+
+	while (victim_pos <= victims.size())
+	{
+		std::string_view	victim = next_comma_token(victims, victim_pos);
+		if (victim.empty())
+			continue;
+		has_victim = true;
+
+		t_IRC_Client	*to_be_kicked = find_chmember_by_nick(*channel, victim);
+		if (!to_be_kicked)
+		{
+			build_ERR_USERNOTINCHANNEL(kicker, channel->name, victim);
+			continue;
+		}
+
+		std::string	line;
+		append_KICK_msg(line, kicker, channel->name, to_be_kicked->nick, reason);
+		broadcast_to_channel(*channel, line, kicker, false);
+		remove_client_from_channel(*to_be_kicked, *channel, server);
+		if (to_be_kicked == &kicker)
+			return;
+	}
+	if (!has_victim)
+		build_ERR_NEEDMOREPARAMS(kicker);
 }
 
 void	execute_TOPIC_cmd(t_IRC_Client &client, t_IRC_Server &server)
@@ -264,21 +316,40 @@ void	execute_TOPIC_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
-	if (client.parser.n_params < 1)
+	if (client.parser.n_params == 0)
 	{
-		build_ERR_NEEDMOREPARAMS(client);
+		auto	channel_it = server.channels.begin();
+		while (channel_it != server.channels.end())
+		{
+			send_names_reply(client, channel_it->second);
+			++channel_it;
+		}
+		if (server.channels.empty())
+			build_RPL_ENDOFNAMES(client, "*");
 		return;
 	}
 
-	std::string_view	channel_name(client.parser.params[0]);
-	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
-	if (!channel)
-	{
-		build_RPL_ENDOFNAMES(client, channel_name);
-		return;
-	}
+	std::string_view	channels(client.parser.params[0]);
+	size_t				channel_pos = 0;
+	bool				has_channel = false;
 
-	send_names_reply(client, *channel);
+	while (channel_pos <= channels.size())
+	{
+		std::string_view	channel_name = next_comma_token(channels, channel_pos);
+		if (channel_name.empty())
+			continue;
+		has_channel = true;
+
+		t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
+		if (!channel)
+		{
+			build_RPL_ENDOFNAMES(client, channel_name);
+			continue;
+		}
+		send_names_reply(client, *channel);
+	}
+	if (!has_channel)
+		build_RPL_ENDOFNAMES(client, "*");
 }
 
 void	execute_LIST_cmd(t_IRC_Client &client, t_IRC_Server &server)

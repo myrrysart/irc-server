@@ -14,12 +14,18 @@ void	append_JOIN_msg(std::string &buf, const t_IRC_Client &who, std::string_view
 	buf += "\r\n";
 }
 
-void	append_PART_msg(std::string &buf, const t_IRC_Client &who, std::string_view chan)
+void	append_PART_msg(std::string &buf, const t_IRC_Client &who,
+		std::string_view chan, std::string_view reason)
 {
 	buf += ":";
 	append_nick_user_host(buf, who);
 	buf += " PART ";
 	buf += chan;
+	if (!reason.empty())
+	{
+		buf += " :";
+		buf += reason;
+	}
 	buf += "\r\n";
 }
 
