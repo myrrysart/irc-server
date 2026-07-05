@@ -10,6 +10,7 @@
 # NOTE: these are testing files
 !tests/
 !tests/*.sh
+!test_mandatory.sh
 # BlOCK END
 
 # Makefile
