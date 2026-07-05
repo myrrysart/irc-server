@@ -5,6 +5,18 @@
 #include <string>
 #include <string_view>
 
+std::string_view	next_comma_token(std::string_view list, size_t &pos)
+{
+	if (pos > list.size())
+		return {};
+	size_t			end = list.find(',', pos);
+	if (end == std::string_view::npos)
+		end = list.size();
+	std::string_view	token = list.substr(pos, end - pos);
+	pos = end + 1;
+	return token;
+}
+
 t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, std::string_view nick)
 {
 	for (auto &[member_ptr, flags] : channel.members)

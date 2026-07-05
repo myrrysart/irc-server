@@ -8,61 +8,64 @@
 
 void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
+	if (client.parser.n_params == 0)
+	{
+		build_ERR_NORECIPIENT(client);
+		return;
+	}
+	// WARN: n_params==1 cannot distinguish PRIVMSG bob (412) from PRIVMSG :hello (411);
+	// Same param, so needs parser input to return 411 for trailing-only lines.
+	// Is this needed in practice? Irssi invokes just 412
 	if (client.parser.n_params < 2)
 	{
-		build_ERR_NEEDMOREPARAMS(client);
+		build_ERR_NOTEXTTOSEND(client); //412
 		return;
 	}
-	std::string_view	target(client.parser.params[0]);
+
+	std::string_view	targets(client.parser.params[0]);
 	std::string_view	message(client.parser.params[1]);
+	size_t				pos = 0;
+	bool				delivered = false;
 
-	if (target.empty())
+	while (pos <= targets.size())
 	{
-		build_ERR_NOSUCHNICK(client, target);
-		return;
-	}
+		std::string_view	target = next_comma_token(targets, pos);
+		if (target.empty())
+			continue;
 
-	std::string		line = ":";
-	append_nick_user_host(line, client);
-	line += " PRIVMSG ";
-
-	if (target[0] == '#' || target[0] == '&')
-	{
-		t_IRC_Channel	*channel = find_channel_by_name(server, target);
-		if (!channel)
+		if (target[0] == '#' || target[0] == '&')
 		{
-			build_ERR_NOSUCHCHANNEL(client, target);
-			return;
+			t_IRC_Channel	*channel = find_channel_by_name(server, target);
+			if (!channel)
+			{
+				build_ERR_NOSUCHCHANNEL(client, target);
+				return;
+			}
+			if (!channel->members.contains(&client))
+			{
+				build_ERR_CANNOTSENDTOCHAN(client, target);
+				return;
+			}
+			std::string		line;
+			append_PRIVMSG_msg(line, client, channel->name, message);
+			broadcast_to_channel(*channel, line, client, true);
 		}
-
-		if (!channel->members.contains(&client))
+		else
 		{
-			build_ERR_CANNOTSENDTOCHAN(client, target);
-			return;
+			t_IRC_Client	*target_client = find_client_by_nick(server, target);
+			if (!target_client)
+			{
+				build_ERR_NOSUCHNICK(client, target);
+				return;
+			}
+			std::string		line;
+			append_PRIVMSG_msg(line, client, target_client->nick, message);
+			target_client->send_message_buffer += line;
 		}
-
-		line += channel->name;
-		line += " :";
-		line += message;
-		line += "\r\n";
-
-		broadcast_to_channel(*channel, line, client, true);
+		delivered = true;
 	}
-	else
-	{
-		t_IRC_Client	*target_client = find_client_by_nick(server, target);
-		if (!target_client)
-		{
-			build_ERR_NOSUCHNICK(client, target);
-			return;
-		}
-
-		target_client->send_message_buffer += line;
-		target_client->send_message_buffer += target_client->nick;
-		target_client->send_message_buffer += " :";
-		target_client->send_message_buffer += message;
-		target_client->send_message_buffer += "\r\n";
-	}
+	if (!delivered)
+		build_ERR_NORECIPIENT(client);
 }
 
 void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
@@ -289,19 +292,16 @@ void	execute_LIST_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	else
 	{
 		std::string_view	targets = client.parser.params[0];
-		size_t				start = 0;
+		size_t				pos = 0;
 
-		while (start <= targets.size())
+		while (pos <= targets.size())
 		{
-			size_t			end = targets.find(',', start);
-			if (end == std::string_view::npos)
-				end = targets.size();
-
-			std::string		name(targets.substr(start, end - start));
+			std::string_view	name = next_comma_token(targets, pos);
+			if (name.empty())
+				continue;
 			t_IRC_Channel	*channel = find_channel_by_name(server, name);
 			if (channel)
 				build_RPL_LIST(client, *channel);
-			start = end + 1;
 		}
 	}
 	build_RPL_LISTEND(client);

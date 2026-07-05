@@ -74,3 +74,15 @@ void	append_INVITE_msg(std::string &buf, const t_IRC_Client &inviter,
 	buf += chan;
 	buf += "\r\n";
 }
+
+void	append_PRIVMSG_msg(std::string &buf, const t_IRC_Client &who,
+		std::string_view target, std::string_view message)
+{
+	buf += ":";
+	append_nick_user_host(buf, who);
+	buf += " PRIVMSG ";
+	buf += target;
+	buf += " :";
+	buf += message;
+	buf += "\r\n";
+}

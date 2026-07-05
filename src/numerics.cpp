@@ -363,6 +363,26 @@ void	build_ERR_TOOMANYCHANNELS(t_IRC_Client &client, std::string_view channel)
 	buffer += " :You have joined too many channels\r\n";
 }
 
+// ERR_NORECIPIENT (411)
+// "<client> :No recipient given (PRIVMSG/NOTICE)"
+void	build_ERR_NORECIPIENT(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "411", client.nick);
+	buffer += ":No recipient given (PRIVMSG/NOTICE)\r\n";
+}
+
+// ERR_NOTEXTTOSEND (412)
+// "<client> :No text to send"
+void	build_ERR_NOTEXTTOSEND(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "412", client.nick);
+	buffer += ":No text to send\r\n";
+}
+
 // ERR_NOMOTD (422)
 // "<client> :MOTD File is missing"
 void	build_ERR_NOMOTD(t_IRC_Client &client)
