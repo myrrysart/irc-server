@@ -81,7 +81,7 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 			build_RPL_ISUPPORT(client);
 
 			build_RPL_MOTDSTART(client);
-			build_RPL_MOTD(client, "Welcome to the our humble server!");
+			build_RPL_MOTD(client, "Welcome to our humble server!");
 			build_RPL_ENDOFMOTD(client);
 
 		}

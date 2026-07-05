@@ -432,6 +432,24 @@ void	build_ERR_NOTONCHANNEL(t_IRC_Client &client, std::string_view channel)
 	buffer += " :You're not on that channel\r\n";
 }
 
+// ERR_USERONCHANNEL (443)
+// "<client> <nick> <channel> :<nick> is on <channel>"
+void	build_ERR_USERONCHANNEL(t_IRC_Client &client,
+		std::string_view nick, std::string_view channel)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "443", client.nick);
+	buffer += nick;
+	buffer += ' ';
+	buffer += channel;
+	buffer += " :";
+	buffer += nick;
+	buffer += " is on ";
+	buffer += channel;
+	buffer += "\r\n";
+}
+
 // ERR_CHANNELISFULL (471)
 // "<client> <channel name> :Cannot join channel (+l)"
 void	build_ERR_CHANNELISFULL(t_IRC_Client &client, std::string_view channel)

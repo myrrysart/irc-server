@@ -62,3 +62,15 @@ void append_TOPIC_msg(std::string &buf, const t_IRC_Client &who,
 	buf += topic;
 	buf += "\r\n";
 }
+
+void	append_INVITE_msg(std::string &buf, const t_IRC_Client &inviter,
+		std::string_view target_nick, std::string_view chan)
+{
+	buf += ":";
+	append_nick_user_host(buf, inviter);
+	buf += " INVITE ";
+	buf += target_nick;
+	buf += " :";
+	buf += chan;
+	buf += "\r\n";
+}

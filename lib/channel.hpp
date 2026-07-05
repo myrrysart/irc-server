@@ -36,5 +36,7 @@ void	append_KICK_msg(std::string &buf, const t_IRC_Client &kicker,
 void	append_MODE_msg(std::string &buf, const t_IRC_Client &who, std::string_view chan, std::string_view mode);
 void	append_TOPIC_msg(std::string &buf, const t_IRC_Client &who,
 		std::string_view chan, std::string_view topic);
+void	append_INVITE_msg(std::string &buf, const t_IRC_Client &inviter,
+		std::string_view target_nick, std::string_view chan);
 void	send_names_reply(t_IRC_Client &client, const t_IRC_Channel &channel);
 #endif

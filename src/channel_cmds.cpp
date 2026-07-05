@@ -133,6 +133,7 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 	channel.members[&client] = join_flags;
 	client.joined_channels.insert(&channel);
+	channel.invited.erase(&client);
 
 	std::string		line;
 	append_JOIN_msg(line, client, channel.name);
@@ -343,6 +344,16 @@ void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
+	if (channel->members.contains(target))
+	{
+		build_ERR_USERONCHANNEL(client, target_nick, channel->name);
+		return;
+	}
+
 	channel->invited.insert(target);
 	build_RPL_INVITING(client, target_nick, channel->name);
+
+	std::string		line;
+	append_INVITE_msg(line, client, target_nick, channel->name);
+	target->send_message_buffer += line;
 }

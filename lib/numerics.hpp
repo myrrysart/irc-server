@@ -62,6 +62,8 @@ void	build_ERR_USERNOTINCHANNEL(t_IRC_Client &client,             // 441
             std::string_view channel, std::string_view nick);
 void	build_ERR_NOTONCHANNEL(t_IRC_Client &client,                 // 442
             std::string_view channel);
+void	build_ERR_USERONCHANNEL(t_IRC_Client &client,                // 443
+            std::string_view nick, std::string_view channel);
 void	build_ERR_NOTREGISTERED(t_IRC_Client &client);               // 451
 void	build_ERR_NEEDMOREPARAMS(t_IRC_Client &client);              // 461
 void	build_ERR_ALREADYREGISTERED(t_IRC_Client &client);           // 462

@@ -198,7 +198,7 @@ verify "A registers -> 001..005 greeting burst" "$GRABBED" \
 	're:^:humble_server 005 aylmer CHANTYPES=#& PREFIX=\(o\)@ NETWORK=Hive CASEMAPPING=ascii :are supported by this server$'
 verify "A registers -> MOTD 375/372/376" "$GRABBED" \
 	're:^:humble_server 375 aylmer :- humble_server Message of the day -$' \
-	're:^:humble_server 372 aylmer :- Welcome to the our humble server!$' \
+	're:^:humble_server 372 aylmer :- Welcome to our humble server!$' \
 	're:^:humble_server 376 aylmer :End of /MOTD command$'
 sendB "PASS $PASS"; sendB "NICK bob"; sendB "USER bob 0 * :Bob"
 expect B "B registers -> 001..004" \
