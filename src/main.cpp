@@ -1,6 +1,7 @@
 #include <csignal>
 #include <iostream>
 #include <exception>
+#include <limits> // std::numeric_limits
 #include "../lib/server.hpp"
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
@@ -21,6 +22,17 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	uint16_t	port = 0;
+	if (!convert_port_string_to_sixteen_bit_uint(argv[1], port))
+	{
+		std::cerr
+			<< "Port \"" << argv[1] << "\" is invalid. Accepted range: 1 to "
+			<< std::numeric_limits<uint16_t>::max() << ", inclusive. "
+			"Only numeric characters are accepted."
+			<< std::endl;
+		return 1;
+	}
+
 	size_t	password_len = validate_password_and_strlen(argv[2]);
 	if (password_len <= 0)
 	{
@@ -38,7 +50,7 @@ int main(int argc, char **argv)
 
 	t_IRC_Server	server = {};
 
-	server.port = atoi(argv[1]); // WARN: should we add some error handling for this?
+	server.port = port;
 	server.password = std::string_view{argv[2], password_len};
 
 	try {

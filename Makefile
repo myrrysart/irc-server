@@ -8,6 +8,7 @@ SRC		= src/main.cpp src/server.cpp src/listener.cpp src/client.cpp \
 		  src/channel_mode.cpp src/channel_cmds.cpp
 OBJS	= $(SRC:.cpp=.o)
 DEPS	= $(SRC:.cpp=.d)
+SANS	= -fsanitize=address,undefined
 
 all: $(NAME)
 
@@ -23,7 +24,11 @@ clean:
 fclean: clean
 	rm -f $(NAME)
 
-re: fclean all
+re: fclean
+	$(MAKE) CFLAGS="$(CFLAGS)" all
+
+fsan: CFLAGS += $(SANS)
+fsan: re
 
 -include $(DEPS)
 

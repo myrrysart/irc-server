@@ -7,6 +7,8 @@
 # include <unordered_map>
 # include <unordered_set>
 # include <vector>
+# include <cstdint> // for fixed width integer data types
+# include <new> // for hardware_constructive_interference_size
 # include <string_view>
 
 # define MAX_CLIENTS 128
@@ -185,7 +187,7 @@ typedef struct	s_IRC_Server
 	static constexpr int							poll_timeout = 1000;
 	static constexpr const char						version[] = "0.042"; // remember to update when upgrading ;-)
 	int												listen_fd;
-	int												port;
+	uint16_t										port;
 	std::string_view								password;
 	std::unordered_map<int, t_IRC_Client>			clients;
 	std::unordered_map<std::string, t_IRC_Channel>	channels;
