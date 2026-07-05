@@ -300,7 +300,7 @@ void	build_RPL_ISUPPORT(t_IRC_Client &client)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "005", client.nick);
-	buffer += "CHANTYPES=#,& CHANLIMIT=#&:";
+	buffer += "CHANTYPES=#,& CHANLIMIT=#&: CHANMODES=beI,k,l,psit";
 	buffer += std::to_string(MAX_CHANNELS_PER_CLIENT);
 	buffer += " PREFIX=(o)@ NETWORK=Hive CASEMAPPING=ascii "
 		":are supported by this server\r\n";
@@ -450,7 +450,6 @@ void	build_ERR_UNKNOWNMODE(t_IRC_Client &client, char mode_char)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "472", client.nick);
-	buffer += ' ';
 	buffer += mode_char;
 	buffer += " :is unknown mode char to me\r\n";
 }
