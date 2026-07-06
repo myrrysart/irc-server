@@ -46,6 +46,7 @@ void	build_ERR_CANNOTSENDTOCHAN(t_IRC_Client &client,             // 404
             std::string_view channel);
 void	build_ERR_TOOMANYCHANNELS(t_IRC_Client &client,              // 405
             std::string_view channel);
+void	build_ERR_NOORIGIN(t_IRC_Client &client);                    // 409
 void	build_ERR_NORECIPIENT(t_IRC_Client &client);                 // 411
 void	build_ERR_NOTEXTTOSEND(t_IRC_Client &client);                // 412
 void	build_RPL_MOTDSTART(t_IRC_Client &client);                   // 375

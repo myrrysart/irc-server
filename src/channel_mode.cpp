@@ -133,7 +133,10 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					plus_args += key;
 				}
 				else
-					continue;
+				{
+					build_ERR_NEEDMOREPARAMS(client);
+					continue ;
+				}
 			}
 			else
 			{
@@ -151,9 +154,13 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					std::string_view	limit = client.parser.params[arg_idx];
 					arg_idx++;
 
-					size_t	parsed_limit = 0;
-					std::from_chars(limit.data(), limit.data() + limit.size(), parsed_limit);
-					if (parsed_limit == 0)
+					size_t				parsed_limit = 0;
+					const char			*begin = limit.data();
+					const char			*end = begin + limit.size();
+					std::from_chars_result	res =
+						std::from_chars(begin, end, parsed_limit);
+					if (res.ec != std::errc{} || res.ptr != end
+						|| parsed_limit == 0)
 						continue;
 
 					channel->mode |= LIMIT;
@@ -164,7 +171,10 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					plus_args += limit;
 				}
 				else
-					continue;
+				{
+					build_ERR_NEEDMOREPARAMS(client);
+					continue ;
+				}
 			}
 			else
 			{
@@ -201,7 +211,10 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				}
 			}
 			else
-				continue;
+			{
+				build_ERR_NEEDMOREPARAMS(client);
+				continue ;
+			}
 		}
 		else
 			build_ERR_UNKNOWNMODE(client, current_char);

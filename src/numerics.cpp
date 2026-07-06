@@ -365,6 +365,16 @@ void	build_ERR_TOOMANYCHANNELS(t_IRC_Client &client, std::string_view channel)
 	buffer += " :You have joined too many channels\r\n";
 }
 
+// ERR_NOORIGIN (409)
+// "<client> :No origin specified"
+void	build_ERR_NOORIGIN(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "409", client.nick);
+	buffer += ":No origin specified\r\n";
+}
+
 // ERR_NORECIPIENT (411)
 // "<client> :No recipient given (PRIVMSG/NOTICE)"
 void	build_ERR_NORECIPIENT(t_IRC_Client &client)
