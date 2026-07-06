@@ -1,8 +1,4 @@
 
-// FIXME: On linux, when running netcat (or is it only with 'netcat' but not
-// with 'nc'?), and inputting something and then ctrl + d twice in a row just
-// completely seems to break the server? This needs more testing. Is it SIGPIPE?
-
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
 

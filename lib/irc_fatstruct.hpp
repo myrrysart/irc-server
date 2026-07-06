@@ -173,6 +173,15 @@ typedef struct	s_IRC_Client
 }										t_IRC_Client;
 static_assert(sizeof(t_IRC_Client) <= 128*CACHE_LINE_SIZE," t_IRC_Client did not use 128 cache line" );
 
+typedef struct	s_recipient_tracker
+{
+   // MAX_CLIENTS can/should be replaced with whatever maximal value of clients per channel we have.
+   // or maybe there is a better way to achieve that, since the unordered_set of channel members has a size?
+   // but maybe using that would be a VLA (variable length array), which is always a bad idea.
+	int			fds[MAX_CLIENTS];
+	size_t		count;
+}				t_recipient_tracker;
+
 // IRC_Server state bitmask definitions
 // NOTE: state is essentially an error code catcher for the IRC_Server. BIT(0) means server is running smoothly, anything else is an error case.
 // NOTE: 'static constexpr' within a struct does not increase struct's memory occupation: they are literals known at compile time.
@@ -192,6 +201,7 @@ typedef struct	s_IRC_Server
 	std::unordered_map<int, t_IRC_Client>			clients;
 	std::unordered_map<std::string, t_IRC_Channel>	channels;
 	std::vector<pollfd>								poll_fds;
+	t_recipient_tracker								recipient_tracker;
 
 	/* destructor */
 	~s_IRC_Server();
