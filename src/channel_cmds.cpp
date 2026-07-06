@@ -103,6 +103,15 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 		bool			just_created = false;
 		auto			ch_it = server.channels.find(channel_name);
+		if (ch_it != server.channels.end() && ch_it->second.members.contains(&client))
+			continue;
+
+		if (client.joined_channels.size() >= MAX_CHANNELS_PER_CLIENT)
+		{
+			build_ERR_TOOMANYCHANNELS(client, channel_name);
+			continue;
+		}
+
 		if (ch_it == server.channels.end())
 		{
 			if (server.channels.size() >= MAX_CHANNELS)
@@ -117,15 +126,6 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		}
 
 		t_IRC_Channel	&channel = ch_it->second;
-
-		if (channel.members.contains(&client))
-			continue;
-
-		if (client.joined_channels.size() >= MAX_CHANNELS_PER_CLIENT)
-		{
-			build_ERR_TOOMANYCHANNELS(client, channel.name);
-			continue;
-		}
 
 		if (is_flag_set(channel.mode, LIMIT) && channel.members.size() >= channel.user_limit)
 		{
