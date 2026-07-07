@@ -5,10 +5,11 @@
 #include <exception>
 #include "../lib/server.hpp"
 #include "../lib/irc_fatstruct.hpp"
+#include "../lib/commands.hpp"
 
-static void	initialize_hostname(t_IRC_Client &client)
+static void	initialize_hostname(const struct in_addr *addr, char *hostname)
 {
-	if (!inet_ntop(AF_INET, &client.addr.sin_addr, client.hostname, INET_ADDRSTRLEN))
+	if (!inet_ntop(AF_INET, addr, hostname, INET_ADDRSTRLEN))
 	{
 		if (errno == EAFNOSUPPORT)
 			log_error("Failure to initialize hostname; "
@@ -22,7 +23,7 @@ static void	initialize_hostname(t_IRC_Client &client)
 			"inet_ntop", __FILE__, __LINE__);
 
 		// sizeof() includes a '\0', making the array safe for appending
-		(void)std::memmove(client.hostname, "unknown", sizeof("unknown"));
+		(void)std::memmove(hostname, "unknown", sizeof("unknown"));
 	}
 }
 
@@ -64,16 +65,20 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 	* client side. */
 	client.nick_buf[0] = '*';
 	client.nick = std::string_view{client.nick_buf, 1};
-	initialize_hostname(client);
+	initialize_hostname(&client.addr.sin_addr, client.hostname);
 
 	return true;
 }
 
-static void	notify_client_that_server_is_full(int fd, const char *server_name)
+static void	notify_client_that_server_is_full(int fd, const char *server_name,
+				const struct in_addr *addr)
 {
-	std::string	error_msg{':'};
-	error_msg += server_name;
-	error_msg += " ERROR :Closing connection: server is full\r\n";
+	std::string	error_msg;
+	char		hostname[INET_ADDRSTRLEN] = {};
+
+	initialize_hostname(addr, hostname);
+	append_common_error_prefix(error_msg, server_name, hostname);
+	error_msg += " (Server is full)\r\n";
 	(void)send(fd, error_msg.c_str(), error_msg.size(), MSG_NOSIGNAL);
 }
 
@@ -91,7 +96,7 @@ void	accept_new_client(t_IRC_Server &server)
 	}
 	if (server.clients.size() >= MAX_CLIENTS)
 	{
-		notify_client_that_server_is_full(client_fd, server.name);
+		notify_client_that_server_is_full(client_fd, server.name, &client_addr.sin_addr);
 		log_error("Server is full", "server", __FILE__, __LINE__);
 		close(client_fd);
 		return;

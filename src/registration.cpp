@@ -87,23 +87,15 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 		}
 		else
 		{
-			// WARN: It seems like the "dd horse" protocol treats the same way:
-			// 	• Wrong password
-			// 	• NICK / USER provided before password
-			// 	It executes the following steps for both situtations:
-			// 	1. Send ERR_PASSWDMISMATCH 464 ("Password Incorrect" message for example)
-			// 	2. Send another Error: "ERROR :Closing Link: localhost (Bad Password)"
-			// 	3. Disconnect the client.
-
-			// TODO: missing elements here.
-			// send password mismatch 464
+			/* The "dd horse" protocol treats all of the following registration
+			* scnarios as failed attempts. It requires sending the numeric reply
+			* ERR_PASSWDMISMATCH and an error message before disconnecting:
+			* • Wrong password
+			* • NICK / USER provided before password
+			* • both NICK and USER provided but no password */
 			build_ERR_PASSWDMISMATCH(client);
-
-			// TODO:
-			// send ERROR ?
-
-
-			// set disconnect flag
+			queue_registration_error(client.send_message_buffer, server.name,
+				client.hostname);
 			client.state |= t_IRC_Client::DISCONNECT;
 		}
 	}

@@ -39,17 +39,22 @@ void	set_fatal_error_flag_and_log(t_bmask &state, const char *context,
 	log_error(std::strerror(errno), context, filename, line_num);
 }
 
+void	append_common_error_prefix(std::string &output_buffer,
+            const char *server_name, const char *hostname)
+{
+	output_buffer += ':';
+	output_buffer += server_name;
+	output_buffer += " ERROR :Closing Link: ";
+	output_buffer += hostname;
+}
+
 void	append_error_msg_quit(t_IRC_Client &quitter, const char *server_name)
 {
 	std::string	&output_buf = quitter.send_message_buffer;
 
-	output_buf += ':';
-	output_buf += server_name;
-	output_buf += " ERROR: Closing connection: ";
-	output_buf += quitter.nick;
-	output_buf += '[';
-	output_buf += quitter.hostname;
-	output_buf += "] (Quit: ";
+	append_common_error_prefix(quitter.send_message_buffer, server_name,
+		                       quitter.hostname);
+	output_buf += " (Quit: ";
 
 	// Append client's reason of departure, if provided.
 	// Handling for no reason / empty reason mimics the one required by the
@@ -58,4 +63,11 @@ void	append_error_msg_quit(t_IRC_Client &quitter, const char *server_name)
 		output_buf += quitter.parser.params[0];
 
 	output_buf += ")\r\n";
+}
+
+void	queue_registration_error(std::string &output_buffer,
+	        const char *server_name, const char *hostname)
+{
+	append_common_error_prefix(output_buffer, server_name, hostname);
+	output_buffer += " (Bad password)\r\n";
 }
