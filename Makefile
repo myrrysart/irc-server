@@ -8,7 +8,12 @@ SRC		= src/main.cpp src/server.cpp src/listener.cpp src/client.cpp \
 		  src/channel_mode.cpp src/channel_cmds.cpp
 OBJS	= $(SRC:.cpp=.o)
 DEPS	= $(SRC:.cpp=.d)
-SANS	= -fsanitize=address,undefined
+
+ifeq ($(shell uname),Linux)
+SANS = -fsanitize=address,undefined,leak
+else
+SANS = -fsanitize=address,undefined
+endif
 
 all: $(NAME)
 
