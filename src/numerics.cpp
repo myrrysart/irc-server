@@ -174,7 +174,7 @@ void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,
 		"letters, digits, and the following symbols: \"";
 	buffer += t_IRC_Client::allowed_symbols_nick;
 	buffer += "\". "
-		"First characters may not be: a digit, '#', ':' or \"&#\". "
+		"First characters may not be: a digit, '#', '&' or ':'. "
 		"Only the first 30 characters will be considered.\r\n";
 }
 
@@ -300,7 +300,7 @@ void	build_RPL_ISUPPORT(t_IRC_Client &client)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "005", client.nick);
-	buffer += "CHANTYPES=#,& CHANLIMIT=#&:";
+	buffer += "CHANTYPES=#& CHANLIMIT=#&:";
 	buffer += std::to_string(MAX_CHANNELS_PER_CLIENT);
 	// CHANMODES=A,B,C,D — which channel modes take a param when set:
 	// B=kl (key, limit), C=o (nick on +o only), D=it (no param)

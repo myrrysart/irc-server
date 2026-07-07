@@ -51,10 +51,6 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 	else
 		i = t_parser::n_valid_cmds; // invalid command, will trigger default case
 
-	// WARN: Make 100% sure that the commands in the switch case match the ones
-	// in the commands array; Also, make sure that all of those commands are
-	// implemented / need to be implemented!
-
 	if (!is_flag_set(client.state, t_IRC_Client::REGISTERED))
 	{
 		// Registration required - or unfinished

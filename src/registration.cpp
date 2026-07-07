@@ -68,10 +68,7 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 	{
 		if (has_provided_password_first_and_it_is_correct(client.state))
 		{
-			// TODO: client registered successfully.
-			// go on to do all of the steps which server has to do when
-			// client registers successfully...
-
+			/* client registered successfully */
 			client.state |= t_IRC_Client::REGISTERED;
 
 			build_RPL_WELCOME(client);
@@ -146,11 +143,12 @@ void	execute_PASS_cmd(t_IRC_Client &client, const t_IRC_Server &server)
 	// set client's 'password provided first' flag (do NOT unset if already set!)
 	client.state |= t_IRC_Client::PSWD_FIRST;
 
-	// check if the password is the right one or not, and adjust PSWD_CORRECT flag
+	// check if the password is the right one or not;
+	// set / unset the PSWD_CORRECT flag accordingly
 	if (client.parser.params[0] == server.password)
-		client.state |= t_IRC_Client::PSWD_CORRECT; // set PSWD_CORRECT flag
+		client.state |= t_IRC_Client::PSWD_CORRECT;
 	else
-		client.state &= ~t_IRC_Client::PSWD_CORRECT; // unset PSWD_CORRECT flag (or make sure it remains unset, do not flip)
+		client.state &= ~t_IRC_Client::PSWD_CORRECT;
 }
 
 /* Since this IRC server requires a password in order for a client to register,
@@ -291,9 +289,10 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		// numeric reply and implement.
 
 	}
-	// 'else', we return, silently ignoring the NICK change: no need to inform
-	// anyone about it since client is not yet connected and no one else is aware
-	// of it, and client will end up being disconnected with ERR_PASSWDMISMATCH
+	/* 'else': we return, silently ignoring the NICK change. No need to inform
+	* anyone about it since the client is not yet connected and no one else is
+	* aware of its connection attempt - and it will be disconnected soon enough,
+	* since their registration process has failed */
 }
 
 // WARN: Review this function when CHANTYPES are chosen for channel handling!
@@ -302,15 +301,14 @@ bool	is_nickname_valid(const std::string_view nickname)
 {
 	size_t	len = nickname.size();
 
-	// refuse leading: digit, '#', ':' and "&#" // WARN: review this when CHANTYPES are known!
+	// refuse leading: digit, '#', ':' or '&'
 	if (len)
 	{
 		char	c = nickname[0];
-		if (std::isdigit(static_cast<unsigned char>(c)) || c == '#' || c == ':')
+		if (std::isdigit(static_cast<unsigned char>(c))
+				|| c == '#' || c == ':' || c == '&')
 			return false;
 	}
-	if (len > 1 && nickname.compare(0, 2, "&#") == 0)
-		return false;
 
 	if (nickname.find_first_not_of(t_IRC_Client::nick_whitelist) != std::string_view::npos)
 		return false;
