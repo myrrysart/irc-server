@@ -87,27 +87,6 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 	client.parser.n_params = 0;
 }
 
-static void	append_error_msg_quit(t_IRC_Client &quitter, const char *server_name)
-{
-	std::string	&output_buf = quitter.send_message_buffer;
-
-	output_buf += ':';
-	output_buf += server_name;
-	output_buf += " ERROR: Closing connection: ";
-	output_buf += quitter.nick;
-	output_buf += '[';
-	output_buf += quitter.hostname;
-	output_buf += "] (Quit: ";
-
-	// Append client's reason of departure, if provided.
-	// Handling for no reason / empty reason mimics the one required by the
-	// protocol for fellow channelers alert message, i.e.: "(Quit: )"
-	if (quitter.parser.n_params)
-		output_buf += quitter.parser.params[0];
-
-	output_buf += ")\r\n";
-}
-
 /* message string builder for execute_QUIT_cmd() */
 static void	build_quit_message(std::string &quit_msg, t_IRC_Client &quitter)
 {

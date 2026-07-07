@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring> // for std::memmove() and std::strerror()
+#include <string>
 #include <cerrno>
 #include <exception>
 #include "../lib/server.hpp"
@@ -68,6 +69,14 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 	return true;
 }
 
+static void	notify_client_that_server_is_full(int fd, const char *server_name)
+{
+	std::string	error_msg{':'};
+	error_msg += server_name;
+	error_msg += " ERROR :Closing connection: server is full\r\n";
+	(void)send(fd, error_msg.c_str(), error_msg.size(), MSG_NOSIGNAL);
+}
+
 void	accept_new_client(t_IRC_Server &server)
 {
 	sockaddr_in client_addr{};
@@ -82,8 +91,7 @@ void	accept_new_client(t_IRC_Server &server)
 	}
 	if (server.clients.size() >= MAX_CLIENTS)
 	{
-		// WARN: Should this error be communicated to the client before disconnecting them?
-		// std::cout << "This server is full." << std::endl;
+		notify_client_that_server_is_full(client_fd, server.name);
 		log_error("Server is full", "server", __FILE__, __LINE__);
 		close(client_fd);
 		return;

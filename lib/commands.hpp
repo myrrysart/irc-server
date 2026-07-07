@@ -30,5 +30,6 @@ bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients
 bool	is_nickname_valid(const std::string_view nickname);
 void	append_client_quit_msg(std::string &buffer, const t_IRC_Client &quitter);
 void	append_nick_user_host(std::string &buffer, const t_IRC_Client &client);
+void	append_error_msg_quit(t_IRC_Client &quitter, const char *server_name);
 
 #endif
