@@ -84,3 +84,59 @@ void	send_names_reply(t_IRC_Client &client, const t_IRC_Channel &channel)
 	build_RPL_NAMREPLY(client, channel.name, names);
 	build_RPL_ENDOFNAMES(client, channel.name);
 }
+
+/* helper for broadcast_to_fellow_channelers_once_per_client() */
+static bool	is_message_already_loaded(t_delivery_tracker &tracker, int fd)
+{
+	for (size_t i = 0; i < tracker.count; ++i)
+	{
+		if (tracker.fds[i] == fd)
+			return true;
+	}
+	return false;
+}
+
+/* - appends 'msg' to all buffers of clients who share a channel with 'sender'
+* - skips 'sender'
+* - if a client shares multiple channels with 'sender', appends 'msg' only once
+* - skips clients who are about to be disconnected */
+void	broadcast_to_fellow_channelers_once_per_client(t_IRC_Client &sender,
+            const std::string &msg)
+{
+	/* To avoid duplicate alerts for clients who share more than one channel
+	* with 'sender': 'tracker' stores the fds of all clients who get the alert
+	* appended to their output buffers. */
+	static t_delivery_tracker	tracker;
+	tracker.count = 0; // reset to zero since it is a static variable with state
+
+	// iterate through all channels 'sender' is connected to
+	for (std::unordered_set<t_IRC_Channel *>::const_iterator	channel_it =
+		sender.joined_channels.begin();
+		channel_it != sender.joined_channels.end(); ++channel_it)
+	{
+		t_IRC_Channel	&channel = **channel_it;
+
+		// iterate through all members connected to the current channel
+		for (std::unordered_map<t_IRC_Client*, t_bmask>::iterator	member_it =
+			channel.members.begin(); member_it != channel.members.end();
+			++member_it)
+		{
+			t_IRC_Client	&fellow_member = *(member_it->first);
+
+			/* Avoids sending to:
+			* - the sender themselves
+			* - a client who is about to be disconnected anyways
+			* - a client who shares more than one channel with the sender and has
+			*   the message already loaded by a previous iteration of this loop */
+			if (fellow_member.fd == sender.fd
+				   || is_flag_set(fellow_member.state, t_IRC_Client::DISCONNECT)
+				   || is_message_already_loaded(tracker, fellow_member.fd))
+				continue;
+
+			// append the alert and update 'tracker'
+			fellow_member.send_message_buffer += msg;
+			tracker.fds[tracker.count] = fellow_member.fd;
+			++(tracker.count);
+		}
+	}
+}

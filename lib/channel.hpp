@@ -29,6 +29,7 @@ t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, std::string_view nick);
 void			remove_client_from_channel(t_IRC_Client &client, t_IRC_Channel &channel, t_IRC_Server &server);
 void			broadcast_to_channel(t_IRC_Channel &channel, const std::string &line, t_IRC_Client &client, bool skip_sender);
 std::string_view	next_comma_token(std::string_view list, size_t &pos);
+void			broadcast_to_fellow_channelers_once_per_client(t_IRC_Client &sender, const std::string &msg);
 // message builders
 void	append_JOIN_msg(std::string &buf, const t_IRC_Client &who, std::string_view chan);
 void	append_PART_msg(std::string &buf, const t_IRC_Client &who,
@@ -43,4 +44,11 @@ void	append_INVITE_msg(std::string &buf, const t_IRC_Client &inviter,
 void	append_PRIVMSG_msg(std::string &buf, const t_IRC_Client &who,
 		std::string_view target, std::string_view message);
 void	send_names_reply(t_IRC_Client &client, const t_IRC_Channel &channel);
+
+typedef struct	s_delivery_tracker
+{
+	int			fds[MAX_CLIENTS];
+	size_t		count;
+}				t_delivery_tracker;
+
 #endif

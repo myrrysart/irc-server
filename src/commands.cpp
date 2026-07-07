@@ -63,96 +63,94 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 	else
 	{
 		// dispatch for all commands
-		// TODO: Work in progress.
 		switch (i)
 		{
-			default: build_ERR_UNKNOWNCOMMAND(client);		break;
-			case 0:  execute_PASS_cmd(client, server);		break;
-			case 1:  execute_NICK_cmd(client, server);		break;
-			case 2:  execute_USER_cmd(client);				break;
-			case 3:  execute_QUIT_cmd(client, server);		break;
-			case 4:  execute_JOIN_cmd(client, server);		break;
-			case 5:  execute_PART_cmd(client, server);		break;
-			case 6:  execute_PRIVMSG_cmd(client, server);	break;
-			case 7:  execute_MODE_cmd(client, server);		break;
-			case 8:  execute_KICK_cmd(client, server);		break;
-			case 9:  execute_INVITE_cmd(client, server);	break;
-			case 10: execute_TOPIC_cmd(client, server); 	break;
-			case 13: execute_NAMES_cmd(client, server); 	break;
-			case 14: execute_LIST_cmd(client, server);  	break;
-			case 11: execute_PING_cmd(client, server);		break;
-			case 12: execute_PONG_cmd(client, server);		break;
+			default: build_ERR_UNKNOWNCOMMAND(client);     break;
+			case 0:  execute_PASS_cmd(client, server);     break;
+			case 1:  execute_NICK_cmd(client, server);     break;
+			case 2:  execute_USER_cmd(client);             break;
+			case 3:  execute_QUIT_cmd(client, server);     break;
+			case 4:  execute_JOIN_cmd(client, server);     break;
+			case 5:  execute_PART_cmd(client, server);     break;
+			case 6:  execute_PRIVMSG_cmd(client, server);  break;
+			case 7:  execute_MODE_cmd(client, server);     break;
+			case 8:  execute_KICK_cmd(client, server);     break;
+			case 9:  execute_INVITE_cmd(client, server);   break;
+			case 10: execute_TOPIC_cmd(client, server);    break;
+			case 11: execute_NAMES_cmd(client, server);    break;
+			case 12: execute_LIST_cmd(client, server);     break;
+			case 13: execute_PING_cmd(client, server);     break;
+			case 14: execute_PONG_cmd(client, server);     break;
 		}
 	}
 
 	client.parser.n_params = 0;
 }
 
-// WARN: work in progress
-// temporary placeholder definition for this struct, if this is kept, it would go elsewhere, of course:
-// this idea for this struct is to allow keeping track of the clients that have already gotten the message
-// appended to their output buffer, so that they would not end up getting duplicate messages just because they share
-// more than one channel with the quitting client.
-// This may be specific for QUIT command, however.
-void    execute_QUIT_cmd(t_IRC_Client &client, t_IRC_Server &server)
+static void	append_error_msg_quit(t_IRC_Client &quitter, const char *server_name)
 {
-	// trigger disconnecting of client without alerting anyone,
+	std::string	&output_buf = quitter.send_message_buffer;
+
+	output_buf += ':';
+	output_buf += server_name;
+	output_buf += " ERROR: Closing connection: ";
+	output_buf += quitter.nick;
+	output_buf += '[';
+	output_buf += quitter.hostname;
+	output_buf += "] (Quit: ";
+
+	// Append client's reason of departure, if provided.
+	// Handling for no reason / empty reason mimics the one required by the
+	// protocol for fellow channelers alert message, i.e.: "(Quit: )"
+	if (quitter.parser.n_params)
+		output_buf += quitter.parser.params[0];
+
+	output_buf += ")\r\n";
+}
+
+/* message string builder for execute_QUIT_cmd() */
+static void	build_quit_message(std::string &quit_msg, t_IRC_Client &quitter)
+{
+	static const std::string_view	middle_part{" QUIT :Quit: "};
+
+	// calculate how long the message will be, to allow pre-reservation of
+	// capacity, avoiding potential std::string reallocations
+	size_t	len = quitter.nick.size() + quitter.username.size() +
+		sizeof(quitter.hostname) + middle_part.size() +
+		quitter.parser.params[0].size() + 4; // 4: '!' + '@' + '\r' + '\n'
+	quit_msg.reserve(len);
+
+	append_nick_user_host(quit_msg, quitter);
+	quit_msg += middle_part;
+
+	// append the reason provided by the departing client
+	// if no reason provided or reason is empty: the client should still receive
+	// ":Quit: ", implemented in the string literal 'middle_part'
+	if (quitter.parser.n_params)
+		quit_msg += quitter.parser.params[0];
+	quit_msg += "\r\n";
+}
+
+void    execute_QUIT_cmd(t_IRC_Client &quitter, t_IRC_Server &server)
+{
+	// According to the Modern IRC protocol: "The server acknowledges" the
+	// QUIT command "by replying with an ERROR message"
+	append_error_msg_quit(quitter, server.name);
+
+	// trigger disconnection of client without alerting anyone,
 	// if client is unregistered or not on any channel
-	if (!is_flag_set(client.state, client.REGISTERED) ||
-			client.joined_channels.empty())
-       client.state |= t_IRC_Client::DISCONNECT;
+	if (!is_flag_set(quitter.state, quitter.REGISTERED)
+		|| quitter.joined_channels.empty())
+	{
+		quitter.state |= t_IRC_Client::DISCONNECT;
+		return;
+	}
 
 	// build message to be broadcasted. Each client that shares a channel with
 	// the departing client should be notified
-	static const std::string_view    middle_part{" QUIT :Quit: "};
+	std::string	quit_msg;
+	build_quit_message(quit_msg, quitter);
 
-	// calculate how long the appended message will be, to allow reservation of
-	// capacity, avoiding potential std::string reallocations
-	size_t    len = client.nick.size() + client.username.size() +
-		sizeof(client.hostname) + middle_part.size() +
-		client.parser.params[0].size() + 4; // 4: '!' + '@' + '\r' + '\n'
-
-	std::string    quit_msg;
-	quit_msg.reserve(len);
-	append_nick_user_host(quit_msg, client);
-	quit_msg += middle_part;
-
-	// append the reason provided by the client
-	if (client.parser.n_params)
-		quit_msg += client.parser.params[0];
-	quit_msg += "\r\n";
-
-	/* To avoid duplicate alerts for clients who share more than one channel
-	* with the departing client: 'recipient_tracker' stores the fds of all
-	* clients that get the alert appended to their output buffers. */
-	server.recipient_tracker.count = 0;
-
-
-	// WARN: Do I need to check operator privileges or other flags?
-
-	// iterate through all channels the client is connected to
-   for (std::unordered_set<t_IRC_Channel *>::const_iterator	channel_it =
-		client.joined_channels.begin();
-		channel_it != client.joined_channels.end(); ++channel_it)
-   {
-		t_IRC_Channel	&channel = **channel_it;
-
-		// iterate through all members connected to the current channel
-		for (std::unordered_map<t_IRC_Client*, t_bmask>::iterator	member_it =
-			channel.members.begin(); member_it != channel.members.end();
-			++member_it)
-	   {
-	// TODO: I got here.
-		   // no need to send the message to itself
-		   // nor to a member that already has the message ready in its buffer
-		   if (member_it.fd == client.fd || has_received_message(already_sent, member_it.fd))
-			   continue;
-		   member_it.send_message_buffer += quit_msg;
-				   // can be replaced with whatever appending function (something like 'build_msg_to_send(member_it.send_message_buffer));'
-		   already_sent.fds[already_sent.count] = member_it.fd;
-		   ++(already_sent.count);
-	   }
-   }
-
-   client.state |= t_IRC_Client::DISCONNECT;
+	broadcast_to_fellow_channelers_once_per_client(quitter, quit_msg);
+	quitter.state |= t_IRC_Client::DISCONNECT;
 }

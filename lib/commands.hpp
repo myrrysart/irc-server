@@ -17,7 +17,7 @@ void	execute_USER_cmd(t_IRC_Client &client);
 void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server);
 
 /* IRC Commands */
-void	execute_QUIT_cmd(t_IRC_Client &client, t_IRC_Server &server); // WARN: work in progress
+void	execute_QUIT_cmd(t_IRC_Client &quitter, t_IRC_Server &server);
 
 /* Bitmask check helpers */
 bool	has_provided_user_and_nick_names(t_bmask mask);
