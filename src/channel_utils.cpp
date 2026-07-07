@@ -116,18 +116,13 @@ void	broadcast_to_fellow_channelers_once_per_client(t_IRC_Client &sender,
 	{
 		t_IRC_Channel	&channel = **channel_it;
 
-		// iterate through all members connected to the current channel
+		// iterate through all members connected to 'channel'
 		for (std::unordered_map<t_IRC_Client*, t_bmask>::iterator	member_it =
 			channel.members.begin(); member_it != channel.members.end();
 			++member_it)
 		{
 			t_IRC_Client	&fellow_member = *(member_it->first);
 
-			/* Avoids sending to:
-			* - the sender themselves
-			* - a client who is about to be disconnected anyways
-			* - a client who shares more than one channel with the sender and has
-			*   the message already loaded by a previous iteration of this loop */
 			if (fellow_member.fd == sender.fd
 				   || is_flag_set(fellow_member.state, t_IRC_Client::DISCONNECT)
 				   || is_message_already_loaded(tracker, fellow_member.fd))
