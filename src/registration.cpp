@@ -3,10 +3,12 @@
 #include "../lib/commands.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
+#include "../lib/channel.hpp"
 
 #include <string_view>
 #include <unordered_map>
 #include <string> // for std::string's append()
+#include <string_view>
 #include <algorithm> // for std::min()
 #include <cctype> // for std::isdigit()
 
@@ -278,21 +280,58 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	if (is_flag_set(client.state, t_IRC_Client::REGISTERED)
 		|| is_flag_set(client.state, t_IRC_Client::PSWD_FIRST))
 	{
+		// temporarily store previous nick, in order to integrate it to the reply
+		std::string	old_nick{client.nick};
 
 		// Store new nickname (has to be a deep copy)
 		for (size_t	i = 0; i < new_nicklen; ++i)
 			client.nick_buf[i] = new_nick[i];
 		client.nick = std::string_view{client.nick_buf, new_nicklen};
 
-		// TODO: Build message/s to be sent message to concerned clients/channels
-		// regarding the nick name change of current client? Look for appropriate
-		// numeric reply and implement.
-
+		// Broadcast NICK reply to the requesting client and to all fellow
+		// channelers (but not more than once per client)
+		broadcast_nick_change(client, old_nick);
 	}
 	/* 'else': we return, silently ignoring the NICK change. No need to inform
 	* anyone about it since the client is not yet connected and no one else is
 	* aware of its connection attempt - and it will be disconnected soon enough,
 	* since their registration process has failed */
+}
+
+static void	build_NICK_message(std::string &nick_msg, t_IRC_Client &client,
+	            const std::string &old_nick)
+{
+	const std::string_view	slice = " NICK ";
+	size_t	len = old_nick.size() + client.username.size()
+		+ sizeof(client.hostname) + slice.size() + client.nick.size() + 6;
+	// 6: ':' + '!' + '@' + ':' + '\r' + '\n'
+
+	nick_msg.reserve(len);
+
+	nick_msg += ':';
+	nick_msg += old_nick;
+	nick_msg += '!';
+	nick_msg += client.username;
+	nick_msg += '@';
+	nick_msg += client.hostname;
+	nick_msg += slice;
+	nick_msg += ':';
+	nick_msg += client.nick;
+	nick_msg += "\r\n";
+}
+
+void	broadcast_nick_change(t_IRC_Client &client, const std::string &old_nick)
+{
+	// build the reply
+	std::string	nick_msg;
+	build_NICK_message(nick_msg, client, old_nick);
+
+	// queue the reply to requesting client's output buffer
+	client.send_message_buffer += nick_msg;
+
+	// broadcast to all fellow channelers - but only once per client, even if
+	// they happen to share more than one channel with the client
+	broadcast_to_fellow_channelers_once_per_client(client, nick_msg);
 }
 
 // WARN: Review this function when CHANTYPES are chosen for channel handling!

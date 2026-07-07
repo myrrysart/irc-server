@@ -86,15 +86,16 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 /* message string builder for execute_QUIT_cmd() */
 static void	build_quit_message(std::string &quit_msg, t_IRC_Client &quitter)
 {
-	static const std::string_view	middle_part{" QUIT :Quit: "};
+	const std::string_view	middle_part{" QUIT :Quit: "};
 
 	// calculate how long the message will be, to allow pre-reservation of
 	// capacity, avoiding potential std::string reallocations
-	size_t	len = quitter.nick.size() + quitter.username.size() +
-		sizeof(quitter.hostname) + middle_part.size() +
-		quitter.parser.params[0].size() + 4; // 4: '!' + '@' + '\r' + '\n'
+	size_t	len = quitter.nick.size() + quitter.username.size()
+		+ sizeof(quitter.hostname) + middle_part.size()
+		+ quitter.parser.params[0].size() + 5; // 5: ':' + '!' + '@' + '\r' + '\n'
 	quit_msg.reserve(len);
 
+	quit_msg += ':';
 	append_nick_user_host(quit_msg, quitter);
 	quit_msg += middle_part;
 
