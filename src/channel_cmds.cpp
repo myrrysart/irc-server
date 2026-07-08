@@ -56,6 +56,7 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		// nick target: must be an online client
 		else
 		{
+			trim_nickname_if_longer_than_max_nicklen(target);
 			t_IRC_Client	*target_client = find_client_by_nick(server, target);
 			if (!target_client)
 			{
@@ -271,6 +272,7 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 		if (victim.empty())
 			continue;
 		has_victim_token = true;
+		trim_nickname_if_longer_than_max_nicklen(victim);
 
 		// each victim must currently be in the channel
 		t_IRC_Client	*to_be_kicked = find_chmember_by_nick(*channel, victim);
@@ -419,6 +421,7 @@ void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 	// find channel, inviter must be a member and an operator
 	std::string_view	target_nick(client.parser.params[0]);
+	trim_nickname_if_longer_than_max_nicklen(target_nick);
 	std::string_view	channel_name(client.parser.params[1]);
 	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 	if (!channel)

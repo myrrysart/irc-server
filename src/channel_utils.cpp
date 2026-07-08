@@ -21,7 +21,7 @@ t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, std::string_view nic
 {
 	for (auto &[member_ptr, flags] : channel.members)
 	{
-		if (are_equal_strs_case_insensitive(nick.data(), nick.size(), member_ptr->nick.data(), member_ptr->nick.size()))
+		if (are_equal_strs_case_insensitive(nick, member_ptr->nick))
 			return member_ptr;
 	}
 	return nullptr;
@@ -40,9 +40,7 @@ t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, std::string_view nick)
 	for (auto &entry : server.clients)
 	{
 		t_IRC_Client	&client = entry.second;
-		if (are_equal_strs_case_insensitive(
-				nick.data(), nick.size(),
-				client.nick.data(), client.nick.size()))
+		if (are_equal_strs_case_insensitive(nick, client.nick))
 			return &client;
 	}
 	return nullptr;

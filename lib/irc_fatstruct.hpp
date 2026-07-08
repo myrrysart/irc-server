@@ -174,15 +174,13 @@ typedef struct	s_IRC_Client
 static_assert(sizeof(t_IRC_Client) <= 128*CACHE_LINE_SIZE," t_IRC_Client did not use 128 cache line" );
 
 // IRC_Server state bitmask definitions
-// NOTE: state is essentially an error code catcher for the IRC_Server. BIT(0) means server is running smoothly, anything else is an error case.
-// NOTE: 'static constexpr' within a struct does not increase struct's memory occupation: they are literals known at compile time.
 typedef struct	s_IRC_Server
 {
 	enum {
 		FATAL_ERROR = BIT(0)
 	};
 
-	t_bmask											state; //Not in use in this version
+	t_bmask											state;
 	static constexpr const char						name[] = "humble_server";
 	static constexpr int							poll_timeout = 1000;
 	static constexpr const char						version[] = "0.042"; // remember to update when upgrading ;-)

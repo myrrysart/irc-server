@@ -202,6 +202,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			if (arg_idx < client.parser.n_params)
 			{
 				std::string_view	target_nick = client.parser.params[arg_idx];
+				trim_nickname_if_longer_than_max_nicklen(target_nick);
 				t_IRC_Client		*target =
 					find_chmember_by_nick(*channel, target_nick);
 				arg_idx++;
