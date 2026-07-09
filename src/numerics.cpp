@@ -234,12 +234,12 @@ void	build_RPL_UMODEIS(t_IRC_Client &client)
 	buffer += "+\r\n";
 }
 
-// ERR_USERSDONTMATCH (502) "<client> :Cant change mode for other users"
+// ERR_USERSDONTMATCH (502) "<client> :Cannot change mode for other users"
 void	build_ERR_USERSDONTMATCH(t_IRC_Client &client)
 {
 	std::string	&buffer = client.send_message_buffer;
 	append_common_reply_prefix(buffer, "502", client.nick);
-	buffer += ":Cant change mode for other users\r\n";
+	buffer += ":Cannot change mode for other users\r\n";
 }
 
 // ERR_ALREADYREGISTERED (462)
@@ -376,13 +376,16 @@ void	build_ERR_NOORIGIN(t_IRC_Client &client)
 }
 
 // ERR_NORECIPIENT (411)
-// "<client> :No recipient given (PRIVMSG/NOTICE)"
+// "<client> :No recipient given (<command>)"
 void	build_ERR_NORECIPIENT(t_IRC_Client &client)
 {
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "411", client.nick);
-	buffer += ":No recipient given (PRIVMSG/NOTICE)\r\n";
+	buffer += ":No recipient given (";
+	buffer += std::string_view{client.parser.verb_in_caps,
+		client.parser.verb.size()};
+	buffer += ")\r\n";
 }
 
 // ERR_NOTEXTTOSEND (412)
