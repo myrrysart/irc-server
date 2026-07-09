@@ -126,8 +126,8 @@ typedef struct	s_IRC_Client
 		DISCARD_MSG  = BIT(6)
 	};
 
-	// IRC protocol's username length parameter. Usually set to 5
-	static constexpr size_t	userlen = 5;
+	// IRC protocol's username length parameter
+	static constexpr size_t	userlen = 10;
 
 	// "If <nickname> is longer than the server allows (...), it is silently truncated"
 	static constexpr size_t	max_nicklen = 30;

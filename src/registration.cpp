@@ -201,7 +201,8 @@ void	execute_USER_cmd(t_IRC_Client &client)
 	{
 		std::string_view	*params = client.parser.params;
 		client.username = "~"; // a prefix indicating that 'username' is set by the user.
-		client.username.append(params[0].substr(0, t_IRC_Client::userlen)); // silently trim any characters after userlen
+		// silently trim any characters after userlen ('~' counts)
+		client.username.append(params[0].substr(0, t_IRC_Client::userlen - 1));
 		client.realname = params[3];
 		/* as for parameters [1] & [2]: they are usually sent from the client
 		* as '0' and '*', respectively - but they do not really concern anything
