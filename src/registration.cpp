@@ -31,28 +31,6 @@
 // the client before continuing. This exchange may happen immediately on connection
 // and at any time during connection registration, so clients MUST respond
 // correctly to it."
-// "Upon successful completion of the registration process, the server MUST send,
-// in this order:
-// RPL_WELCOME (001),
-// RPL_YOURHOST (002),
-// RPL_CREATED (003),
-// RPL_MYINFO (004),
-// at least one RPL_ISUPPORT (005) numeric to the client.
-// The server MAY then send other numerics and messages.
-// The server SHOULD then respond as though the client sent the LUSERS command
-// and return the appropriate numerics.
-// The server MUST then respond as though the client sent it the MOTD command,
-// i.e. it must send either the successful Message of the Day numerics or the
-// ERR_NOMOTD (422) numeric.
-// If the user has client modes set on them automatically upon joining the network,
-// the server SHOULD send the client the RPL_UMODEIS (221) reply or a MODE message
-// with the client as target, preferably the former.
-// The first parameter of the RPL_WELCOME (001) message is the nickname assigned
-// by the network to the client. Since it may differ from the nickname the client
-// requested with the NICK command (due to, e.g. length limits or policy
-// restrictions on nicknames), the client SHOULD use this parameter to determine
-// its actual nickname at the time of connection. Subsequent nickname changes,
-// client-initiated or not, will be communicated by the server sending a NICK message.
 
 void	client_registration(t_IRC_Client &client, size_t i, t_IRC_Server &server)
 {
