@@ -457,9 +457,9 @@ void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 	// record invite (bypasses +i) and notify both sides
 	channel->invited.insert(target);
-	build_RPL_INVITING(client, target_nick, channel->name); // 341
+	build_RPL_INVITING(client, target->nick, channel->name); // 341
 
 	std::string		line;
-	append_INVITE_msg(line, client, target_nick, channel->name);
+	append_INVITE_msg(line, client, target->nick, channel->name);
 	target->send_message_buffer += line;
 }
