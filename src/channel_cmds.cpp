@@ -451,7 +451,7 @@ void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 	if (channel->members.contains(target))
 	{
-		build_ERR_USERONCHANNEL(client, target_nick, channel->name); // 443
+		build_ERR_USERONCHANNEL(client, target->nick, channel->name); // 443
 		return;
 	}
 

@@ -460,7 +460,7 @@ void	build_RPL_MOTD(t_IRC_Client &client, const std::string_view line)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "372", client.nick);
-	buffer += ":- ";
+	buffer += ":";
 	buffer += line;
 	buffer += "\r\n";
 }
@@ -501,7 +501,7 @@ void	build_ERR_NOTONCHANNEL(t_IRC_Client &client, std::string_view channel)
 }
 
 // ERR_USERONCHANNEL (443)
-// "<client> <nick> <channel> :<nick> is on <channel>"
+// "<client> <nick> <channel> :is already on channel"
 void	build_ERR_USERONCHANNEL(t_IRC_Client &client,
 		std::string_view nick, std::string_view channel)
 {
@@ -511,11 +511,7 @@ void	build_ERR_USERONCHANNEL(t_IRC_Client &client,
 	buffer += nick;
 	buffer += ' ';
 	buffer += channel;
-	buffer += " :";
-	buffer += nick;
-	buffer += " is on ";
-	buffer += channel;
-	buffer += "\r\n";
+	buffer += " :is already on channel\r\n";
 }
 
 // ERR_CHANNELISFULL (471)
