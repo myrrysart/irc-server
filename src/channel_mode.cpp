@@ -46,8 +46,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	if (channel_name.empty() || (channel_name[0] != '#' && channel_name[0] != '&'))
 	{
 		//irssi auto-sends `MODE <yournick>` on connect
-		if (are_equal_strs_case_insensitive(channel_name.data(), channel_name.size(),
-				client.nick.data(), client.nick.size()))
+		if (are_equal_strs_case_insensitive(channel_name, client.nick))
 			build_RPL_UMODEIS(client); // 221
 		else
 			build_ERR_USERSDONTMATCH(client); // 502
