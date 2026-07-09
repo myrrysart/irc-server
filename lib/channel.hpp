@@ -47,6 +47,12 @@ void	append_PRIVMSG_msg(std::string &buf, const t_IRC_Client &who,
 		std::string_view target, std::string_view message);
 void	send_names_reply(t_IRC_Client &client, const t_IRC_Channel &channel);
 
+typedef struct			s_key_channel
+{
+	std::string_view	channel;
+	std::string_view	key;
+}						t_key_channel;
+
 typedef struct	s_delivery_tracker
 {
 	int			fds[MAX_CLIENTS];

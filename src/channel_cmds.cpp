@@ -75,12 +75,6 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
-	struct t_key_channel //NOTE: this might help with readability. If so, we'll move it to header.
-	{
-		std::string_view	channel;
-		std::string_view	key;
-	};
-
 	if (client.parser.n_params == 0)
 	{
 		build_ERR_NEEDMOREPARAMS(client); // 461
