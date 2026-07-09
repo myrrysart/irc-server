@@ -417,7 +417,7 @@ void	build_RPL_MOTDSTART(t_IRC_Client &client)
 	append_common_reply_prefix(buffer, "375", client.nick);
 	buffer += ":- ";
 	buffer += t_IRC_Server::name;
-	buffer += " Message of the day -\r\n";
+	buffer += " Message of the day - \r\n";
 }
 
 // RPL_MOTD (372)
