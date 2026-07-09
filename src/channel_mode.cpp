@@ -213,7 +213,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					plus_chars += 'o';
 					if (!plus_args.empty())
 						plus_args += ' ';
-					plus_args += target_nick;
+					plus_args += target->nick;
 				}
 				else
 				{
@@ -221,7 +221,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					minus_chars += 'o';
 					if (!minus_args.empty())
 						minus_args += ' ';
-					minus_args += target_nick;
+					minus_args += target->nick;
 				}
 			}
 			else

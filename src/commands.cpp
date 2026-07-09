@@ -27,8 +27,6 @@ void	execute_PONG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	(void) server;
 	(void) client;
 }
-// WARN: To avoid bad invalid memory access surprises: Once PRIVMSG is implemented,
-// Test something like: "PRIVMSG :some message" followed by "PRIVMSS :whatever".
 
 void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 {
