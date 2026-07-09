@@ -92,9 +92,8 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// each parsed request pairs one channel token with the next key token (if any)
 	while (channel_pos <= channels.size())
 	{
-		t_key_channel	req;
-		req.channel = next_comma_token(channels, channel_pos);
-		req.key = {};
+		// directly initialize the struct's members, without intermediate steps
+		t_key_channel	req{ next_comma_token(channels, channel_pos), {} };
 
 		if (client.parser.n_params >= 2 && key_pos <= keys.size())
 			req.key = next_comma_token(keys, key_pos);
