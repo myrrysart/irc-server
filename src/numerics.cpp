@@ -226,6 +226,21 @@ void	build_ERR_NEEDMOREPARAMS(t_IRC_Client &client)
 	buffer += " :Not enough parameters\r\n";
 }
 
+// RPL_UMODEIS (221) "<client> <user modes>"
+void	build_RPL_UMODEIS(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+	append_common_reply_prefix(buffer, "221", client.nick);
+	buffer += "+\r\n";
+}
+
+// ERR_USERSDONTMATCH (502) "<client> :Cant change mode for other users"
+void	build_ERR_USERSDONTMATCH(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+	append_common_reply_prefix(buffer, "502", client.nick);
+	buffer += ":Cant change mode for other users\r\n";
+}
 
 // ERR_ALREADYREGISTERED (462)
 // "<client> :You may not reregister"
@@ -276,7 +291,7 @@ void	build_RPL_MYINFO(t_IRC_Client &client)
 	buffer += t_IRC_Server::name;
 	buffer += ' ';
 	buffer += t_IRC_Server::version;
-	buffer += "  itkl\r\n";
+	buffer += " o itkl\r\n";
 }
 
 // RPL_ISUPPORT (005)
@@ -287,7 +302,9 @@ void	build_RPL_ISUPPORT(t_IRC_Client &client)
 	append_common_reply_prefix(buffer, "005", client.nick);
 	buffer += "CHANTYPES=#,& CHANLIMIT=#&:";
 	buffer += std::to_string(MAX_CHANNELS_PER_CLIENT);
-	buffer += " PREFIX=(o)@ NETWORK=Hive CASEMAPPING=ascii "
+	// CHANMODES=A,B,C,D — which channel modes take a param when set:
+	// B=kl (key, limit), C=o (nick on +o only), D=it (no param)
+	buffer += " CHANMODES=,kl,o,it PREFIX=(o)@ NETWORK=Hive CASEMAPPING=ascii "
 		":are supported by this server\r\n";
 }
 
@@ -348,6 +365,36 @@ void	build_ERR_TOOMANYCHANNELS(t_IRC_Client &client, std::string_view channel)
 	buffer += " :You have joined too many channels\r\n";
 }
 
+// ERR_NOORIGIN (409)
+// "<client> :No origin specified"
+void	build_ERR_NOORIGIN(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "409", client.nick);
+	buffer += ":No origin specified\r\n";
+}
+
+// ERR_NORECIPIENT (411)
+// "<client> :No recipient given (PRIVMSG/NOTICE)"
+void	build_ERR_NORECIPIENT(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "411", client.nick);
+	buffer += ":No recipient given (PRIVMSG/NOTICE)\r\n";
+}
+
+// ERR_NOTEXTTOSEND (412)
+// "<client> :No text to send"
+void	build_ERR_NOTEXTTOSEND(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "412", client.nick);
+	buffer += ":No text to send\r\n";
+}
+
 // ERR_NOMOTD (422)
 // "<client> :MOTD File is missing"
 void	build_ERR_NOMOTD(t_IRC_Client &client)
@@ -356,6 +403,40 @@ void	build_ERR_NOMOTD(t_IRC_Client &client)
 
 	append_common_reply_prefix(buffer, "422", client.nick);
 	buffer += ":MOTD File is missing\r\n";
+}
+
+// RPL_MOTDSTART (375)
+// "<client> :- <server> Message of the day - "
+void	build_RPL_MOTDSTART(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "375", client.nick);
+	buffer += ":- ";
+	buffer += t_IRC_Server::name;
+	buffer += " Message of the day -\r\n";
+}
+
+// RPL_MOTD (372)
+// "<client> :<line of the motd>"
+void	build_RPL_MOTD(t_IRC_Client &client, const std::string_view line)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "372", client.nick);
+	buffer += ":- ";
+	buffer += line;
+	buffer += "\r\n";
+}
+
+// RPL_ENDOFMOTD (376)
+// "<client> :End of /MOTD command"
+void	build_RPL_ENDOFMOTD(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "376", client.nick);
+	buffer += ":End of /MOTD command\r\n";
 }
 
 // ERR_USERNOTINCHANNEL (441)
@@ -383,6 +464,24 @@ void	build_ERR_NOTONCHANNEL(t_IRC_Client &client, std::string_view channel)
 	buffer += " :You're not on that channel\r\n";
 }
 
+// ERR_USERONCHANNEL (443)
+// "<client> <nick> <channel> :<nick> is on <channel>"
+void	build_ERR_USERONCHANNEL(t_IRC_Client &client,
+		std::string_view nick, std::string_view channel)
+{
+	std::string	&buffer = client.send_message_buffer;
+
+	append_common_reply_prefix(buffer, "443", client.nick);
+	buffer += nick;
+	buffer += ' ';
+	buffer += channel;
+	buffer += " :";
+	buffer += nick;
+	buffer += " is on ";
+	buffer += channel;
+	buffer += "\r\n";
+}
+
 // ERR_CHANNELISFULL (471)
 // "<client> <channel name> :Cannot join channel (+l)"
 void	build_ERR_CHANNELISFULL(t_IRC_Client &client, std::string_view channel)
@@ -401,7 +500,6 @@ void	build_ERR_UNKNOWNMODE(t_IRC_Client &client, char mode_char)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "472", client.nick);
-	buffer += ' ';
 	buffer += mode_char;
 	buffer += " :is unknown mode char to me\r\n";
 }
@@ -464,7 +562,6 @@ void	build_RPL_NAMREPLY(t_IRC_Client &client, std::string_view channel, std::str
 	buffer += "\r\n";
 }
 
-
 // RPL_ENDOFNAMES (366)
 // "<client> <channel> :End of /NAMES list`, not `<client> :End of /NAMES list`"
 void	build_RPL_ENDOFNAMES(t_IRC_Client &client, std::string_view channel)
@@ -522,6 +619,7 @@ void	build_RPL_NOTOPIC(t_IRC_Client &client, std::string_view channel)
 	buffer += channel;
 	buffer += " :No topic is set\r\n";
 }
+
 void	build_RPL_TOPIC(t_IRC_Client &client, const t_IRC_Channel &channel)
 {
 	std::string	&buffer = client.send_message_buffer;
@@ -532,7 +630,6 @@ void	build_RPL_TOPIC(t_IRC_Client &client, const t_IRC_Channel &channel)
 	buffer += channel.topic;
 	buffer += "\r\n";
 }
-
 
 void	append_common_reply_prefix(std::string &buffer,
             std::string_view numeric, std::string_view nick)

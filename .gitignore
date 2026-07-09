@@ -5,10 +5,12 @@
 # BLOCK START:
 !.github/workflows/build.yml
 !.gitignore
-!notes.md
+! tests.md
+! mandatory_status.md
 # NOTE: these are testing files
 !tests/
 !tests/*.sh
+!test_mandatory.sh
 # BlOCK END
 
 # Makefile

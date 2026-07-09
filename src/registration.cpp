@@ -79,7 +79,10 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 			build_RPL_CREATED(client);
 			build_RPL_MYINFO(client);
 			build_RPL_ISUPPORT(client);
-			build_ERR_NOMOTD(client);
+
+			build_RPL_MOTDSTART(client);
+			build_RPL_MOTD(client, "Welcome to our humble server!");
+			build_RPL_ENDOFMOTD(client);
 
 		}
 		else

@@ -14,12 +14,18 @@ void	append_JOIN_msg(std::string &buf, const t_IRC_Client &who, std::string_view
 	buf += "\r\n";
 }
 
-void	append_PART_msg(std::string &buf, const t_IRC_Client &who, std::string_view chan)
+void	append_PART_msg(std::string &buf, const t_IRC_Client &who,
+		std::string_view chan, std::string_view reason)
 {
 	buf += ":";
 	append_nick_user_host(buf, who);
 	buf += " PART ";
 	buf += chan;
+	if (!reason.empty())
+	{
+		buf += " :";
+		buf += reason;
+	}
 	buf += "\r\n";
 }
 
@@ -60,5 +66,29 @@ void append_TOPIC_msg(std::string &buf, const t_IRC_Client &who,
 	buf += chan;
 	buf += " :";
 	buf += topic;
+	buf += "\r\n";
+}
+
+void	append_INVITE_msg(std::string &buf, const t_IRC_Client &inviter,
+		std::string_view target_nick, std::string_view chan)
+{
+	buf += ":";
+	append_nick_user_host(buf, inviter);
+	buf += " INVITE ";
+	buf += target_nick;
+	buf += " :";
+	buf += chan;
+	buf += "\r\n";
+}
+
+void	append_PRIVMSG_msg(std::string &buf, const t_IRC_Client &who,
+		std::string_view target, std::string_view message)
+{
+	buf += ":";
+	append_nick_user_host(buf, who);
+	buf += " PRIVMSG ";
+	buf += target;
+	buf += " :";
+	buf += message;
 	buf += "\r\n";
 }

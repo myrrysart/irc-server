@@ -20,6 +20,18 @@ static void	append_sign_group(std::string &out, char sign,
 		out += args;
 	}
 }
+// NOTE: this is pretty much the same function to the one in main.cpp.
+// Could both be turned to one generic helper?
+static bool	parse_channel_limit(std::string_view limit, size_t &parsed_limit)
+{
+	const char				*begin = limit.data();
+	const char				*end = begin + limit.size();
+	std::from_chars_result	result = std::from_chars(begin, end, parsed_limit);
+
+	if (result.ec != std::errc{} || result.ptr != end || parsed_limit == 0)
+		return false;
+	return true;
+}
 
 void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -30,27 +42,45 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	}
 
 	std::string_view	channel_name(client.parser.params[0]);
+	// first param isn't a channel: irssi's auto `MODE <yournick>` on connect
+	if (channel_name.empty() || (channel_name[0] != '#' && channel_name[0] != '&'))
+	{
+		//irssi auto-sends `MODE <yournick>` on connect
+		if (are_equal_strs_case_insensitive(channel_name.data(), channel_name.size(),
+				client.nick.data(), client.nick.size()))
+			build_RPL_UMODEIS(client); // 221
+		else
+			build_ERR_USERSDONTMATCH(client); // 502
+		return;
+	}
+
+	// no 2nd param -> report current modes
 	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 	if (!channel)
 	{
-		build_ERR_NOSUCHCHANNEL(client, channel_name);
+		build_ERR_NOSUCHCHANNEL(client, channel_name); // 403
 		return;
 	}
 	if (client.parser.n_params == 1)
 	{
-		build_RPL_CHANNELMODEIS(client, *channel);
+		build_RPL_CHANNELMODEIS(client, *channel); // 324
 		return;
 	}
+	// changing modes checks for membership + operator
 	auto	member_it = channel->members.find(&client);
-	if (member_it == channel->members.end()
-		|| !is_flag_set(member_it->second, IS_OPERATOR))
+	if (member_it == channel->members.end())
 	{
-		build_ERR_CHANOPRIVSNEEDED(client, channel->name);
+		build_ERR_NOTONCHANNEL(client, channel->name); // 442
+		return;
+	}
+	if (!is_flag_set(member_it->second, IS_OPERATOR))
+	{
+		build_ERR_CHANOPRIVSNEEDED(client, channel->name); // 482
 		return;
 	}
 
 	std::string_view	modes = client.parser.params[1];
-	size_t				arg_idx = 2;
+	size_t				arg_idx = 2;	// next mode-argument param to consume (for k/l/o)
 	char				sign = 0;
 	size_t				i = 0;
 
@@ -61,6 +91,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	std::string			minus_chars;
 	std::string			minus_args;
 
+	// walk the mode string char by char, tracking the current +/- sign
 	while (i < modes.size())
 	{
 		char	current_char = modes[i];
@@ -100,6 +131,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				minus_chars += 't';
 			}
 		}
+		// channel key. +k with argument, -k without
 		else if (current_char == 'k')
 		{
 			if (sign == '+')
@@ -118,7 +150,10 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					plus_args += key;
 				}
 				else
-					continue;
+				{
+					build_ERR_NEEDMOREPARAMS(client); // 461
+					continue ;
+				}
 			}
 			else
 			{
@@ -127,6 +162,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				minus_chars += 'k';
 			}
 		}
+		// user limit. +l w. argument (parses numeric), -l no argument
 		else if (current_char == 'l')
 		{
 			if (sign == '+')
@@ -134,25 +170,33 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				if (arg_idx < client.parser.n_params)
 				{
 					std::string_view	limit = client.parser.params[arg_idx];
+					arg_idx++;
+
+					size_t				parsed_limit = 0;
+					if (!parse_channel_limit(limit, parsed_limit))
+						continue;
 
 					channel->mode |= LIMIT;
-					channel->user_limit = 0;
-					std::from_chars(limit.data(), limit.data() + limit.size(), channel->user_limit);
+					channel->user_limit = parsed_limit;
 					plus_chars += 'l';
 					if (!plus_args.empty())
 						plus_args += ' ';
 					plus_args += limit;
-					arg_idx++;
 				}
 				else
-					continue;
+				{
+					build_ERR_NEEDMOREPARAMS(client); // 461
+					continue ;
+				}
 			}
 			else
 			{
 				channel->mode &= ~LIMIT;
+				channel->user_limit = 0;
 				minus_chars += 'l';
 			}
 		}
+		// operator status on a target member. Always with an argument
 		else if (current_char == 'o')
 		{
 			if (arg_idx < client.parser.n_params)
@@ -162,7 +206,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					find_chmember_by_nick(*channel, target_nick);
 				arg_idx++;
 				if (!target)
-					build_ERR_USERNOTINCHANNEL(client, channel->name, target_nick);
+					build_ERR_USERNOTINCHANNEL(client, channel->name, target_nick); // 441
 				else if (sign == '+')
 				{
 					channel->members[target] |= IS_OPERATOR;
@@ -181,20 +225,24 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				}
 			}
 			else
-				continue;
+			{
+				build_ERR_NEEDMOREPARAMS(client); // 461
+				continue ;
+			}
 		}
 		else
-			build_ERR_UNKNOWNMODE(client, current_char);
+			build_ERR_UNKNOWNMODE(client, current_char); // 472
 	}
 
-	std::string	delta;
-	append_sign_group(delta, '+', plus_chars,  plus_args);
-	append_sign_group(delta, '-', minus_chars, minus_args);
+	// broadcast only the changes that actually applied, e.g. "+ik key -l"
+	std::string	applied_mode_changes;
+	append_sign_group(applied_mode_changes, '+', plus_chars,  plus_args);
+	append_sign_group(applied_mode_changes, '-', minus_chars, minus_args);
 
-	if (!delta.empty())
+	if (!applied_mode_changes.empty())
 	{
 		std::string	line;
-		append_MODE_msg(line, client, channel->name, delta);
+		append_MODE_msg(line, client, channel->name, applied_mode_changes);
 		broadcast_to_channel(*channel, line, client, false);
 	}
 }
