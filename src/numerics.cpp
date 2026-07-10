@@ -227,11 +227,22 @@ void	build_ERR_NEEDMOREPARAMS(t_IRC_Client &client)
 }
 
 // RPL_UMODEIS (221) "<client> <user modes>"
+// These are for user modes, which are not supported by this server ->
+// <user modes> is always empty -> two spaces before "\r\n"
 void	build_RPL_UMODEIS(t_IRC_Client &client)
 {
 	std::string	&buffer = client.send_message_buffer;
 	append_common_reply_prefix(buffer, "221", client.nick);
-	buffer += "+\r\n";
+	buffer += " \r\n";
+}
+
+// ERR_UMODEUNKNOWNFLAG (501)
+// "<client> :Unknown MODE flag"
+void	build_ERR_UMODEUNKNOWNFLAG(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+	append_common_reply_prefix(buffer, "501", client.nick);
+	buffer += ":Unknown user MODE flag\r\n";
 }
 
 // ERR_USERSDONTMATCH (502) "<client> :Cannot change mode for other users"

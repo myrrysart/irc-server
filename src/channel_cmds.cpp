@@ -140,7 +140,6 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					&& client.parser.n_params >= 2 && key_pos <= keys.size())
 				req.key = next_comma_token(keys, key_pos);
 
-
 			// already in it. Silent.
 			if (ch_it->second.members.contains(&client))
 				continue;

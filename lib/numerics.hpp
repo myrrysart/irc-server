@@ -82,6 +82,7 @@ void	build_ERR_BADCHANMASK(t_IRC_Client &client,                      // 476
 			std::string_view channel);
 void	build_ERR_CHANOPRIVSNEEDED(t_IRC_Client &client,                 // 482
             std::string_view channel);
+void	build_ERR_UMODEUNKNOWNFLAG(t_IRC_Client &client);                // 501
 void	build_ERR_USERSDONTMATCH(t_IRC_Client &client);                  // 502
 
 

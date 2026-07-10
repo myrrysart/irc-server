@@ -45,11 +45,23 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// first param isn't a channel: irssi's auto `MODE <yournick>` on connect
 	if (channel_name.empty() || (channel_name[0] != '#' && channel_name[0] != '&'))
 	{
+		trim_nickname_if_longer_than_max_nicklen(channel_name);
+
 		//irssi auto-sends `MODE <yournick>` on connect
 		if (are_equal_strs_case_insensitive(channel_name, client.nick))
-			build_RPL_UMODEIS(client); // 221
+		{
+			if (client.parser.n_params > 1)
+				build_ERR_UMODEUNKNOWNFLAG(client); // 501
+			else
+				build_RPL_UMODEIS(client); // 221
+		}
 		else
-			build_ERR_USERSDONTMATCH(client); // 502
+		{
+			if (!find_client_by_nick(server, channel_name))
+				build_ERR_NOSUCHNICK(client, channel_name); // 401
+			else
+				build_ERR_USERSDONTMATCH(client); // 502
+		}
 		return;
 	}
 
