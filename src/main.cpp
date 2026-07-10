@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	// convert port argument to 16 bit unsigned, refuse inappropriate input
+	// convert port argument to 16 bit unsigned, refuse inappropriate input.
 	uint16_t	port = 0;
 	if (!parse_positive_integer_and_validate_input(argv[1], port))
 	{

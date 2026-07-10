@@ -30,7 +30,10 @@ bool	are_equal_strs_case_insensitive(std::string_view str1, std::string_view str
 void	trim_nickname_if_longer_than_max_nicklen(std::string_view &nick);
 bool	has_space_character(std::string_view str);
 
-template <typename UIntType> // expects unsigned integers only!
+/* exception-free numeric parsing function. Expects unsigned integers only.
+*  Accepts the range [1, UIntType's MAX] inclusive;
+*  Rejects any non-numeric character. */
+template <typename UIntType>
 bool	parse_positive_integer_and_validate_input(std::string_view str, UIntType &val)
 {
 	const char* const	begin = str.data();
