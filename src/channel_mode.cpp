@@ -36,7 +36,6 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	{
 		trim_nickname_if_longer_than_max_nicklen(channel_name);
 
-		//irssi auto-sends `MODE <yournick>` on connect
 		if (are_equal_strs_case_insensitive(channel_name, client.nick))
 		{
 			if (client.parser.n_params > 1)
