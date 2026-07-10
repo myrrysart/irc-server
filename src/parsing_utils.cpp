@@ -1,7 +1,7 @@
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
 
-#include <cctype>       // for std::toupper() & std::iscntrl()
+#include <cctype>       // for std::toupper(), std::iscntrl() & std::isspace()
 #include <string>
 #include <string_view>
 #include <charconv>     // for std::from_chars() and std::from_chars_result
@@ -86,4 +86,14 @@ void	trim_nickname_if_longer_than_max_nicklen(std::string_view &nick)
 {
 	if (nick.size() > t_IRC_Client::max_nicklen)
 		nick.remove_suffix(nick.size() - t_IRC_Client::max_nicklen);
+}
+
+bool	has_space_character(std::string_view str)
+{
+	for (char c : str)
+	{
+		if (std::isspace(static_cast<unsigned char>(c)))
+			return true;
+	}
+	return false;
 }

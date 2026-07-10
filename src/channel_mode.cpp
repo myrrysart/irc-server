@@ -140,7 +140,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				{
 					std::string_view	key = client.parser.params[arg_idx];
 					arg_idx++;
-					if (key.empty())
+					if (key.empty() || has_space_character(key))
 						continue;
 					channel->mode |= KEY;
 					channel->key.assign(key);
