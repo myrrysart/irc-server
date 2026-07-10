@@ -161,10 +161,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					plus_args += key;
 				}
 				else
-				{
-					build_ERR_NEEDMOREPARAMS(client); // 461
-					continue ;
-				}
+					continue ; // ignore request if required argument is not there
 			}
 			else
 			{
@@ -195,10 +192,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					plus_args += limit;
 				}
 				else
-				{
-					build_ERR_NEEDMOREPARAMS(client); // 461
-					continue ;
-				}
+					continue ; // required argument is not there -> ignore
 			}
 			else
 			{
@@ -237,10 +231,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				}
 			}
 			else
-			{
-				build_ERR_NEEDMOREPARAMS(client); // 461
-				continue ;
-			}
+				continue ; // required argument ain't there -> ignore request
 		}
 		else
 			build_ERR_UNKNOWNMODE(client, current_char); // 472
