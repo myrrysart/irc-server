@@ -1,9 +1,10 @@
+#include "../lib/irc_fatstruct.hpp"
 #include "../lib/channel.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
 #include <cstddef>
-#include <charconv>
 #include <string>
+#include <algorithm> // std::min()
 
 static void	append_sign_group(std::string &out, char sign,
 		const std::string &chars, const std::string &args)
@@ -19,18 +20,6 @@ static void	append_sign_group(std::string &out, char sign,
 		out += ' ';
 		out += args;
 	}
-}
-// NOTE: this is pretty much the same function to the one in main.cpp.
-// Could both be turned to one generic helper?
-static bool	parse_channel_limit(std::string_view limit, size_t &parsed_limit)
-{
-	const char				*begin = limit.data();
-	const char				*end = begin + limit.size();
-	std::from_chars_result	result = std::from_chars(begin, end, parsed_limit);
-
-	if (result.ec != std::errc{} || result.ptr != end || parsed_limit == 0)
-		return false;
-	return true;
 }
 
 void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
@@ -181,15 +170,16 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					arg_idx++;
 
 					size_t				parsed_limit = 0;
-					if (!parse_channel_limit(limit, parsed_limit))
+					if (!parse_positive_integer_and_validate_input(limit, parsed_limit))
 						continue;
 
 					channel->mode |= LIMIT;
-					channel->user_limit = parsed_limit;
+					channel->user_limit = std::min(parsed_limit,
+						static_cast<size_t>(MAX_CLIENTS));
 					plus_chars += 'l';
 					if (!plus_args.empty())
 						plus_args += ' ';
-					plus_args += limit;
+					plus_args += std::to_string(channel->user_limit);
 				}
 				else
 					continue ; // required argument is not there -> ignore
