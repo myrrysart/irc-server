@@ -80,6 +80,14 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		build_ERR_NEEDMOREPARAMS(client); // 461
 		return;
 	}
+
+	// "0" is a special JOIN argument
+	if (client.parser.params[0] == "0")
+	{
+		remove_client_from_all_channels(client, server);
+		return;
+	}
+
 	std::string_view	channels(client.parser.params[0]);
 	std::string_view	keys;
 	size_t				channel_pos = 0;

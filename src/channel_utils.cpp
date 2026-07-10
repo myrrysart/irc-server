@@ -1,9 +1,11 @@
+#include "../lib/irc_fatstruct.hpp"
 #include "../lib/channel.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
 
 #include <string>
 #include <string_view>
+#include <unordered_set>
 
 std::string_view	next_comma_token(std::string_view list, size_t &pos)
 {
@@ -53,6 +55,23 @@ void	remove_client_from_channel(t_IRC_Client &client, t_IRC_Channel &channel, t_
 	channel.invited.erase(&client);
 	if (channel.members.empty())
 		server.channels.erase(channel.name);
+}
+
+void	remove_client_from_all_channels(t_IRC_Client &client, t_IRC_Server &server)
+{
+	for (
+		std::unordered_set<t_IRC_Channel*>::iterator ch_it = client.joined_channels.begin();
+		ch_it != client.joined_channels.end(); )
+	{
+		std::string	line;
+		append_PART_msg(line, client, std::string_view{(*ch_it)->name}, std::string_view{});
+		broadcast_to_channel(**ch_it, line, client, false);
+
+		// the removal will invalidate the iterator - 'temp' comes to the rescue
+		std::unordered_set<t_IRC_Channel*>::iterator	temp = ch_it;
+		++ch_it;
+		remove_client_from_channel(client, **temp, server);
+	}
 }
 
 void	broadcast_to_channel(t_IRC_Channel &channel, const std::string &line, t_IRC_Client &client, bool skip_sender)
