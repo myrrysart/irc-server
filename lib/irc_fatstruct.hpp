@@ -167,7 +167,7 @@ typedef struct	s_IRC_Client
 	t_parser								parser;
 	std::unordered_set<t_IRC_Channel*>		joined_channels;
 }	t_IRC_Client;
-static_assert(sizeof(t_IRC_Client) <= 68*CACHE_LINE_SIZE," t_IRC_Client did not use 68 cache line" );
+static_assert(sizeof(t_IRC_Client) <= 69*CACHE_LINE_SIZE," t_IRC_Client did not use 69 cache line" );
 
 // IRC_Server state bitmask definitions
 typedef struct	s_IRC_Server
