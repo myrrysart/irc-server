@@ -69,8 +69,6 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-// WARN: should sending SIGINT to the program return 0 (which is the case currently)?
-
 /*
  * steps to establish connection:
  * create listener:
