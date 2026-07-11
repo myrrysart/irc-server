@@ -24,7 +24,7 @@ s_IRC_Server::~s_IRC_Server()
 * • 'filename': pass the macro '__FILE__'
 * • 'line_number': pass the macro '__LINE__' */
 void	log_error(const char *error, const char *context, const char *filename,
-            const int line_num)
+            int line_num)
 {
 	std::cerr
 		<< "ERROR. " << context << ": " << error
@@ -33,7 +33,7 @@ void	log_error(const char *error, const char *context, const char *filename,
 }
 
 void	set_fatal_error_flag_and_log(t_bmask &state, const char *context,
-            const char *filename, const int line_num)
+            const char *filename, int line_num)
 {
 	state |= t_IRC_Server::FATAL_ERROR;
 	log_error(std::strerror(errno), context, filename, line_num);
