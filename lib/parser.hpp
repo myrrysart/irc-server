@@ -3,7 +3,8 @@
 
 # include <string>
 # include <string_view>
-# include <cstdint>     // fixed width data types
+# include <charconv>     // std::from_chars(), std::from_chars_result
+# include <system_error> // std::errc
 
 /* Forward declarations */
 struct	s_IRC_Server;
@@ -14,20 +15,35 @@ typedef s_IRC_Client t_IRC_Client;
 
 /* Received bytes handling */
 void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
-            const ssize_t received);
-int		parse_message(const size_t pos, const std::string &buf,
-            t_IRC_Client &client);
+            ssize_t received);
+int		parse_message(size_t pos, const std::string &buf, t_IRC_Client &client);
 
 /* Parsing */
-void	tokenize_message(t_IRC_Client &client, const std::string_view msg);
+void	tokenize_message(t_IRC_Client &client, std::string_view msg);
 
 /* Parsing utils */
-bool	convert_port_string_to_sixteen_bit_uint(std::string_view str, uint16_t &result);
 size_t	validate_password_and_strlen(const char *str);
 char	to_uppercase(char c);
 size_t	skip_leading_spaces_and_check_for_empty_message(const std::string &buf,
-            const size_t pos, const bool has_cr);
-bool	are_equal_strs_case_insensitive(const char *str1, const size_t len1,
-            const char *str2, const size_t len2);
+            size_t pos, bool has_cr);
+bool	are_equal_strs_case_insensitive(std::string_view str1, std::string_view str2);
+void	trim_nickname_if_longer_than_max_nicklen(std::string_view &nick);
+bool	has_space_character(std::string_view str);
+
+/* exception-free numeric parsing function. Expects unsigned integers only.
+*  Accepts the range [1, UIntType's MAX] inclusive;
+*  Rejects any non-numeric character. */
+template <typename UIntType>
+bool	parse_positive_integer_and_validate_input(std::string_view str, UIntType &val)
+{
+	const char* const	begin = str.data();
+	const char* const	end = str.data() + str.size();
+
+	std::from_chars_result	result = std::from_chars(begin, end, val);
+
+	if (result.ec != std::errc{} || result.ptr != end || val == 0)
+		return false;
+	return true;
+}
 
 #endif

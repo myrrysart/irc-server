@@ -3,11 +3,11 @@
 #include "../lib/commands.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
+#include "../lib/channel.hpp"
 
-#include <string_view>
 #include <unordered_map>
 #include <string> // for std::string's append()
-#include <algorithm> // for std::min()
+#include <string_view>
 #include <cctype> // for std::isdigit()
 
 // TODO: Add the time checks!
@@ -30,30 +30,8 @@
 // the client before continuing. This exchange may happen immediately on connection
 // and at any time during connection registration, so clients MUST respond
 // correctly to it."
-// "Upon successful completion of the registration process, the server MUST send,
-// in this order:
-// RPL_WELCOME (001),
-// RPL_YOURHOST (002),
-// RPL_CREATED (003),
-// RPL_MYINFO (004),
-// at least one RPL_ISUPPORT (005) numeric to the client.
-// The server MAY then send other numerics and messages.
-// The server SHOULD then respond as though the client sent the LUSERS command
-// and return the appropriate numerics.
-// The server MUST then respond as though the client sent it the MOTD command,
-// i.e. it must send either the successful Message of the Day numerics or the
-// ERR_NOMOTD (422) numeric.
-// If the user has client modes set on them automatically upon joining the network,
-// the server SHOULD send the client the RPL_UMODEIS (221) reply or a MODE message
-// with the client as target, preferably the former.
-// The first parameter of the RPL_WELCOME (001) message is the nickname assigned
-// by the network to the client. Since it may differ from the nickname the client
-// requested with the NICK command (due to, e.g. length limits or policy
-// restrictions on nicknames), the client SHOULD use this parameter to determine
-// its actual nickname at the time of connection. Subsequent nickname changes,
-// client-initiated or not, will be communicated by the server sending a NICK message.
 
-void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &server)
+void	client_registration(t_IRC_Client &client, size_t i, t_IRC_Server &server)
 {
 	switch (i)
 	{
@@ -61,17 +39,14 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 		case 0: execute_PASS_cmd(client, server); break;
 		case 1: execute_NICK_cmd(client, server); break;
 		case 2: execute_USER_cmd(client);         break;
-		// case 3: execute_QUIT_cmd(client, server); break;
+		case 3: execute_QUIT_cmd(client, server); break;
 	}
 
 	if (has_provided_user_and_nick_names(client.state))
 	{
 		if (has_provided_password_first_and_it_is_correct(client.state))
 		{
-			// TODO: client registered successfully.
-			// go on to do all of the steps which server has to do when
-			// client registers successfully...
-
+			/* client registered successfully */
 			client.state |= t_IRC_Client::REGISTERED;
 
 			build_RPL_WELCOME(client);
@@ -87,23 +62,15 @@ void	client_registration(t_IRC_Client &client, const size_t i, t_IRC_Server &ser
 		}
 		else
 		{
-			// WARN: It seems like the "dd horse" protocol treats the same way:
-			// 	• Wrong password
-			// 	• NICK / USER provided before password
-			// 	It executes the following steps for both situtations:
-			// 	1. Send ERR_PASSWDMISMATCH 464 ("Password Incorrect" message for example)
-			// 	2. Send another Error: "ERROR :Closing Link: localhost (Bad Password)"
-			// 	3. Disconnect the client.
-
-			// TODO: missing elements here.
-			// send password mismatch 464
+			/* The "dd horse" protocol treats all of the following registration
+			* scnarios as failed attempts. It requires sending the numeric reply
+			* ERR_PASSWDMISMATCH and an error message before disconnecting:
+			* • Wrong password
+			* • NICK / USER provided before password
+			* • both NICK and USER provided but no password */
 			build_ERR_PASSWDMISMATCH(client);
-
-			// TODO:
-			// send ERROR ?
-
-
-			// set disconnect flag
+			queue_registration_error(client.send_message_buffer, server.name,
+				client.hostname);
 			client.state |= t_IRC_Client::DISCONNECT;
 		}
 	}
@@ -116,7 +83,7 @@ bool	is_flag_set(const t_bmask state, const unsigned int mask)
 	return false;
 }
 
-bool	has_provided_user_and_nick_names(const t_bmask state)
+bool	has_provided_user_and_nick_names(t_bmask state)
 {
 
 	if (is_flag_set(state, (t_IRC_Client::NICK | t_IRC_Client::USERNAME)))
@@ -124,7 +91,7 @@ bool	has_provided_user_and_nick_names(const t_bmask state)
 	return false;
 }
 
-bool	has_provided_password_first_and_it_is_correct(const t_bmask state)
+bool	has_provided_password_first_and_it_is_correct(t_bmask state)
 {
 	if (is_flag_set(state, (t_IRC_Client::PSWD_FIRST | t_IRC_Client::PSWD_CORRECT)))
 		return true;
@@ -154,11 +121,12 @@ void	execute_PASS_cmd(t_IRC_Client &client, const t_IRC_Server &server)
 	// set client's 'password provided first' flag (do NOT unset if already set!)
 	client.state |= t_IRC_Client::PSWD_FIRST;
 
-	// check if the password is the right one or not, and adjust PSWD_CORRECT flag
+	// check if the password is the right one or not;
+	// set / unset the PSWD_CORRECT flag accordingly
 	if (client.parser.params[0] == server.password)
-		client.state |= t_IRC_Client::PSWD_CORRECT; // set PSWD_CORRECT flag
+		client.state |= t_IRC_Client::PSWD_CORRECT;
 	else
-		client.state &= ~t_IRC_Client::PSWD_CORRECT; // unset PSWD_CORRECT flag (or make sure it remains unset, do not flip)
+		client.state &= ~t_IRC_Client::PSWD_CORRECT;
 }
 
 /* Since this IRC server requires a password in order for a client to register,
@@ -172,7 +140,7 @@ void	execute_PASS_cmd(t_IRC_Client &client, const t_IRC_Server &server)
 * This function takes into consideration all the possible combinations of the
 * three flags concerned: PSWD_FIRST, NICK and USERNAME. It returns true only in
 * the appropriate cases */
-bool	is_or_was_password_provided_first(const t_bmask state)
+bool	is_or_was_password_provided_first(t_bmask state)
 {
 	// check if PSWD_FIRST is unset
 	if (!is_flag_set(state, t_IRC_Client::PSWD_FIRST))
@@ -210,7 +178,8 @@ void	execute_USER_cmd(t_IRC_Client &client)
 	{
 		std::string_view	*params = client.parser.params;
 		client.username = "~"; // a prefix indicating that 'username' is set by the user.
-		client.username.append(params[0].substr(0, t_IRC_Client::userlen)); // silently trim any characters after userlen
+		// silently trim any characters after userlen ('~' counts)
+		client.username.append(params[0].substr(0, t_IRC_Client::userlen - 1));
 		client.realname = params[3];
 		/* as for parameters [1] & [2]: they are usually sent from the client
 		* as '0' and '*', respectively - but they do not really concern anything
@@ -239,6 +208,13 @@ void	execute_USER_cmd(t_IRC_Client &client)
 // the nick got entirely truncated there - it already displays it in the message
 // beforehand, making the string very long.
 
+static void	store_new_nickname(t_IRC_Client &client, std::string_view new_nick)
+{
+	for (size_t	i = 0; i < new_nick.size(); ++i)
+		client.nick_buf[i] = new_nick[i];
+	client.nick = std::string_view{client.nick_buf, new_nick.size()};
+}
+
 void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
 	// no nickname / empty nickname provided
@@ -248,9 +224,8 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	std::string_view	new_nick{client.parser.params[0].data(),
-		std::min(client.parser.params[0].size(), t_IRC_Client::max_nicklen)};
-	size_t	new_nicklen = new_nick.size();
+	std::string_view	new_nick{client.parser.params[0]};
+	trim_nickname_if_longer_than_max_nicklen(new_nick);
 
 	// validation: check that requested nickname contains only valid characters
 	// NOTE: It is important that this step is done here, and not later on.
@@ -267,8 +242,7 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 	// silently ignore request for an already identical nickname (same client)
 	if (is_flag_set(client.state, t_IRC_Client::NICK)
-		&& are_equal_strs_case_insensitive(new_nick.data(), new_nicklen,
-			client.nick.data(), client.nick.size()))
+			&& are_equal_strs_case_insensitive(new_nick, client.nick))
 		return;
 
 
@@ -282,43 +256,85 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// nickname request is valid: update client's state
 	client.state |= t_IRC_Client::NICK;
 
-	// Only store nickname if client is:
+
+	// Only store new nickname if client is:
 	//  • already registered
 	//  • unregistered, but has provided the password first
-	if (is_flag_set(client.state, t_IRC_Client::REGISTERED)
-		|| is_flag_set(client.state, t_IRC_Client::PSWD_FIRST))
+	if (is_flag_set(client.state, t_IRC_Client::REGISTERED))
 	{
+		// temporarily store previous nick in order to integrate it to the reply
+		std::string	old_nick{client.nick};
 
 		// Store new nickname (has to be a deep copy)
-		for (size_t	i = 0; i < new_nicklen; ++i)
-			client.nick_buf[i] = new_nick[i];
-		client.nick = std::string_view{client.nick_buf, new_nicklen};
+		store_new_nickname(client, new_nick);
 
-		// TODO: Build message/s to be sent message to concerned clients/channels
-		// regarding the nick name change of current client? Look for appropriate
-		// numeric reply and implement.
+		// Broadcast NICK reply to the requesting client and to all fellow
+		// channelers (but not more than once per client)
+		broadcast_nick_change(client, old_nick);
 
 	}
-	// 'else', we return, silently ignoring the NICK change: no need to inform
-	// anyone about it since client is not yet connected and no one else is aware
-	// of it, and client will end up being disconnected with ERR_PASSWDMISMATCH
+	else if (is_flag_set(client.state, t_IRC_Client::PSWD_FIRST))
+	{
+		// Client registration process seems to be going well:
+		// Store new nickname (has to be a deep copy)
+		store_new_nickname(client, new_nick);
+	}
+	/* 'else': we return, silently ignoring the NICK change. No need to inform
+	* anyone about it since the client is not yet connected and no one else is
+	* aware of its connection attempt - and it will be disconnected soon enough,
+	* since their registration process has failed */
+}
+
+static void	build_NICK_message(std::string &nick_msg, t_IRC_Client &client,
+	            const std::string &old_nick)
+{
+	const std::string_view	slice = " NICK ";
+	size_t	len = old_nick.size() + client.username.size()
+		+ sizeof(client.hostname) + slice.size() + client.nick.size() + 6;
+	// 6: ':' + '!' + '@' + ':' + '\r' + '\n'
+
+	nick_msg.reserve(len);
+
+	nick_msg += ':';
+	nick_msg += old_nick;
+	nick_msg += '!';
+	nick_msg += client.username;
+	nick_msg += '@';
+	nick_msg += client.hostname;
+	nick_msg += slice;
+	nick_msg += ':';
+	nick_msg += client.nick;
+	nick_msg += "\r\n";
+}
+
+void	broadcast_nick_change(t_IRC_Client &client, const std::string &old_nick)
+{
+	// build the reply
+	std::string	nick_msg;
+	build_NICK_message(nick_msg, client, old_nick);
+
+	// queue the reply to requesting client's output buffer
+	client.send_message_buffer += nick_msg;
+
+	// broadcast to all fellow channelers - but only once per client, even if
+	// they happen to share more than one channel with the client
+	broadcast_to_fellow_channelers_once_per_client(client, nick_msg);
 }
 
 // WARN: Review this function when CHANTYPES are chosen for channel handling!
 // Those characters have to be avoided here!
-bool	is_nickname_valid(const std::string_view nickname)
+bool	is_nickname_valid(std::string_view nickname)
 {
 	size_t	len = nickname.size();
 
-	// refuse leading: digit, '#', ':' and "&#" // WARN: review this when CHANTYPES are known!
+	// refuse leading: digit, '#', ':' or '&'
 	if (len)
 	{
 		char	c = nickname[0];
-		if (std::isdigit(static_cast<unsigned char>(c)) || c == '#' || c == ':')
+		if (std::isdigit(static_cast<unsigned char>(c))
+				|| c == '#' || c == ':' || c == '&')
 			return false;
 	}
-	if (len > 1 && nickname.compare(0, 2, "&#") == 0)
-		return false;
 
 	if (nickname.find_first_not_of(t_IRC_Client::nick_whitelist) != std::string_view::npos)
 		return false;
@@ -327,10 +343,8 @@ bool	is_nickname_valid(const std::string_view nickname)
 
 // uses 'ascii' CASEMAPPING, meaning case-insensitive checks: "tommy" == "ToMMY"
 bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients,
-            const int fd, const std::string_view new_nick)
+            int fd, std::string_view new_nick)
 {
-	size_t	new_nicklen = new_nick.size();
-
 	// iterator->first is the fd key, iterator->second is t_IRC_Client value
 	for (std::unordered_map<int, t_IRC_Client>::const_iterator iterator = clients.begin();
 		iterator != clients.end();
@@ -340,8 +354,7 @@ bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients
 		if (iterator->first == fd)
 			continue;
 
-		if (are_equal_strs_case_insensitive(new_nick.data(), new_nicklen,
-				iterator->second.nick.data(), iterator->second.nick.size()))
+		if (are_equal_strs_case_insensitive(new_nick, iterator->second.nick))
 			return true;
 	}
 	return false;

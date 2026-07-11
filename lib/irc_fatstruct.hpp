@@ -36,19 +36,14 @@ typedef s_IRC_Client t_IRC_Client;
 
 // the states of clients in individual channels
 # define IS_OPERATOR BIT(0)
-# define IS_BANNED	BIT(2)
-
-
 
 // IRC_Channel mode bitmask definitions
 # define	INVITE BIT(0)
 # define	TOPIC  BIT(1)
 # define	KEY BIT(2)
 # define	LIMIT BIT(3)
-// define	OPERATOR_PRIVILEGE BIT(4) //not needed here? IS_OPERATOR should handle this?
 typedef struct	s_IRC_Channel
 {
-	// t_bmask										state; //is this needed?
 	t_bmask										mode;
 	std::string									name;
 	std::string									topic;
@@ -66,17 +61,17 @@ typedef struct	s_parser
 		"NICK",
 		"USER",
 		"QUIT",
-		"JOIN", // "lets users join a channel"// WARN: is this the exact command needed to be implemented for joining a channel?
-		"PART", // WARN: extra but nice to have: "lets users leave a channel."
-		"PRIVMSG", // "used to send private messages between users, as well as to send messages to channels"
+		"JOIN",
+		"PART",
+		"PRIVMSG",
 		"MODE",
 		"KICK",
 		"INVITE",
 		"TOPIC",
-		"PING",
-		"PONG",
 		"NAMES",
-		"LIST"
+		"LIST",
+		"PING",
+		"PONG"
 	};
 	// NOTE: do not implement OPER: we need channel operators, not IRC operators.
 	// WARN: do we need to implement CAP? Is that what allows a user to become operator?
@@ -126,8 +121,8 @@ typedef struct	s_IRC_Client
 		DISCARD_MSG  = BIT(6)
 	};
 
-	// IRC protocol's username length parameter. Usually set to 5
-	static constexpr size_t	userlen = 5;
+	// IRC protocol's username length parameter
+	static constexpr size_t	userlen = 10;
 
 	// "If <nickname> is longer than the server allows (...), it is silently truncated"
 	static constexpr size_t	max_nicklen = 30;
@@ -174,15 +169,13 @@ typedef struct	s_IRC_Client
 static_assert(sizeof(t_IRC_Client) <= 128*CACHE_LINE_SIZE," t_IRC_Client did not use 128 cache line" );
 
 // IRC_Server state bitmask definitions
-// NOTE: state is essentially an error code catcher for the IRC_Server. BIT(0) means server is running smoothly, anything else is an error case.
-// NOTE: 'static constexpr' within a struct does not increase struct's memory occupation: they are literals known at compile time.
 typedef struct	s_IRC_Server
 {
 	enum {
 		FATAL_ERROR = BIT(0)
 	};
 
-	t_bmask											state; //Not in use in this version
+	t_bmask											state;
 	static constexpr const char						name[] = "humble_server";
 	static constexpr int							poll_timeout = 1000;
 	static constexpr const char						version[] = "0.042"; // remember to update when upgrading ;-)

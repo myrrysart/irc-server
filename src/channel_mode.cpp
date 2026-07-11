@@ -1,9 +1,10 @@
+#include "../lib/irc_fatstruct.hpp"
 #include "../lib/channel.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
 #include <cstddef>
-#include <charconv>
 #include <string>
+#include <algorithm> // std::min()
 
 static void	append_sign_group(std::string &out, char sign,
 		const std::string &chars, const std::string &args)
@@ -20,18 +21,6 @@ static void	append_sign_group(std::string &out, char sign,
 		out += args;
 	}
 }
-// NOTE: this is pretty much the same function to the one in main.cpp.
-// Could both be turned to one generic helper?
-static bool	parse_channel_limit(std::string_view limit, size_t &parsed_limit)
-{
-	const char				*begin = limit.data();
-	const char				*end = begin + limit.size();
-	std::from_chars_result	result = std::from_chars(begin, end, parsed_limit);
-
-	if (result.ec != std::errc{} || result.ptr != end || parsed_limit == 0)
-		return false;
-	return true;
-}
 
 void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -45,12 +34,22 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// first param isn't a channel: irssi's auto `MODE <yournick>` on connect
 	if (channel_name.empty() || (channel_name[0] != '#' && channel_name[0] != '&'))
 	{
-		//irssi auto-sends `MODE <yournick>` on connect
-		if (are_equal_strs_case_insensitive(channel_name.data(), channel_name.size(),
-				client.nick.data(), client.nick.size()))
-			build_RPL_UMODEIS(client); // 221
+		trim_nickname_if_longer_than_max_nicklen(channel_name);
+
+		if (are_equal_strs_case_insensitive(channel_name, client.nick))
+		{
+			if (client.parser.n_params > 1)
+				build_ERR_UMODEUNKNOWNFLAG(client); // 501
+			else
+				build_RPL_UMODEIS(client); // 221
+		}
 		else
-			build_ERR_USERSDONTMATCH(client); // 502
+		{
+			if (!find_client_by_nick(server, channel_name))
+				build_ERR_NOSUCHNICK(client, channel_name); // 401
+			else
+				build_ERR_USERSDONTMATCH(client); // 502
+		}
 		return;
 	}
 
@@ -140,7 +139,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				{
 					std::string_view	key = client.parser.params[arg_idx];
 					arg_idx++;
-					if (key.empty())
+					if (key.empty() || has_space_character(key))
 						continue;
 					channel->mode |= KEY;
 					channel->key.assign(key);
@@ -150,10 +149,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					plus_args += key;
 				}
 				else
-				{
-					build_ERR_NEEDMOREPARAMS(client); // 461
-					continue ;
-				}
+					continue ; // ignore request if required argument is not there
 			}
 			else
 			{
@@ -173,21 +169,19 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					arg_idx++;
 
 					size_t				parsed_limit = 0;
-					if (!parse_channel_limit(limit, parsed_limit))
+					if (!parse_positive_integer_and_validate_input(limit, parsed_limit))
 						continue;
 
 					channel->mode |= LIMIT;
-					channel->user_limit = parsed_limit;
+					channel->user_limit = std::min(parsed_limit,
+						static_cast<size_t>(MAX_CLIENTS));
 					plus_chars += 'l';
 					if (!plus_args.empty())
 						plus_args += ' ';
-					plus_args += limit;
+					plus_args += std::to_string(channel->user_limit);
 				}
 				else
-				{
-					build_ERR_NEEDMOREPARAMS(client); // 461
-					continue ;
-				}
+					continue ; // required argument is not there -> ignore
 			}
 			else
 			{
@@ -202,6 +196,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			if (arg_idx < client.parser.n_params)
 			{
 				std::string_view	target_nick = client.parser.params[arg_idx];
+				trim_nickname_if_longer_than_max_nicklen(target_nick);
 				t_IRC_Client		*target =
 					find_chmember_by_nick(*channel, target_nick);
 				arg_idx++;
@@ -213,7 +208,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					plus_chars += 'o';
 					if (!plus_args.empty())
 						plus_args += ' ';
-					plus_args += target_nick;
+					plus_args += target->nick;
 				}
 				else
 				{
@@ -221,14 +216,11 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					minus_chars += 'o';
 					if (!minus_args.empty())
 						minus_args += ' ';
-					minus_args += target_nick;
+					minus_args += target->nick;
 				}
 			}
 			else
-			{
-				build_ERR_NEEDMOREPARAMS(client); // 461
-				continue ;
-			}
+				continue ; // required argument ain't there -> ignore request
 		}
 		else
 			build_ERR_UNKNOWNMODE(client, current_char); // 472

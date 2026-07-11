@@ -1,5 +1,4 @@
 #include "../lib/channel.hpp"
-#include "../lib/commands.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
 #include <cstddef>
@@ -56,6 +55,7 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		// nick target: must be an online client
 		else
 		{
+			trim_nickname_if_longer_than_max_nicklen(target);
 			t_IRC_Client	*target_client = find_client_by_nick(server, target);
 			if (!target_client)
 			{
@@ -75,22 +75,23 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
-	struct t_key_channel //NOTE: this might help with readability. If so, we'll move it to header.
-	{
-		std::string_view	channel;
-		std::string_view	key;
-	};
-
 	if (client.parser.n_params == 0)
 	{
 		build_ERR_NEEDMOREPARAMS(client); // 461
 		return;
 	}
+
+	// "0" is a special JOIN argument
+	if (client.parser.params[0] == "0")
+	{
+		remove_client_from_all_channels(client, server);
+		return;
+	}
+
 	std::string_view	channels(client.parser.params[0]);
 	std::string_view	keys;
 	size_t				channel_pos = 0;
 	size_t				key_pos = 0;
-	bool				has_nonempty_channel_token = false;
 
 	// if there are more params than one, we consider them keys for the channels
 	if (client.parser.n_params >= 2)
@@ -98,72 +99,84 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	// each parsed request pairs one channel token with the next key token (if any)
 	while (channel_pos <= channels.size())
 	{
-		t_key_channel	req;
-		req.channel = next_comma_token(channels, channel_pos);
-		req.key = {};
+		// directly initialize the struct's members, without intermediate steps
+		t_key_channel	req{ next_comma_token(channels, channel_pos), {} };
 
-		if (client.parser.n_params >= 2 && key_pos <= keys.size())
-			req.key = next_comma_token(keys, key_pos);
-		if (req.channel.empty())
+		if (req.channel.empty() || (req.channel[0] != '#' && req.channel[0] != '&'))
+		{
+			build_ERR_BADCHANMASK(client, req.channel); // 476
 			continue;
-		has_nonempty_channel_token = true;
+		}
 
 		std::string	channel_name(req.channel);
-		if (channel_name.empty() || (channel_name[0] != '#' && channel_name[0] != '&'))
-		{
-			build_ERR_BADCHANMASK(client, channel_name); // 476
-			continue;
-		}
+		bool		channel_just_created = false;
+		auto		ch_it = server.channels.find(channel_name);
 
-		bool			channel_just_created = false;
-		auto			ch_it = server.channels.find(channel_name);
-		// already in it. Silent.
-		if (ch_it != server.channels.end() && ch_it->second.members.contains(&client))
-			continue;
-
-		if (client.joined_channels.size() >= MAX_CHANNELS_PER_CLIENT)
+		if (ch_it == server.channels.end()) // new channel to be created
 		{
-			build_ERR_TOOMANYCHANNELS(client, channel_name); // 405
-			continue;
-		}
-
-		// doesn't exist yet. Create it, first joiner becomes operator
-		if (ch_it == server.channels.end())
-		{
+			// doesn't exist yet. Create it, first joiner becomes operator
+			// but first: check for channel limits
 			if (server.channels.size() >= MAX_CHANNELS)
 			{
 				build_ERR_TOOMANYCHANNELS(client, channel_name); // 405
 				continue;
 			}
+			if (client.joined_channels.size() >= MAX_CHANNELS_PER_CLIENT)
+			{
+				build_ERR_TOOMANYCHANNELS(client, channel_name); // 405
+				continue;
+			}
+
 			ch_it = server.channels.emplace(channel_name, t_IRC_Channel{}).first;
 			ch_it->second.name = channel_name;
 			ch_it->second.mode |= TOPIC;
 			channel_just_created = true;
 		}
-
-		t_IRC_Channel	&channel = ch_it->second;
-
-		// existing channel: check flags
-		if (is_flag_set(channel.mode, LIMIT) && channel.members.size() >= channel.user_limit)
+		else // existing channel
 		{
-			build_ERR_CHANNELISFULL(client, channel.name); // 471
-			continue;
-		}
+			// if the channel requires a key: consume the key now, so that
+			// next iterations of the loop would get the right matching key
+			if (is_flag_set(ch_it->second.mode, KEY)
+					&& client.parser.n_params >= 2 && key_pos <= keys.size())
+				req.key = next_comma_token(keys, key_pos);
 
-		if (is_flag_set(channel.mode, INVITE) && !channel.invited.contains(&client))
-		{
-			build_ERR_INVITEONLYCHAN(client, channel.name); // 473
-			continue;
-		}
+			// already in it. Silent.
+			if (ch_it->second.members.contains(&client))
+				continue;
 
-		if (is_flag_set(channel.mode, KEY))
-		{
-			if (req.key.empty() || channel.key != req.key)
+			// check all flags
+
+			if (client.joined_channels.size() >= MAX_CHANNELS_PER_CLIENT)
 			{
-				build_ERR_BADCHANNELKEY(client, channel.name); // 475
+				build_ERR_TOOMANYCHANNELS(client, channel_name); // 405
 				continue;
 			}
+
+			if (is_flag_set(ch_it->second.mode, LIMIT)
+				&& ch_it->second.members.size() >= ch_it->second.user_limit)
+			{
+				build_ERR_CHANNELISFULL(client, ch_it->second.name); // 471
+				continue;
+			}
+
+			if (is_flag_set(ch_it->second.mode, INVITE)
+				&& !ch_it->second.invited.contains(&client))
+			{
+				build_ERR_INVITEONLYCHAN(client, ch_it->second.name); // 473
+				continue;
+			}
+
+			if (is_flag_set(ch_it->second.mode, KEY))
+			{
+				if (req.key.empty() || ch_it->second.key != req.key)
+				{
+					build_ERR_BADCHANNELKEY(client, ch_it->second.name); // 475
+					continue;
+				}
+			}
 		}
+
+		t_IRC_Channel	&channel = ch_it->second;
 
 		// all checks passed. record membership and broadcast
 		t_bmask			join_flags = 0;
@@ -181,8 +194,6 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			build_RPL_TOPIC(client, channel); // 332
 		send_names_reply(client, channel);
 	}
-	if (!has_nonempty_channel_token)
-		build_ERR_BADCHANMASK(client, channels); // 476
 }
 
 void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
@@ -271,6 +282,7 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 		if (victim.empty())
 			continue;
 		has_victim_token = true;
+		trim_nickname_if_longer_than_max_nicklen(victim);
 
 		// each victim must currently be in the channel
 		t_IRC_Client	*to_be_kicked = find_chmember_by_nick(*channel, victim);
@@ -419,6 +431,7 @@ void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 	// find channel, inviter must be a member and an operator
 	std::string_view	target_nick(client.parser.params[0]);
+	trim_nickname_if_longer_than_max_nicklen(target_nick);
 	std::string_view	channel_name(client.parser.params[1]);
 	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 	if (!channel)
@@ -449,15 +462,15 @@ void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 	if (channel->members.contains(target))
 	{
-		build_ERR_USERONCHANNEL(client, target_nick, channel->name); // 443
+		build_ERR_USERONCHANNEL(client, target->nick, channel->name); // 443
 		return;
 	}
 
 	// record invite (bypasses +i) and notify both sides
 	channel->invited.insert(target);
-	build_RPL_INVITING(client, target_nick, channel->name); // 341
+	build_RPL_INVITING(client, target->nick, channel->name); // 341
 
 	std::string		line;
-	append_INVITE_msg(line, client, target_nick, channel->name);
+	append_INVITE_msg(line, client, target->nick, channel->name);
 	target->send_message_buffer += line;
 }

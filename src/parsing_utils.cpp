@@ -1,27 +1,9 @@
+#include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
 
-#include <cctype>       // for std::toupper() & std::iscntrl()
+#include <cctype>       // for std::toupper(), std::iscntrl() & std::isspace()
 #include <string>
 #include <string_view>
-#include <charconv>     // for std::from_chars() and std::from_chars_result
-#include <system_error> // for std::errc (from_chars() error codes)
-
-/* exception-free numeric parsing function.
-*  Accepts the range [1, UINT16_MAX] inclusive, suitable for a port.
-*  Accepting port 0 would be asking from the kernel to grant any available port.
-*  Rejects any non-numeric character. */
-bool	convert_port_string_to_sixteen_bit_uint(std::string_view str, uint16_t &result)
-{
-	std::from_chars_result	conversion_info =
-		std::from_chars(str.cbegin(), str.cend(), result);
-
-	if (conversion_info.ptr != str.cend() ||
-			conversion_info.ec == std::errc::invalid_argument ||
-			conversion_info.ec == std::errc::result_out_of_range ||
-			result == 0)
-		return false;
-	return true;
-}
 
 /* Return values:
  * • The length of the string
@@ -49,7 +31,7 @@ char	to_uppercase(char c)
 }
 
 size_t	skip_leading_spaces_and_check_for_empty_message(const std::string &buf,
-            const size_t pos, const bool has_cr)
+            size_t pos, bool has_cr)
 {
 	size_t	i = 0;
 
@@ -67,16 +49,32 @@ size_t	skip_leading_spaces_and_check_for_empty_message(const std::string &buf,
 	return i;
 }
 
-bool	are_equal_strs_case_insensitive(const char *str1, const size_t len1,
-            const char *str2, const size_t len2)
+bool	are_equal_strs_case_insensitive(std::string_view str1, std::string_view str2)
 {
-	if (len1 != len2)
+	if (str1.size() != str2.size())
 		return false;
 
-	for (size_t i = 0; i < len1; ++i)
+	for (size_t i = 0; i < str1.size(); ++i)
 	{
 		if (to_uppercase(str1[i]) != to_uppercase(str2[i]))
 			return false;
 	}
 	return true;
+}
+
+/* 'nick' has to be passed as a reference */
+void	trim_nickname_if_longer_than_max_nicklen(std::string_view &nick)
+{
+	if (nick.size() > t_IRC_Client::max_nicklen)
+		nick.remove_suffix(nick.size() - t_IRC_Client::max_nicklen);
+}
+
+bool	has_space_character(std::string_view str)
+{
+	for (char c : str)
+	{
+		if (std::isspace(static_cast<unsigned char>(c)))
+			return true;
+	}
+	return false;
 }

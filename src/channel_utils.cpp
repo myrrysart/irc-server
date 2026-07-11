@@ -1,9 +1,11 @@
+#include "../lib/irc_fatstruct.hpp"
 #include "../lib/channel.hpp"
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
 
 #include <string>
 #include <string_view>
+#include <unordered_set>
 
 std::string_view	next_comma_token(std::string_view list, size_t &pos)
 {
@@ -21,7 +23,7 @@ t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, std::string_view nic
 {
 	for (auto &[member_ptr, flags] : channel.members)
 	{
-		if (are_equal_strs_case_insensitive(nick.data(), nick.size(), member_ptr->nick.data(), member_ptr->nick.size()))
+		if (are_equal_strs_case_insensitive(nick, member_ptr->nick))
 			return member_ptr;
 	}
 	return nullptr;
@@ -40,9 +42,7 @@ t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, std::string_view nick)
 	for (auto &entry : server.clients)
 	{
 		t_IRC_Client	&client = entry.second;
-		if (are_equal_strs_case_insensitive(
-				nick.data(), nick.size(),
-				client.nick.data(), client.nick.size()))
+		if (are_equal_strs_case_insensitive(nick, client.nick))
 			return &client;
 	}
 	return nullptr;
@@ -55,6 +55,23 @@ void	remove_client_from_channel(t_IRC_Client &client, t_IRC_Channel &channel, t_
 	channel.invited.erase(&client);
 	if (channel.members.empty())
 		server.channels.erase(channel.name);
+}
+
+void	remove_client_from_all_channels(t_IRC_Client &client, t_IRC_Server &server)
+{
+	for (
+		std::unordered_set<t_IRC_Channel*>::iterator ch_it = client.joined_channels.begin();
+		ch_it != client.joined_channels.end(); )
+	{
+		std::string	line;
+		append_PART_msg(line, client, std::string_view{(*ch_it)->name}, std::string_view{});
+		broadcast_to_channel(**ch_it, line, client, false);
+
+		// the removal will invalidate the iterator - 'temp' comes to the rescue
+		std::unordered_set<t_IRC_Channel*>::iterator	temp = ch_it;
+		++ch_it;
+		remove_client_from_channel(client, **temp, server);
+	}
 }
 
 void	broadcast_to_channel(t_IRC_Channel &channel, const std::string &line, t_IRC_Client &client, bool skip_sender)
@@ -83,4 +100,55 @@ void	send_names_reply(t_IRC_Client &client, const t_IRC_Channel &channel)
 		names.pop_back(); //getting rid of the space at the end
 	build_RPL_NAMREPLY(client, channel.name, names);
 	build_RPL_ENDOFNAMES(client, channel.name);
+}
+
+/* helper for broadcast_to_fellow_channelers_once_per_client() */
+static bool	is_message_already_loaded(t_delivery_tracker &tracker, int fd)
+{
+	for (size_t i = 0; i < tracker.count; ++i)
+	{
+		if (tracker.fds[i] == fd)
+			return true;
+	}
+	return false;
+}
+
+/* - appends 'msg' to all buffers of clients who share a channel with 'sender'
+* - skips 'sender'
+* - if a client shares multiple channels with 'sender', appends 'msg' only once
+* - skips clients who are about to be disconnected */
+void	broadcast_to_fellow_channelers_once_per_client(t_IRC_Client &sender,
+            const std::string &msg)
+{
+	/* To avoid duplicate alerts for clients who share more than one channel
+	* with 'sender': 'tracker' stores the fds of all clients who get the alert
+	* appended to their output buffers. */
+	static t_delivery_tracker	tracker;
+	tracker.count = 0; // reset to zero since it is a static variable with state
+
+	// iterate through all channels 'sender' is connected to
+	for (std::unordered_set<t_IRC_Channel *>::const_iterator	channel_it =
+		sender.joined_channels.begin();
+		channel_it != sender.joined_channels.end(); ++channel_it)
+	{
+		t_IRC_Channel	&channel = **channel_it;
+
+		// iterate through all members connected to 'channel'
+		for (std::unordered_map<t_IRC_Client*, t_bmask>::iterator	member_it =
+			channel.members.begin(); member_it != channel.members.end();
+			++member_it)
+		{
+			t_IRC_Client	&fellow_member = *(member_it->first);
+
+			if (fellow_member.fd == sender.fd
+				   || is_flag_set(fellow_member.state, t_IRC_Client::DISCONNECT)
+				   || is_message_already_loaded(tracker, fellow_member.fd))
+				continue;
+
+			// append the alert and update 'tracker'
+			fellow_member.send_message_buffer += msg;
+			tracker.fds[tracker.count] = fellow_member.fd;
+			++(tracker.count);
+		}
+	}
 }

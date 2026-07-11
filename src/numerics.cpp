@@ -174,7 +174,7 @@ void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,
 		"letters, digits, and the following symbols: \"";
 	buffer += t_IRC_Client::allowed_symbols_nick;
 	buffer += "\". "
-		"First characters may not be: a digit, '#', ':' or \"&#\". "
+		"First characters may not be: a digit, '#', '&' or ':'. "
 		"Only the first 30 characters will be considered.\r\n";
 }
 
@@ -227,19 +227,30 @@ void	build_ERR_NEEDMOREPARAMS(t_IRC_Client &client)
 }
 
 // RPL_UMODEIS (221) "<client> <user modes>"
+// These are for user modes, which are not supported by this server ->
+// <user modes> is always empty -> two spaces before "\r\n"
 void	build_RPL_UMODEIS(t_IRC_Client &client)
 {
 	std::string	&buffer = client.send_message_buffer;
 	append_common_reply_prefix(buffer, "221", client.nick);
-	buffer += "+\r\n";
+	buffer += " \r\n";
 }
 
-// ERR_USERSDONTMATCH (502) "<client> :Cant change mode for other users"
+// ERR_UMODEUNKNOWNFLAG (501)
+// "<client> :Unknown MODE flag"
+void	build_ERR_UMODEUNKNOWNFLAG(t_IRC_Client &client)
+{
+	std::string	&buffer = client.send_message_buffer;
+	append_common_reply_prefix(buffer, "501", client.nick);
+	buffer += ":Unknown user MODE flag\r\n";
+}
+
+// ERR_USERSDONTMATCH (502) "<client> :Cannot change mode for other users"
 void	build_ERR_USERSDONTMATCH(t_IRC_Client &client)
 {
 	std::string	&buffer = client.send_message_buffer;
 	append_common_reply_prefix(buffer, "502", client.nick);
-	buffer += ":Cant change mode for other users\r\n";
+	buffer += ":Cannot change mode for other users\r\n";
 }
 
 // ERR_ALREADYREGISTERED (462)
@@ -282,7 +293,26 @@ void	build_RPL_CREATED(t_IRC_Client &client)
 }
 
 // RPL_MYINFO (004)
-// "<client> <servername> <version> <available user modes> <available channel modes>"
+/* "<client> <servername> <version> <available user modes> <available channel modes>"
+*
+* NOTE: This server does not support any user modes.
+* The supported modes are:
+* • Channel modes: i, t, k and l.
+*   These are advertised both in the last parameter of this reply, i.e.
+*   <available channel modes>, and in RPL_ISUPPORT (005) under CHANMODES.
+*       • i: invite-only channel
+*       • t: changing the topic is exclusive to channel operators
+*       • k: channel key
+*       • l: user limit
+* • Channel membership mode: o
+*   This mode grants channel operator privileges to a user on a channel.
+*   It is advertised via RPL_ISUPPORT's PREFIX parameter as "PREFIX=(o)@",
+*   which maps membership mode 'o' to the nickname prefix '@'. This must not be
+*   confused with the IRC operator user mode 'o', which this server does not
+*   support. If IRC operator mode were supported, it would be advertised in the
+*   fourth parameter (<available user modes>) of RPL_MYINFO.
+* Since this server supports no user modes, the fourth parameter of RPL_MYINFO
+* is empty. Consequently, there are two consecutive spaces before "itkl". */
 void	build_RPL_MYINFO(t_IRC_Client &client)
 {
 	std::string	&buffer = client.send_message_buffer;
@@ -291,21 +321,35 @@ void	build_RPL_MYINFO(t_IRC_Client &client)
 	buffer += t_IRC_Server::name;
 	buffer += ' ';
 	buffer += t_IRC_Server::version;
-	buffer += " o itkl\r\n";
+	buffer += "  itkl\r\n";
 }
 
 // RPL_ISUPPORT (005)
+/* This important numeric reply basically communicates to IRC clients the
+* server's supported features, limits, and protocol behavior, allowing them to
+* interact with the server smoothly.
+* Small note regarding the CHANMODES parameter, from the 'modern' documentation:
+* "Server MUST NOT list modes in this parameter that are also advertised in
+* the PREFIX parameter." Therefore, there is no need to list 'o' in CHANMODES,
+* it is already mapped by the PREFIX parameter. */
 void	build_RPL_ISUPPORT(t_IRC_Client &client)
 {
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "005", client.nick);
-	buffer += "CHANTYPES=#,& CHANLIMIT=#&:";
+	buffer += "CHANTYPES=#& CHANLIMIT=#&:";
 	buffer += std::to_string(MAX_CHANNELS_PER_CLIENT);
 	// CHANMODES=A,B,C,D — which channel modes take a param when set:
-	// B=kl (key, limit), C=o (nick on +o only), D=it (no param)
-	buffer += " CHANMODES=,kl,o,it PREFIX=(o)@ NETWORK=Hive CASEMAPPING=ascii "
-		":are supported by this server\r\n";
+	// A: List mode; multiple entries may be set (not relevant for this server)
+	// B: takes a parameter both when set and when unset
+	// C: takes a parameter when set, and none when unset (k & l)
+	// D: does not take any parameter (i & t)
+	buffer += " CHANMODES=,,kl,it PREFIX=(o)@ NETWORK=Hive CASEMAPPING=ascii "
+		"USERLEN=";
+	buffer += std::to_string(t_IRC_Client::userlen);
+	buffer += " NICKLEN=";
+	buffer += std::to_string(t_IRC_Client::max_nicklen);
+	buffer += " :are supported by this server\r\n";
 }
 
 // RPL_CHANNELMODEIS (324)
@@ -376,13 +420,16 @@ void	build_ERR_NOORIGIN(t_IRC_Client &client)
 }
 
 // ERR_NORECIPIENT (411)
-// "<client> :No recipient given (PRIVMSG/NOTICE)"
+// "<client> :No recipient given (<command>)"
 void	build_ERR_NORECIPIENT(t_IRC_Client &client)
 {
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "411", client.nick);
-	buffer += ":No recipient given (PRIVMSG/NOTICE)\r\n";
+	buffer += ":No recipient given (";
+	buffer += std::string_view{client.parser.verb_in_caps,
+		client.parser.verb.size()};
+	buffer += ")\r\n";
 }
 
 // ERR_NOTEXTTOSEND (412)
@@ -414,7 +461,7 @@ void	build_RPL_MOTDSTART(t_IRC_Client &client)
 	append_common_reply_prefix(buffer, "375", client.nick);
 	buffer += ":- ";
 	buffer += t_IRC_Server::name;
-	buffer += " Message of the day -\r\n";
+	buffer += " Message of the day - \r\n";
 }
 
 // RPL_MOTD (372)
@@ -424,7 +471,7 @@ void	build_RPL_MOTD(t_IRC_Client &client, const std::string_view line)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "372", client.nick);
-	buffer += ":- ";
+	buffer += ":";
 	buffer += line;
 	buffer += "\r\n";
 }
@@ -465,7 +512,7 @@ void	build_ERR_NOTONCHANNEL(t_IRC_Client &client, std::string_view channel)
 }
 
 // ERR_USERONCHANNEL (443)
-// "<client> <nick> <channel> :<nick> is on <channel>"
+// "<client> <nick> <channel> :is already on channel"
 void	build_ERR_USERONCHANNEL(t_IRC_Client &client,
 		std::string_view nick, std::string_view channel)
 {
@@ -475,11 +522,7 @@ void	build_ERR_USERONCHANNEL(t_IRC_Client &client,
 	buffer += nick;
 	buffer += ' ';
 	buffer += channel;
-	buffer += " :";
-	buffer += nick;
-	buffer += " is on ";
-	buffer += channel;
-	buffer += "\r\n";
+	buffer += " :is already on channel\r\n";
 }
 
 // ERR_CHANNELISFULL (471)

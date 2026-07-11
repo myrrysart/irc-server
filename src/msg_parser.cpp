@@ -1,8 +1,4 @@
 
-// FIXME: On linux, when running netcat (or is it only with 'netcat' but not
-// with 'nc'?), and inputting something and then ctrl + d twice in a row just
-// completely seems to break the server? This needs more testing. Is it SIGPIPE?
-
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/parser.hpp"
 
@@ -12,7 +8,7 @@
 /* out-of-line zero initialization of shared static buffer in t_parser struct */
 char	t_parser::verb_in_caps[t_parser::longest_cmd_size];
 
-int	parse_message(const size_t pos, const std::string &buf, t_IRC_Client &client)
+int	parse_message(size_t pos, const std::string &buf, t_IRC_Client &client)
 {
 	if (pos >= t_parser::buf_size)
 	{
@@ -42,7 +38,7 @@ int	parse_message(const size_t pos, const std::string &buf, t_IRC_Client &client
 	return (0);
 }
 
-void	tokenize_message(t_IRC_Client &client, const std::string_view msg)
+void	tokenize_message(t_IRC_Client &client, std::string_view msg)
 {
 	size_t	i = 0;
 	size_t	j = 0;
@@ -75,7 +71,7 @@ void	tokenize_message(t_IRC_Client &client, const std::string_view msg)
 }
 
 void	handle_message_to_discard(t_IRC_Client &client, const char *buf,
-            const ssize_t received)
+            ssize_t received)
 {
 	std::string	&msg = client.received_message_buffer;
 	ssize_t		pos = 0;
