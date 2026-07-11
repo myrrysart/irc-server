@@ -3,6 +3,7 @@
 #include <string>
 #include <cerrno>
 #include <exception>
+#include <chrono>
 #include "../lib/server.hpp"
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/commands.hpp"
@@ -67,6 +68,7 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 	client.nick_buf[0] = '*';
 	client.nick = std::string_view{client.nick_buf, 1};
 	initialize_hostname(&client.addr.sin_addr, client.hostname);
+	client.connection_time = std::chrono::steady_clock::now();
 
 	return true;
 }
@@ -185,5 +187,7 @@ void	server_loop(t_IRC_Server &server)
 
 		// send messages loop
 		send_messages_to_all_clients(server);
+
+		check_registration_timeouts(server);
 	}
 }
