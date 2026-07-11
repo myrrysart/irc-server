@@ -7,7 +7,7 @@
 void	append_common_reply_prefix(std::string &buffer,
             std::string_view numeric, std::string_view nick);
 
-static void	append_channel_modes(std::string &buffer, const t_IRC_Channel &channel)
+static void	append_channel_modes(std::string &buffer, const t_IRC_Channel &channel, bool broadcast_key)
 {
 	std::string	modes;
 	if (is_flag_set(channel.mode, INVITE))
@@ -23,7 +23,7 @@ static void	append_channel_modes(std::string &buffer, const t_IRC_Channel &chann
 
 	buffer += '+';
 	buffer += modes;
-	if (is_flag_set(channel.mode, KEY) && !channel.key.empty())
+	if (is_flag_set(channel.mode, KEY) && !channel.key.empty() && broadcast_key)
 	{
 		buffer += ' ';
 		buffer += channel.key;
@@ -361,7 +361,7 @@ void	build_RPL_CHANNELMODEIS(t_IRC_Client &client, const t_IRC_Channel &channel)
 	append_common_reply_prefix(buffer, "324", client.nick);
 	buffer += channel.name;
 	buffer += ' ';
-	append_channel_modes(buffer, channel);
+	append_channel_modes(buffer, channel, channel.members.contains(&client));
 	buffer += "\r\n";
 }
 

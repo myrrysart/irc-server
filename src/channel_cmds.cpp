@@ -101,8 +101,8 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	{
 		// directly initialize the struct's members, without intermediate steps
 		t_key_channel	req{ next_comma_token(channels, channel_pos), {} };
-
-		if (req.channel.empty() || (req.channel[0] != '#' && req.channel[0] != '&'))
+		// NOTE: helper pontential here?
+		if (req.channel.empty() || req.channel.size() < 2 || (req.channel[0] != '#' && req.channel[0] != '&'))
 		{
 			build_ERR_BADCHANMASK(client, req.channel); // 476
 			continue;

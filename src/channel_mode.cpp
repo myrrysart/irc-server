@@ -26,7 +26,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
 	if (client.parser.n_params == 0)
 	{
-		build_ERR_NEEDMOREPARAMS(client);
+		build_ERR_NEEDMOREPARAMS(client);	// 461
 		return;
 	}
 
