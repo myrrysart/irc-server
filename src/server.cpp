@@ -120,6 +120,8 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 			requested_shutdown = 1;
 			return true;
 		}
+		// WARN: Can the client not be integrated into the client container yet ??????
+		// If yes, this is really bad.
 		broadcast_non_requested_disconnect_msg(server.clients[fd]);
 		disconnect_client(server, fd);
 		return true;
@@ -140,6 +142,8 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 			return false;
 		if (recv_from_client(server, fd))
 		{
+			// WARN: Can the client not be integrated into the client container yet ??????
+			// If yes, this is really bad.
 			broadcast_non_requested_disconnect_msg(server.clients[fd]);
 			disconnect_client(server, fd);
 			return true;
