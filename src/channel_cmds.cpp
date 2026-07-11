@@ -101,8 +101,7 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	{
 		// directly initialize the struct's members, without intermediate steps
 		t_key_channel	req{ next_comma_token(channels, channel_pos), {} };
-
-		if (req.channel.empty() || (req.channel[0] != '#' && req.channel[0] != '&'))
+		if (req.channel.empty() || req.channel.size() < 2 || (req.channel[0] != '#' && req.channel[0] != '&'))
 		{
 			build_ERR_BADCHANMASK(client, req.channel); // 476
 			continue;
@@ -134,8 +133,10 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		}
 		else // existing channel
 		{
-			// if the channel requires a key: consume the key now, so that
-			// next iterations of the loop would get the right matching key
+			// TODO: verify key/channel pairing — RFC pairs keys by index for every
+			// channel in JOIN ch1,ch2 k1,k2, but we only consume a key when +k is
+			// already set. That can desync keys for later channels (e.g.
+			// JOIN #nokey,#keyed k1,k2 gives #keyed k1 instead of k2).
 			if (is_flag_set(ch_it->second.mode, KEY)
 					&& client.parser.n_params >= 2 && key_pos <= keys.size())
 				req.key = next_comma_token(keys, key_pos);
