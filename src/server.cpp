@@ -59,7 +59,6 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 
 	t_IRC_Client	&client = server.clients[client_fd];
 	client.fd = client_fd;
-	client.addr = client_addr;
 
 	/* Initialize default nickname to '*'. This is an invalid nickname, but it
 	* is crucial for sending numeric replies from the server to the client when
@@ -67,7 +66,7 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 	* client side. */
 	client.nick_buf[0] = '*';
 	client.nick = std::string_view{client.nick_buf, 1};
-	initialize_hostname(&client.addr.sin_addr, client.hostname);
+	initialize_hostname(&client_addr.sin_addr, client.hostname);
 	client.connection_time = std::chrono::steady_clock::now();
 
 	return true;
