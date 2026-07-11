@@ -31,8 +31,10 @@ void				remove_client_from_channel(t_IRC_Client &client, t_IRC_Channel &channel,
 void				remove_client_from_all_channels(t_IRC_Client &client, t_IRC_Server &server);
 void				broadcast_to_channel(t_IRC_Channel &channel, const std::string &line, t_IRC_Client &client, bool skip_sender);
 std::string_view	next_comma_token(std::string_view list, size_t &pos);
-void				broadcast_to_fellow_channelers_once_per_client(t_IRC_Client &sender, const std::string &msg);
+void				broadcast_to_fellow_channelers_once_per_client(
+						const t_IRC_Client &sender, const std::string &msg);
 void				broadcast_nick_change(t_IRC_Client &client, const std::string &old_nick);
+void				broadcast_non_requested_disconnect_msg(const t_IRC_Client &disconnected_client);
 // message builders
 void	append_JOIN_msg(std::string &buf, const t_IRC_Client &who, std::string_view chan);
 void	append_PART_msg(std::string &buf, const t_IRC_Client &who,
@@ -41,11 +43,13 @@ void	append_KICK_msg(std::string &buf, const t_IRC_Client &kicker,
 			std::string_view chan, std::string_view victim_nick, std::string_view reason);
 void	append_MODE_msg(std::string &buf, const t_IRC_Client &who, std::string_view chan, std::string_view mode);
 void	append_TOPIC_msg(std::string &buf, const t_IRC_Client &who,
-		std::string_view chan, std::string_view topic);
+			std::string_view chan, std::string_view topic);
 void	append_INVITE_msg(std::string &buf, const t_IRC_Client &inviter,
-		std::string_view target_nick, std::string_view chan);
+			std::string_view target_nick, std::string_view chan);
 void	append_PRIVMSG_msg(std::string &buf, const t_IRC_Client &who,
-		std::string_view target, std::string_view message);
+			std::string_view target, std::string_view message);
+void	append_quit_message(std::string &quit_msg, const t_IRC_Client &quitter,
+			bool is_quit_requested);
 void	send_names_reply(t_IRC_Client &client, const t_IRC_Channel &channel);
 
 typedef struct			s_key_channel

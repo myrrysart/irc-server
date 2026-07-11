@@ -1,5 +1,6 @@
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
+#include "../lib/channel.hpp"
 
 #include <sys/socket.h> // for send()
 #include <vector> // for the poll_fds vector
@@ -58,6 +59,7 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 					* Other failures are possible here, but they all mean bad
 					* things for the connection -> time to disconnect client */
 					log_error(std::strerror(errno), "send", __FILE__, __LINE__);
+					broadcast_non_requested_disconnect_msg(client);
 					disconnect_client(server, client.fd);
 				}
 				continue;

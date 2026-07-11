@@ -6,6 +6,7 @@
 #include "../lib/server.hpp"
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/commands.hpp"
+#include "../lib/channel.hpp"
 
 static void	initialize_hostname(const struct in_addr *addr, char *hostname)
 {
@@ -119,6 +120,7 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 			requested_shutdown = 1;
 			return true;
 		}
+		broadcast_non_requested_disconnect_msg(server.clients[fd]);
 		disconnect_client(server, fd);
 		return true;
 	}
@@ -138,6 +140,7 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 			return false;
 		if (recv_from_client(server, fd))
 		{
+			broadcast_non_requested_disconnect_msg(server.clients[fd]);
 			disconnect_client(server, fd);
 			return true;
 		}
