@@ -39,6 +39,11 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 
 	while((pos = buf.find_first_of(std::string_view{"\n\0", 2})) != std::string::npos)
 	{
+		// client may exit but still have pending messages sent:
+		// these should be ignored
+		if (requested_shutdown || is_flag_set(client.state, t_IRC_Client::DISCONNECT))
+			return;
+
 		if (buf[pos] == '\0') // a null-terminator was found in the message, unexpected
 		{
 			// handle the rest of the malformed message accordingly,
