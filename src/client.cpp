@@ -11,8 +11,6 @@
 bool	recv_from_client(t_IRC_Server &server, int fd)
 {
 	static char		buf[t_parser::buf_size];
-	// WARN: operator[] inserts a default client if fd is absent. Suggest find()
-	// at entry; if missing, log and return true to disconnect the orphan fd.
 	t_IRC_Client	&client = server.clients.at(fd);
 
 	ssize_t	received = recv(fd, buf, sizeof(buf), 0);
@@ -91,9 +89,7 @@ void	disconnect_client(t_IRC_Server &server, int fd)
 	// Drop the client's raw pointer from every channel it belongs to before the
 	// t_IRC_Client object is destroyed, otherwise those pointers would dangle.
 	// disconnect_client is only called for fds already in server.clients.
-	// NOTE: if that invariant breaks, [] would insert a ghost before erase().
-	// Consider find() + early return, or at() to fail loudly on violation.
-	t_IRC_Client	&client = server.clients[fd];
+	t_IRC_Client	&client = server.clients.at(fd);
 	for (t_IRC_Channel *channel : client.joined_channels)
 	{
 		channel->members.erase(&client);
