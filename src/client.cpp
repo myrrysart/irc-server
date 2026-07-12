@@ -11,7 +11,7 @@
 bool	recv_from_client(t_IRC_Server &server, int fd)
 {
 	static char		buf[t_parser::buf_size];
-	t_IRC_Client	&client = server.clients[fd]; // reference to the observed client
+	t_IRC_Client	&client = server.clients.at(fd);
 
 	ssize_t	received = recv(fd, buf, sizeof(buf), 0);
 	if (received == 0)
@@ -88,8 +88,8 @@ void	disconnect_client(t_IRC_Server &server, int fd)
 {
 	// Drop the client's raw pointer from every channel it belongs to before the
 	// t_IRC_Client object is destroyed, otherwise those pointers would dangle.
-	// disconnect_client is only called for fds already in server.clients
-	t_IRC_Client	&client = server.clients[fd];
+	// disconnect_client is only called for fds already in server.clients.
+	t_IRC_Client	&client = server.clients.at(fd);
 	for (t_IRC_Channel *channel : client.joined_channels)
 	{
 		channel->members.erase(&client);

@@ -20,7 +20,8 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 			++i;
 			continue;
 		}
-		t_IRC_Client	&client = server.clients[server.poll_fds[i].fd]; //WARNING: the [] operator adds the key silently if it doesn't exist
+		int				current_fd = server.poll_fds[i].fd;
+		t_IRC_Client	&client = server.clients.at(current_fd);
 		std::string		&send_buf = client.send_message_buffer;
 
 		if (client.send_offset >= send_buf.size()) // no bytes to send to this client
