@@ -348,7 +348,7 @@ void	check_registration_timeouts(t_IRC_Server &server)
 			&& !is_flag_set(it->second.state, t_IRC_Client::DISCONNECT))
 		{
 			if (std::chrono::steady_clock::now() - it->second.connection_time
-					> std::chrono::seconds(60))
+					> std::chrono::seconds(t_IRC_Server::registration_timeout))
 			{
 				append_common_error_prefix(it->second.send_message_buffer,
 					server.name, it->second.hostname);
