@@ -21,8 +21,8 @@ void signal_handler(int sig)
 
 int main(int argc, char **argv)
 {
-	uint16_t	port;
-	size_t		pass_len;
+	uint16_t	port = 0;
+	size_t		pass_len = 0;
 
 	if (!input_validation(argc, argv, &port, &pass_len))
 		return 2;
@@ -31,9 +31,12 @@ int main(int argc, char **argv)
 	initialize_signal_handler(sa);
 
 	try {
+		/* 'server' contains different containers whose allocators may throw */
 		t_IRC_Server	server = {};
 		initialize_server(server, port, argv[2], pass_len);
 
+		/* This nested try-catch grants the possibility to monitor the server's
+		 * bitmask once its loop is over, before 'server' goes out of scope */
 		try {
 			create_listener(server);
 			if (!is_flag_set(server.state, server.FATAL_ERROR)
@@ -46,14 +49,14 @@ int main(int argc, char **argv)
 		}
 
 		/* the FATAL_ERROR server flag may be set:
-		* • at the catch block, just above
-		* • during runtime, after system call failures
-		* Both paths will end up here, and the boolean would be true */
+		*    • at the catch block just above
+		*    • during runtime, after system call failures
+		* Both paths would converge here, causing the boolean to be true */
 		if (is_flag_set(server.state, t_IRC_Server::FATAL_ERROR))
 			return 1;
 
 	} catch (const std::exception &e) {
-		/* this would catch any allocation/initialization failure of 'server' */
+		/* catches any allocation/initialization failure of 'server' */
 		std::cerr << "Exception caught: " << e.what() << std::endl;
 		return 1;
 	}
