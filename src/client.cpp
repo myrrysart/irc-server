@@ -18,7 +18,7 @@ static void message_logger(const std::string &buf, size_t pos, const t_IRC_Clien
 	std::tm		*local = std::localtime(&now);
 	std::cout << std::put_time(local, "%H:%M:%S")
 		<< " [" << client.nick << "]: "
-		<< buf.substr(0, pos) << std::endl;
+		<< std::string_view(buf.data(), pos) << std::endl;
 }
 
 bool	recv_from_client(t_IRC_Server &server, int fd)
