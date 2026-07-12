@@ -10,27 +10,6 @@
 #include <string_view>
 #include <cctype> // for std::isdigit()
 
-// TODO: Add the time checks!
-// Perhaps add some timer machine to t_IRC_Client (per client);
-// It would then be turned on as soon as a new client connection is validated
-// (in the server loop);
-// And it will only be turned off once the client is registered successfully,
-// and the REGISTERED flag is set for the client's state - or if registration
-// fails entirely and then the client will be disconnected anyways?
-
-// TODO: IF THE USER IS IDLE VERY LONG TIME, kick them out.
-// BUT ONLY DO THAT DURING THEIR REGISTRATION PHASE:
-// Do not kick them out for being inactive after they have registered.
-
-// NOTE: From Modern IRC docs: "If the server is waiting to complete a lookup of
-// client information (such as hostname or ident for a username), there may be an
-// arbitrary wait at some point during registration. Servers SHOULD set a
-// reasonable timeout for these lookups.
-// Additionally, some servers also send a PING and require a matching PONG from
-// the client before continuing. This exchange may happen immediately on connection
-// and at any time during connection registration, so clients MUST respond
-// correctly to it."
-
 void	client_registration(t_IRC_Client &client, size_t i, t_IRC_Server &server)
 {
 	switch (i)
@@ -360,9 +339,22 @@ bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients
 	return false;
 }
 
-// WARN: Should we support CAP - capability negotiation? Probably unnecessary.
-
-// FIXME: Should we accept multiple connections from the same client (perhaps there
-// is a way for them to connect once, and then somehow change their nickname/name to a
-// valid one, and then they could be still validated again? There is a way to check
-// the IP address via the socket address info struct of the client.... but is it necessary?)
+void	check_registration_timeouts(t_IRC_Server &server)
+{
+	for (std::unordered_map<int, t_IRC_Client>::iterator it = server.clients.begin();
+		it != server.clients.end(); ++it)
+	{
+		if (!is_flag_set(it->second.state, t_IRC_Client::REGISTERED)
+			&& !is_flag_set(it->second.state, t_IRC_Client::DISCONNECT))
+		{
+			if (std::chrono::steady_clock::now() - it->second.connection_time
+					> std::chrono::seconds(t_IRC_Server::registration_timeout))
+			{
+				append_common_error_prefix(it->second.send_message_buffer,
+					server.name, it->second.hostname);
+				it->second.send_message_buffer += " (registration timeout)\r\n";
+				it->second.state |= t_IRC_Client::DISCONNECT;
+			}
+		}
+	}
+}

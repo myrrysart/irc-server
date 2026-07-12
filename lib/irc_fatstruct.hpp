@@ -10,6 +10,7 @@
 # include <cstdint> // for fixed width integer data types
 # include <new> // for hardware_constructive_interference_size
 # include <string_view>
+# include <chrono>
 
 # define MAX_CLIENTS 128
 # define MAX_CHANNELS 64
@@ -152,21 +153,21 @@ typedef struct	s_IRC_Client
 		return (std::string_view{nick_whitelist.data(), i});
 	}();
 
-	t_bmask								state;
-	struct sockaddr_in					addr;  //NOTE: Is this needed here?
-	int									fd;
-	std::string_view					nick;
-	char								nick_buf[max_nicklen]; // not nullterminated, use 'nick' instead
-	std::string							username;
-	std::string							realname;
-	char								hostname[INET_ADDRSTRLEN]; // This array is null terminated when initialized by inet_ntop(). Change macro to 'INET6_ADDRSTRLEN' if server ever switches to TCP6 ('AF_INET6').
-	std::string							received_message_buffer;
-	std::string							send_message_buffer;
-	size_t								send_offset;
-	t_parser							parser;
-	std::unordered_set<t_IRC_Channel*>	joined_channels;
-}										t_IRC_Client;
-static_assert(sizeof(t_IRC_Client) <= 128*CACHE_LINE_SIZE," t_IRC_Client did not use 128 cache line" );
+	t_bmask									state;
+	int										fd;
+	std::chrono::steady_clock::time_point	connection_time;
+	std::string_view						nick;
+	char									nick_buf[max_nicklen]; // not nullterminated, use 'nick' instead
+	std::string								username;
+	std::string								realname;
+	char									hostname[INET_ADDRSTRLEN]; // This array is null terminated when initialized by inet_ntop(). Change macro to 'INET6_ADDRSTRLEN' if server ever switches to TCP6 ('AF_INET6').
+	std::string								received_message_buffer;
+	std::string								send_message_buffer;
+	size_t									send_offset;
+	t_parser								parser;
+	std::unordered_set<t_IRC_Channel*>		joined_channels;
+}	t_IRC_Client;
+static_assert(sizeof(t_IRC_Client) <= 69*CACHE_LINE_SIZE," t_IRC_Client did not use 69 cache line" );
 
 // IRC_Server state bitmask definitions
 typedef struct	s_IRC_Server
@@ -179,6 +180,7 @@ typedef struct	s_IRC_Server
 	static constexpr const char						name[] = "humble_server";
 	static constexpr int							poll_timeout = 1000;
 	static constexpr const char						version[] = "0.042"; // remember to update when upgrading ;-)
+	static constexpr int							registration_timeout = 60;
 	int												listen_fd;
 	uint16_t										port;
 	std::string_view								password;
