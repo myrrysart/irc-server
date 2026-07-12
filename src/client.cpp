@@ -13,7 +13,7 @@ bool	recv_from_client(t_IRC_Server &server, int fd)
 	static char		buf[t_parser::buf_size];
 	// WARN: operator[] inserts a default client if fd is absent. Suggest find()
 	// at entry; if missing, log and return true to disconnect the orphan fd.
-	t_IRC_Client	&client = server.clients[fd];
+	t_IRC_Client	&client = server.clients.at(fd);
 
 	ssize_t	received = recv(fd, buf, sizeof(buf), 0);
 	if (received == 0)

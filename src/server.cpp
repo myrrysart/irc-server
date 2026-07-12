@@ -44,21 +44,15 @@ static bool	setup_client(t_IRC_Server &server, int client_fd, struct sockaddr_in
 		close(client_fd);
 		return false;
 	}
-
-	// WARN: both of the next calls may heap allocate via std::vector and std::unordered_map.
-	// These can throw exceptions, which previously would not be caught by our program.
-	// If either of those fails, the client_fd has to be closed here, as it might
-	// not have been integrated to the poll_fds vector.
 	try {
-		server.poll_fds.push_back(pollfd{client_fd, POLLIN, 0});
-		// NOTE: intentional insert — operator[] is correct here; this fd is new.
 		server.clients[client_fd] = t_IRC_Client{};
+		server.poll_fds.push_back(pollfd{client_fd, POLLIN, 0});
 	} catch (const std::exception &e) {
+		server.clients.erase(client_fd);
 		close(client_fd);
 		throw; // throws the same exception that was just caught
 	}
 
-	// NOTE: safe read — the key was just inserted above for this same fd.
 	t_IRC_Client	&client = server.clients[client_fd];
 	client.fd = client_fd;
 
@@ -123,10 +117,7 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 			requested_shutdown = 1;
 			return true;
 		}
-		// WARN: operator[] inserts a default client if fd is missing (e.g.
-		// poll_fds/clients desync after a partial setup_client failure).
-		// Prefer find(); if absent, close(fd), erase the poll entry, return.
-		broadcast_non_requested_disconnect_msg(server.clients[fd]);
+		broadcast_non_requested_disconnect_msg(server.clients.at(fd));
 		disconnect_client(server, fd);
 		return true;
 	}
@@ -142,17 +133,16 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 		// there might still be messages to be sent to it before disconnecting.
 		// This will be handled in the subsequent send loop. But here, the server
 		// can simply ignore any input from that client, it is irrelevant.
-		// WARN: same silent-insert risk on every clients[fd] below — see above.
-		if (is_flag_set(server.clients[fd].state, t_IRC_Client::DISCONNECT))
+		if (is_flag_set(server.clients.at(fd).state, t_IRC_Client::DISCONNECT))
 			return false;
 		if (recv_from_client(server, fd))
 		{
-			broadcast_non_requested_disconnect_msg(server.clients[fd]);
+			broadcast_non_requested_disconnect_msg(server.clients.at(fd));
 			disconnect_client(server, fd);
 			return true;
 		}
 		if (!requested_shutdown)
-			handle_client_message(server.clients[fd], server);
+			handle_client_message(server.clients.at(fd), server);
 	}
 	return false;
 }

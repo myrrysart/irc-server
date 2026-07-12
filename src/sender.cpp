@@ -20,10 +20,8 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 			++i;
 			continue;
 		}
-		// WARN: operator[] inserts a default client if this poll fd is missing
-		// from the map. Prefer find(server.poll_fds[i].fd) and skip (or purge
-		// the orphan poll entry) rather than creating a ghost client.
-		t_IRC_Client	&client = server.clients[server.poll_fds[i].fd];
+		int				current_fd = server.poll_fds[i].fd;
+		t_IRC_Client	&client = server.clients.at(current_fd);
 		std::string		&send_buf = client.send_message_buffer;
 
 		if (client.send_offset >= send_buf.size()) // no bytes to send to this client

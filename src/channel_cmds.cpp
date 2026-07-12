@@ -182,7 +182,6 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		if (channel_just_created)
 			join_flags |= IS_OPERATOR;
 
-		// NOTE: intentional insert — operator[] is correct for recording membership.
 		channel.members[&client] = join_flags;
 		client.joined_channels.insert(&channel);
 		channel.invited.erase(&client); // consume any pending invite

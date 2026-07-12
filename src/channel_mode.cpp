@@ -207,7 +207,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					// NOTE: target came from find_chmember_by_nick(), so the key
 					// already exists — [] won't insert here. For clarity, reuse
 					// that lookup's iterator or at() instead of a second [].
-					channel->members[target] |= IS_OPERATOR;
+					channel->members.at(target) |= IS_OPERATOR;
 					plus_chars += 'o';
 					if (!plus_args.empty())
 						plus_args += ' ';
@@ -216,7 +216,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				else
 				{
 					// NOTE: same as above — key is guaranteed to exist.
-					channel->members[target] &= ~IS_OPERATOR;
+					channel->members.at(target) &= ~IS_OPERATOR;
 					minus_chars += 'o';
 					if (!minus_args.empty())
 						minus_args += ' ';
