@@ -117,7 +117,7 @@ static bool	is_message_already_loaded(t_delivery_tracker &tracker, int fd)
 * - skips 'sender'
 * - if a client shares multiple channels with 'sender', appends 'msg' only once
 * - skips clients who are about to be disconnected */
-void	broadcast_to_fellow_channelers_once_per_client(t_IRC_Client &sender,
+void	broadcast_to_fellow_channelers_once_per_client(const t_IRC_Client &sender,
             const std::string &msg)
 {
 	/* To avoid duplicate alerts for clients who share more than one channel
@@ -150,5 +150,16 @@ void	broadcast_to_fellow_channelers_once_per_client(t_IRC_Client &sender,
 			tracker.fds[tracker.count] = fellow_member.fd;
 			++(tracker.count);
 		}
+	}
+}
+
+// to be called when client gets disconnected without sending QUIT message
+void	broadcast_non_requested_disconnect_msg(const t_IRC_Client &disconnected_client)
+{
+	if (!disconnected_client.joined_channels.empty())
+	{
+		std::string	msg;
+		append_quit_message(msg, disconnected_client, false);
+		broadcast_to_fellow_channelers_once_per_client(disconnected_client, msg);
 	}
 }
