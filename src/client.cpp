@@ -1,12 +1,25 @@
 #include <iostream>
 #include <cstring> // std::strerror()
 #include <cerrno>
+#include <chrono> // std::chrono::system_clock (incoming message timestamps)
+#include <ctime> // std::time_t, std::tm, std::localtime()
+#include <iomanip> // std::put_time() (incoming message timestamps)
 #include <string_view>
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
 #include "../lib/parser.hpp"
 #include "../lib/commands.hpp"
 #include "../lib/numerics.hpp"
+
+static void message_logger(const std::string &buf, size_t pos, const t_IRC_Client &client)
+{
+	std::time_t	now = std::chrono::system_clock::to_time_t(
+		std::chrono::system_clock::now());
+	std::tm		*local = std::localtime(&now);
+	std::cout << std::put_time(local, "%H:%M:%S")
+		<< " [" << client.nick << "]: "
+		<< std::string_view(buf.data(), pos) << std::endl;
+}
 
 bool	recv_from_client(t_IRC_Server &server, int fd)
 {
@@ -62,6 +75,7 @@ void	handle_client_message(t_IRC_Client &client, t_IRC_Server &server)
 			}
 		}
 
+		message_logger(buf, pos, client);
 		if (parse_message(pos, buf, client) == -1)
 			build_ERR_INPUTTOOLONG(client);
 
