@@ -175,26 +175,7 @@ void	server_loop(t_IRC_Server &server)
 				return;
 			int		fd = server.poll_fds[i].fd;
 			short	rev = server.poll_fds[i].revents;
-			bool	is_removed;
-			try
-			{
-				is_removed = handle_poll_event(server, fd, rev);
-			} catch (const std::exception &e)
-			{
-				log_error(e.what(), "handle_poll_event",
-					__FILE__, __LINE__);
-				close(fd);
-				for (size_t j = 0; j < server.poll_fds.size(); j++)
-				{
-					if (server.poll_fds[j].fd == fd)
-					{
-						server.poll_fds.erase(
-							server.poll_fds.begin() + j);
-						break;
-					}
-				}
-				is_removed = true;
-			}
+			bool	is_removed = handle_poll_event(server, fd, rev);
 			if (!is_removed)
 				i++;
 		}
