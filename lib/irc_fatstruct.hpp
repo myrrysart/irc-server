@@ -181,6 +181,7 @@ typedef struct	s_IRC_Server
 	static constexpr const char						name[] = "humble_server";
 	static constexpr int							poll_timeout = 1000;
 	static constexpr const char						version[] = "0.042"; // remember to update when upgrading ;-)
+	static constexpr int							registration_timeout = 60;
 	int												listen_fd;
 	uint16_t										port;
 	std::string_view								password;
