@@ -62,6 +62,19 @@ bool	are_equal_strs_case_insensitive(std::string_view str1, std::string_view str
 	return true;
 }
 
+bool	are_equal_strs_case_sensitive(std::string_view str1, std::string_view str2)
+{
+	if (str1.size() != str2.size())
+		return false;
+
+	for (size_t i = 0; i < str1.size(); ++i)
+	{
+		if (str1[i] != str2[i])
+			return false;
+	}
+	return true;
+}
+
 /* 'nick' has to be passed as a reference */
 void	trim_nickname_if_longer_than_max_nicklen(std::string_view &nick)
 {
