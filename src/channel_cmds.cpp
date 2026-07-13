@@ -114,8 +114,10 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		}
 
 		std::string	channel_name(req.channel);
-		bool		channel_just_created = false;
 		auto		ch_it = server.channels.find(channel_name);
+		t_bmask		join_flags = 0;
+		bool		channel_just_created = false;
+		bool		channel_has_ops = false;
 
 		if (ch_it == server.channels.end()) // new channel to be created
 		{
@@ -174,11 +176,21 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				}
 			}
 		}
-
 		t_IRC_Channel	&channel = ch_it->second;
 
+		// if channel has no ops, you are the op
+		for (const auto &[member, member_flags] : channel.members)
+		{
+			if (is_flag_set(member_flags, IS_OPERATOR))
+			{
+				channel_has_ops = true;
+				break;
+			}
+		}
+
 		// all checks passed. record membership and broadcast
-		t_bmask			join_flags = 0;
+		if (!channel_has_ops)
+			join_flags |= IS_OPERATOR;
 		if (channel_just_created)
 			join_flags |= IS_OPERATOR;
 
