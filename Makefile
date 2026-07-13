@@ -5,7 +5,9 @@ SRC		= src/main.cpp src/server.cpp src/listener.cpp src/client.cpp \
 		  src/error.cpp src/msg_parser.cpp src/sender.cpp src/numerics.cpp \
 		  src/parsing_utils.cpp src/commands.cpp src/registration.cpp \
 		  src/command_utils.cpp src/channel_utils.cpp src/channel_msgs.cpp \
-		  src/channel_mode.cpp src/channel_cmds.cpp
+		  src/channel_mode.cpp src/channel_privmsg.cpp src/channel_join.cpp \
+		  src/channel_part.cpp src/channel_kick.cpp src/channel_topic.cpp \
+		  src/channel_names.cpp src/channel_list.cpp src/channel_invite.cpp
 OBJS	= $(SRC:.cpp=.o)
 DEPS	= $(SRC:.cpp=.d)
 
