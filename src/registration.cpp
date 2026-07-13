@@ -218,7 +218,7 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	if (is_flag_set(client.state, t_IRC_Client::NICK)
 			&& are_equal_strs_case_insensitive(new_nick, client.nick))
 	{
-		if (!are_equal_strs_case_sensitive(new_nick, client.nick))
+		if (new_nick != client.nick)
 			prepare_to_store_new_nick_and_alert_clients(client, new_nick);
 		return;
 	}
