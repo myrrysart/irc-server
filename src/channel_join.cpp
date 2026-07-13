@@ -11,6 +11,8 @@ static void	handle_join_request_to_new_channel(t_IRC_Client &client,
 static void	handle_join_request_to_existing_channel(t_IRC_Client &client,
 	            std::unordered_map<std::string, t_IRC_Channel>::iterator ch_it,
 	            const std::string &channel_name, std::string_view key);
+static void	build_JOIN_reply_and_broadcast(t_IRC_Client &client,
+	            t_IRC_Channel &channel);
 
 void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -89,12 +91,7 @@ static void	handle_join_request_to_new_channel(t_IRC_Client &client,
 	client.joined_channels.insert(&channel);
 	channel.invited.erase(&client); // consume any pending invite
 
-	std::string		line;
-	append_JOIN_msg(line, client, channel.name);
-	broadcast_to_channel(channel, line, client, false);
-	if (!channel.topic.empty())
-		build_RPL_TOPIC(client, channel); // 332
-	send_names_reply(client, channel);
+	build_JOIN_reply_and_broadcast(client, channel);
 }
 
 static void	handle_join_request_to_existing_channel(t_IRC_Client &client,
@@ -143,7 +140,14 @@ static void	handle_join_request_to_existing_channel(t_IRC_Client &client,
 	channel.invited.erase(&client); // consume any pending invite
 
 	// all checks passed. record membership and broadcast
+	build_JOIN_reply_and_broadcast(client, channel);
+}
+
+static void	build_JOIN_reply_and_broadcast(t_IRC_Client &client,
+	            t_IRC_Channel &channel)
+{
 	std::string		line;
+
 	append_JOIN_msg(line, client, channel.name);
 	broadcast_to_channel(channel, line, client, false);
 	if (!channel.topic.empty())
