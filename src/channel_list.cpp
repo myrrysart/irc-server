@@ -24,9 +24,10 @@ void	execute_LIST_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			std::string_view	name = next_comma_token(targets, pos);
 			if (name.empty())
 				continue; //skip empty tokens
-			t_IRC_Channel	*channel = find_channel_by_name(server, name);
-			if (channel)
-				build_RPL_LIST(client, *channel); // 322
+			std::unordered_map<std::string, t_IRC_Channel>::iterator	ch_it =
+				find_channel_by_name(server, name);
+			if (ch_it != server.channels.end())
+				build_RPL_LIST(client, ch_it->second); // 322
 		}
 	}
 	build_RPL_LISTEND(client); // 323

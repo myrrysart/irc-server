@@ -32,13 +32,14 @@ void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			continue;
 		saw_nonempty_channel_toke = true;
 
-		t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
-		if (!channel)
+		std::unordered_map<std::string, t_IRC_Channel>::iterator	ch_it =
+			find_channel_by_name(server, channel_name);
+		if (ch_it != server.channels.end())
 		{
 			build_RPL_ENDOFNAMES(client, channel_name); // 366 this is supposedly valid, but don't show on irssi
 			continue;
 		}
-		send_names_reply(client, *channel);
+		send_names_reply(client, ch_it->second);
 	}
 	if (!saw_nonempty_channel_toke)
 		build_RPL_ENDOFNAMES(client, "*"); // 366 this is supposedly valid, but don't show on irssi

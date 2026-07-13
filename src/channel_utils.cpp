@@ -29,12 +29,19 @@ t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, std::string_view nic
 	return nullptr;
 }
 
-t_IRC_Channel	*find_channel_by_name(t_IRC_Server &server, std::string_view ch_name)
+std::unordered_map<std::string, t_IRC_Channel>::iterator
+	find_channel_by_name(t_IRC_Server &server, std::string_view ch_name)
 {
-	auto	name_it = server.channels.find(std::string(ch_name));
-	if (name_it != server.channels.end())
-		return &name_it->second;
-	return nullptr;
+
+	std::unordered_map<std::string, t_IRC_Channel>::iterator	ch_it =
+		server.channels.begin();
+
+	for ( ; ch_it != server.channels.end(); ++ch_it)
+	{
+		if (are_equal_strs_case_insensitive(ch_name, ch_it->second.name))
+			break;
+	}
+	return ch_it;
 }
 
 t_IRC_Client	*find_client_by_nick(t_IRC_Server &server, std::string_view nick)

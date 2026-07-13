@@ -37,20 +37,22 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		// channel target: must exist and client must be a member
 		if (target[0] == '#' || target[0] == '&')
 		{
-			t_IRC_Channel	*channel = find_channel_by_name(server, target);
-			if (!channel)
+			std::unordered_map<std::string, t_IRC_Channel>::iterator	ch_it =
+				find_channel_by_name(server, target);
+			if (ch_it == server.channels.end())
 			{
 				build_ERR_NOSUCHCHANNEL(client, target); // 403
 				return;
 			}
-			if (!channel->members.contains(&client))
+			t_IRC_Channel	&channel = ch_it->second;
+			if (!channel.members.contains(&client))
 			{
 				build_ERR_CANNOTSENDTOCHAN(client, target); // 404
 				return;
 			}
 			std::string		line;
-			append_PRIVMSG_msg(line, client, channel->name, message);
-			broadcast_to_channel(*channel, line, client, true);
+			append_PRIVMSG_msg(line, client, channel.name, message);
+			broadcast_to_channel(channel, line, client, true);
 		}
 		// nick target: must be an online client
 		else

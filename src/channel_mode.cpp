@@ -54,27 +54,31 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	}
 
 	// no 2nd param -> report current modes
-	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
-	if (!channel)
+	std::unordered_map<std::string, t_IRC_Channel>::iterator	ch_it =
+		find_channel_by_name(server, channel_name);
+
+	if (ch_it == server.channels.end())
 	{
 		build_ERR_NOSUCHCHANNEL(client, channel_name); // 403
 		return;
 	}
+
+	t_IRC_Channel	&channel = ch_it->second;
 	if (client.parser.n_params == 1)
 	{
-		build_RPL_CHANNELMODEIS(client, *channel); // 324
+		build_RPL_CHANNELMODEIS(client, channel); // 324
 		return;
 	}
 	// changing modes checks for membership + operator
-	auto	member_it = channel->members.find(&client);
-	if (member_it == channel->members.end())
+	auto	member_it = channel.members.find(&client);
+	if (member_it == channel.members.end())
 	{
-		build_ERR_NOTONCHANNEL(client, channel->name); // 442
+		build_ERR_NOTONCHANNEL(client, channel.name); // 442
 		return;
 	}
 	if (!is_flag_set(member_it->second, IS_OPERATOR))
 	{
-		build_ERR_CHANOPRIVSNEEDED(client, channel->name); // 482
+		build_ERR_CHANOPRIVSNEEDED(client, channel.name); // 482
 		return;
 	}
 
@@ -108,17 +112,17 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		{
 			if (sign == '+')
 			{
-				if (!is_flag_set(channel->mode, INVITE))
+				if (!is_flag_set(channel.mode, INVITE))
 				{
-					channel->mode |= INVITE;
+					channel.mode |= INVITE;
 					plus_chars += 'i';
 				}
 			}
 			else
 			{
-				if (is_flag_set(channel->mode, INVITE))
+				if (is_flag_set(channel.mode, INVITE))
 				{
-					channel->mode &= ~INVITE;
+					channel.mode &= ~INVITE;
 					minus_chars += 'i';
 				}
 			}
@@ -127,17 +131,17 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		{
 			if (sign == '+')
 			{
-				if (!is_flag_set(channel->mode, TOPIC))
+				if (!is_flag_set(channel.mode, TOPIC))
 				{
-					channel->mode |= TOPIC;
+					channel.mode |= TOPIC;
 					plus_chars += 't';
 				}
 			}
 			else
 			{
-				if (is_flag_set(channel->mode, TOPIC))
+				if (is_flag_set(channel.mode, TOPIC))
 				{
-					channel->mode &= ~TOPIC;
+					channel.mode &= ~TOPIC;
 					minus_chars += 't';
 				}
 			}
@@ -153,10 +157,10 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					arg_idx++;
 					if (key.empty() || has_space_character(key))
 						continue;
-					if (!is_flag_set(channel->mode, KEY) || channel->key != key)
+					if (!is_flag_set(channel.mode, KEY) || channel.key != key)
 					{
-						channel->mode |= KEY;
-						channel->key.assign(key);
+						channel.mode |= KEY;
+						channel.key.assign(key);
 						plus_chars += 'k';
 						if (!plus_args.empty())
 							plus_args += ' ';
@@ -168,10 +172,10 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			}
 			else
 			{
-				if (is_flag_set(channel->mode, KEY))
+				if (is_flag_set(channel.mode, KEY))
 				{
-					channel->mode &= ~KEY;
-					channel->key.clear();
+					channel.mode &= ~KEY;
+					channel.key.clear();
 					minus_chars += 'k';
 				}
 			}
@@ -192,15 +196,15 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 					size_t	new_limit = std::min(parsed_limit,
 						static_cast<size_t>(MAX_CLIENTS));
-					if (!is_flag_set(channel->mode, LIMIT)
-						|| channel->user_limit != new_limit)
+					if (!is_flag_set(channel.mode, LIMIT)
+						|| channel.user_limit != new_limit)
 					{
-						channel->mode |= LIMIT;
-						channel->user_limit = new_limit;
+						channel.mode |= LIMIT;
+						channel.user_limit = new_limit;
 						plus_chars += 'l';
 						if (!plus_args.empty())
 							plus_args += ' ';
-						plus_args += std::to_string(channel->user_limit);
+						plus_args += std::to_string(channel.user_limit);
 					}
 				}
 				else
@@ -208,10 +212,10 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			}
 			else
 			{
-				if (is_flag_set(channel->mode, LIMIT))
+				if (is_flag_set(channel.mode, LIMIT))
 				{
-					channel->mode &= ~LIMIT;
-					channel->user_limit = 0;
+					channel.mode &= ~LIMIT;
+					channel.user_limit = 0;
 					minus_chars += 'l';
 				}
 			}
@@ -224,15 +228,15 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				std::string_view	target_nick = client.parser.params[arg_idx];
 				trim_nickname_if_longer_than_max_nicklen(target_nick);
 				t_IRC_Client		*target =
-					find_chmember_by_nick(*channel, target_nick);
+					find_chmember_by_nick(channel, target_nick);
 				arg_idx++;
 				if (!target)
-					build_ERR_USERNOTINCHANNEL(client, channel->name, target_nick); // 441
+					build_ERR_USERNOTINCHANNEL(client, channel.name, target_nick); // 441
 				else if (sign == '+')
 				{
-					if (!is_flag_set(channel->members.at(target), IS_OPERATOR))
+					if (!is_flag_set(channel.members.at(target), IS_OPERATOR))
 					{
-						channel->members.at(target) |= IS_OPERATOR;
+						channel.members.at(target) |= IS_OPERATOR;
 						plus_chars += 'o';
 						if (!plus_args.empty())
 							plus_args += ' ';
@@ -241,9 +245,9 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 				}
 				else
 				{
-					if (is_flag_set(channel->members.at(target), IS_OPERATOR))
+					if (is_flag_set(channel.members.at(target), IS_OPERATOR))
 					{
-						channel->members.at(target) &= ~IS_OPERATOR;
+						channel.members.at(target) &= ~IS_OPERATOR;
 						minus_chars += 'o';
 						if (!minus_args.empty())
 							minus_args += ' ';
@@ -266,7 +270,7 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	if (!applied_mode_changes.empty())
 	{
 		std::string	line;
-		append_MODE_msg(line, client, channel->name, applied_mode_changes);
-		broadcast_to_channel(*channel, line, client, false);
+		append_MODE_msg(line, client, channel.name, applied_mode_changes);
+		broadcast_to_channel(channel, line, client, false);
 	}
 }

@@ -14,39 +14,41 @@ void	execute_TOPIC_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 	// client must be a member to see/set its topic
 	std::string_view	channel_name(client.parser.params[0]);
-	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
-	if (!channel)
+	std::unordered_map<std::string, t_IRC_Channel>::iterator	ch_it =
+		find_channel_by_name(server, channel_name);
+	if (ch_it == server.channels.end())
 	{
 		build_ERR_NOSUCHCHANNEL(client, channel_name); // 403
 		return;
 	}
+	t_IRC_Channel	&channel = ch_it->second;
 
-	auto	member_it = channel->members.find(&client);
-	if (member_it == channel->members.end())
+	auto	member_it = channel.members.find(&client);
+	if (member_it == channel.members.end())
 	{
-		build_ERR_NOTONCHANNEL(client, channel->name); // 442
+		build_ERR_NOTONCHANNEL(client, channel.name); // 442
 		return;
 	}
 
 	// no second param
 	if (client.parser.n_params < 2)
 	{
-		if (channel->topic.empty())
-			build_RPL_NOTOPIC(client, channel->name); // 331
+		if (channel.topic.empty())
+			build_RPL_NOTOPIC(client, channel.name); // 331
 		else
-			build_RPL_TOPIC(client, *channel); // 332
+			build_RPL_TOPIC(client, channel); // 332
 		return;
 	}
 
 	// +t topic change for operators only
-	if (is_flag_set(channel->mode, TOPIC) && !is_flag_set(member_it->second, IS_OPERATOR))
+	if (is_flag_set(channel.mode, TOPIC) && !is_flag_set(member_it->second, IS_OPERATOR))
 	{
-		build_ERR_CHANOPRIVSNEEDED(client, channel->name); // 482
+		build_ERR_CHANOPRIVSNEEDED(client, channel.name); // 482
 		return;
 	}
-	channel->topic.assign(client.parser.params[1]); // copy out of the receive buffer
+	channel.topic.assign(client.parser.params[1]); // copy out of the receive buffer
 
 	std::string	line;
-	append_TOPIC_msg(line, client, channel->name, channel->topic);
-	broadcast_to_channel(*channel, line, client, false);
+	append_TOPIC_msg(line, client, channel.name, channel.topic);
+	broadcast_to_channel(channel, line, client, false);
 }
