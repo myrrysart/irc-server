@@ -129,20 +129,22 @@ static bool	handle_poll_event(t_IRC_Server &server, int fd, short rev)
 			accept_new_client(server);
 			return false;
 		}
+		t_IRC_Client	&client = server.clients.at(fd);
+
 		// NOTE: The following check is in case the client should be disconnected,
 		// there might still be messages to be sent to it before disconnecting.
 		// This will be handled in the subsequent send loop. But here, the server
 		// can simply ignore any input from that client, it is irrelevant.
-		if (is_flag_set(server.clients.at(fd).state, t_IRC_Client::DISCONNECT))
+		if (is_flag_set(client.state, t_IRC_Client::DISCONNECT))
 			return false;
 		if (recv_from_client(server, fd))
 		{
-			broadcast_non_requested_disconnect_msg(server.clients.at(fd));
+			broadcast_non_requested_disconnect_msg(client);
 			disconnect_client(server, fd);
 			return true;
 		}
 		if (!requested_shutdown)
-			handle_client_message(server.clients.at(fd), server);
+			handle_client_message(client, server);
 	}
 	return false;
 }
