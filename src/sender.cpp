@@ -1,6 +1,7 @@
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"
 #include "../lib/channel.hpp"
+#include "../lib/message_logger.hpp"
 
 #include <sys/socket.h> // for send()
 #include <vector> // for the poll_fds vector
@@ -65,7 +66,8 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 				}
 				continue;
 			}
-
+			message_logger(std::string_view(send_buf.data() + client.send_offset,
+					static_cast<size_t>(ret)), "->", client);
 			update_send_buffer_and_offset(send_buf, client.send_offset, ret);
 		}
 		if (client.send_offset < send_buf.size()) // indicate that we need to write to the client

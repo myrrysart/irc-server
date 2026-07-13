@@ -2,7 +2,6 @@
 #include "../lib/numerics.hpp"
 #include "../lib/parser.hpp"
 #include <cstddef>
-#include <string>
 #include <string_view>
 
 void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
@@ -21,7 +20,7 @@ void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	// params  only the requested channels -> unknown ones get ENDOFNAMES
+	// params only the requested channels -> unknown ones get ENDOFNAMES
 	std::string_view	channels(client.parser.params[0]);
 	size_t				channel_pos = 0;
 	bool				saw_nonempty_channel_toke = false;
@@ -36,11 +35,11 @@ void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
 		if (!channel)
 		{
-			build_RPL_ENDOFNAMES(client, channel_name); // 366
+			build_RPL_ENDOFNAMES(client, channel_name); // 366 this is supposedly valid, but don't show on irssi
 			continue;
 		}
 		send_names_reply(client, *channel);
 	}
 	if (!saw_nonempty_channel_toke)
-		build_RPL_ENDOFNAMES(client, "*"); // 366
+		build_RPL_ENDOFNAMES(client, "*"); // 366 this is supposedly valid, but don't show on irssi
 }

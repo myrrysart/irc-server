@@ -108,26 +108,38 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		{
 			if (sign == '+')
 			{
-				channel->mode |= INVITE;
-				plus_chars += 'i';
+				if (!is_flag_set(channel->mode, INVITE))
+				{
+					channel->mode |= INVITE;
+					plus_chars += 'i';
+				}
 			}
 			else
 			{
-				channel->mode &= ~INVITE;
-				minus_chars += 'i';
+				if (is_flag_set(channel->mode, INVITE))
+				{
+					channel->mode &= ~INVITE;
+					minus_chars += 'i';
+				}
 			}
 		}
 		else if (current_char == 't')
 		{
 			if (sign == '+')
 			{
-				channel->mode |= TOPIC;
-				plus_chars += 't';
+				if (!is_flag_set(channel->mode, TOPIC))
+				{
+					channel->mode |= TOPIC;
+					plus_chars += 't';
+				}
 			}
 			else
 			{
-				channel->mode &= ~TOPIC;
-				minus_chars += 't';
+				if (is_flag_set(channel->mode, TOPIC))
+				{
+					channel->mode &= ~TOPIC;
+					minus_chars += 't';
+				}
 			}
 		}
 		// channel key. +k with argument, -k without
@@ -141,21 +153,27 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					arg_idx++;
 					if (key.empty() || has_space_character(key))
 						continue;
-					channel->mode |= KEY;
-					channel->key.assign(key);
-					plus_chars += 'k';
-					if (!plus_args.empty())
-						plus_args += ' ';
-					plus_args += key;
+					if (!is_flag_set(channel->mode, KEY) || channel->key != key)
+					{
+						channel->mode |= KEY;
+						channel->key.assign(key);
+						plus_chars += 'k';
+						if (!plus_args.empty())
+							plus_args += ' ';
+						plus_args += key;
+					}
 				}
 				else
 					continue ; // ignore request if required argument is not there
 			}
 			else
 			{
-				channel->mode &= ~KEY;
-				channel->key.clear();
-				minus_chars += 'k';
+				if (is_flag_set(channel->mode, KEY))
+				{
+					channel->mode &= ~KEY;
+					channel->key.clear();
+					minus_chars += 'k';
+				}
 			}
 		}
 		// user limit. +l w. argument (parses numeric), -l no argument
@@ -172,22 +190,30 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					if (!parse_positive_integer_and_validate_input(limit, parsed_limit))
 						continue;
 
-					channel->mode |= LIMIT;
-					channel->user_limit = std::min(parsed_limit,
+					size_t	new_limit = std::min(parsed_limit,
 						static_cast<size_t>(MAX_CLIENTS));
-					plus_chars += 'l';
-					if (!plus_args.empty())
-						plus_args += ' ';
-					plus_args += std::to_string(channel->user_limit);
+					if (!is_flag_set(channel->mode, LIMIT)
+						|| channel->user_limit != new_limit)
+					{
+						channel->mode |= LIMIT;
+						channel->user_limit = new_limit;
+						plus_chars += 'l';
+						if (!plus_args.empty())
+							plus_args += ' ';
+						plus_args += std::to_string(channel->user_limit);
+					}
 				}
 				else
 					continue ; // required argument is not there -> ignore
 			}
 			else
 			{
-				channel->mode &= ~LIMIT;
-				channel->user_limit = 0;
-				minus_chars += 'l';
+				if (is_flag_set(channel->mode, LIMIT))
+				{
+					channel->mode &= ~LIMIT;
+					channel->user_limit = 0;
+					minus_chars += 'l';
+				}
 			}
 		}
 		// operator status on a target member. Always with an argument
@@ -204,23 +230,25 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 					build_ERR_USERNOTINCHANNEL(client, channel->name, target_nick); // 441
 				else if (sign == '+')
 				{
-					// NOTE: target came from find_chmember_by_nick(), so the key
-					// already exists — [] won't insert here. For clarity, reuse
-					// that lookup's iterator or at() instead of a second [].
-					channel->members.at(target) |= IS_OPERATOR;
-					plus_chars += 'o';
-					if (!plus_args.empty())
-						plus_args += ' ';
-					plus_args += target->nick;
+					if (!is_flag_set(channel->members.at(target), IS_OPERATOR))
+					{
+						channel->members.at(target) |= IS_OPERATOR;
+						plus_chars += 'o';
+						if (!plus_args.empty())
+							plus_args += ' ';
+						plus_args += target->nick;
+					}
 				}
 				else
 				{
-					// NOTE: same as above — key is guaranteed to exist.
-					channel->members.at(target) &= ~IS_OPERATOR;
-					minus_chars += 'o';
-					if (!minus_args.empty())
-						minus_args += ' ';
-					minus_args += target->nick;
+					if (is_flag_set(channel->members.at(target), IS_OPERATOR))
+					{
+						channel->members.at(target) &= ~IS_OPERATOR;
+						minus_chars += 'o';
+						if (!minus_args.empty())
+							minus_args += ' ';
+						minus_args += target->nick;
+					}
 				}
 			}
 			else
