@@ -74,8 +74,6 @@ typedef struct	s_parser
 		"PING",
 		"PONG"
 	};
-	// NOTE: do not implement OPER: we need channel operators, not IRC operators.
-	// WARN: do we need to implement CAP? Is that what allows a user to become operator?
 
 	static constexpr size_t		n_valid_cmds = sizeof(commands) / sizeof(std::string_view);
 

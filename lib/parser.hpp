@@ -27,6 +27,7 @@ char	to_uppercase(char c);
 size_t	skip_leading_spaces_and_check_for_empty_message(const std::string &buf,
             size_t pos, bool has_cr);
 bool	are_equal_strs_case_insensitive(std::string_view str1, std::string_view str2);
+bool	are_equal_strs_case_sensitive(std::string_view str1, std::string_view str2);
 void	trim_nickname_if_longer_than_max_nicklen(std::string_view &nick);
 bool	has_space_character(std::string_view str);
 

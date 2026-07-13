@@ -10,6 +10,9 @@
 #include <string_view>
 #include <cctype> // for std::isdigit()
 
+static void	prepare_to_store_new_nick_and_alert_clients(t_IRC_Client &client,
+	            std::string_view new_nick);
+
 void	client_registration(t_IRC_Client &client, size_t i, t_IRC_Server &server)
 {
 	switch (i)
@@ -77,7 +80,6 @@ bool	has_provided_password_first_and_it_is_correct(t_bmask state)
 	return false;
 }
 
-// TODO: Missing: timeout handling.
 void	execute_PASS_cmd(t_IRC_Client &client, const t_IRC_Server &server)
 {
 	// check if already registered
@@ -174,18 +176,9 @@ void	execute_USER_cmd(t_IRC_Client &client)
 	// code structure would not allow setting the PSWD_CORRECT flag - and
 	// server will return the following error, once NICK has also been provided:
 	// "ERROR :Closing Link: localhost (Bad Password)"
-	// NOTE: I suppose it is unnecessary to store the username, if the 'password
-	// given first' flag is not on. Same goes for NICK.
+	// It is unnecessary to store the username, if the 'password given first'
+	// flag is not on, since it will be ignored. Same goes for NICK.
 }
-
-// TODO: NICK: cap nicknames at 30 characters, and trim any characters beyond that
-// without saying anything. Example from the old Horse docs:
-// 'dan-is-my-name-dont-wear-it-out-at-all' became: 'dan-is-my-name-dont-wear-it-ou'
-// NOTE: In this example on Horse, the returned welcome 001 message does not
-// end with the nickname at all, unlike other, shorter examples?!
-// NOTE: Maybe this last part is about the size of the send buffer, and that's why
-// the nick got entirely truncated there - it already displays it in the message
-// beforehand, making the string very long.
 
 static void	store_new_nickname(t_IRC_Client &client, std::string_view new_nick)
 {
@@ -219,11 +212,16 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	// silently ignore request for an already identical nickname (same client)
+	// Silently ignore request for an already identical nickname (same client).
+	// However, if the equality is only 'case-insensitive', change the nickname,
+	// alert the client and fellow channel members
 	if (is_flag_set(client.state, t_IRC_Client::NICK)
 			&& are_equal_strs_case_insensitive(new_nick, client.nick))
+	{
+		if (!are_equal_strs_case_sensitive(new_nick, client.nick))
+			prepare_to_store_new_nick_and_alert_clients(client, new_nick);
 		return;
-
+	}
 
 	// handle an already taken nickname
 	if (is_nick_already_in_use(server.clients, client.fd, new_nick))
@@ -232,9 +230,14 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
+	prepare_to_store_new_nick_and_alert_clients(client, new_nick);
+}
+
+static void	prepare_to_store_new_nick_and_alert_clients(t_IRC_Client &client,
+	            std::string_view new_nick)
+{
 	// nickname request is valid: update client's state
 	client.state |= t_IRC_Client::NICK;
-
 
 	// Only store new nickname if client is:
 	//  • already registered
