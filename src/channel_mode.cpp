@@ -9,17 +9,17 @@
 
 static void	append_sign_group(std::string &out, char sign,
 		const std::string &chars, const std::string &args);
-static void	handle_mode_i(char sign, t_IRC_Channel &channel,
+static void	handle_invite(char sign, t_IRC_Channel &channel,
 		std::string &plus_chars, std::string &minus_chars);
-static void	handle_mode_t(char sign, t_IRC_Channel &channel,
+static void	handle_topic(char sign, t_IRC_Channel &channel,
 		std::string &plus_chars, std::string &minus_chars);
-static bool	handle_mode_k(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+static bool	handle_key(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
 		std::string &minus_chars);
-static bool	handle_mode_l(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+static bool	handle_limit(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
 		std::string &minus_chars);
-static bool	handle_mode_o(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+static bool	handle_operator(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
 		std::string &minus_chars, std::string &minus_args);
 
@@ -110,24 +110,24 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			continue;
 
 		if (current_char == 'i')
-			handle_mode_i(sign, channel, plus_chars, minus_chars);
+			handle_invite(sign, channel, plus_chars, minus_chars);
 		else if (current_char == 't')
-			handle_mode_t(sign, channel, plus_chars, minus_chars);
+			handle_topic(sign, channel, plus_chars, minus_chars);
 		else if (current_char == 'k')
 		{
-			if (handle_mode_k(client, sign, channel, arg_idx,
+			if (handle_key(client, sign, channel, arg_idx,
 					plus_chars, plus_args, minus_chars))
 				continue;
 		}
 		else if (current_char == 'l')
 		{
-			if (handle_mode_l(client, sign, channel, arg_idx,
+			if (handle_limit(client, sign, channel, arg_idx,
 					plus_chars, plus_args, minus_chars))
 				continue;
 		}
 		else if (current_char == 'o')
 		{
-			if (handle_mode_o(client, sign, channel, arg_idx,
+			if (handle_operator(client, sign, channel, arg_idx,
 					plus_chars, plus_args, minus_chars, minus_args))
 				continue;
 		}
@@ -164,7 +164,7 @@ static void	append_sign_group(std::string &out, char sign,
 	}
 }
 
-static void	handle_mode_i(char sign, t_IRC_Channel &channel,
+static void	handle_invite(char sign, t_IRC_Channel &channel,
 		std::string &plus_chars, std::string &minus_chars)
 {
 	if (sign == '+')
@@ -185,7 +185,7 @@ static void	handle_mode_i(char sign, t_IRC_Channel &channel,
 	}
 }
 
-static void	handle_mode_t(char sign, t_IRC_Channel &channel,
+static void	handle_topic(char sign, t_IRC_Channel &channel,
 		std::string &plus_chars, std::string &minus_chars)
 {
 	if (sign == '+')
@@ -206,7 +206,7 @@ static void	handle_mode_t(char sign, t_IRC_Channel &channel,
 	}
 }
 
-static bool	handle_mode_k(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+static bool	handle_key(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
 		std::string &minus_chars)
 {
@@ -242,7 +242,7 @@ static bool	handle_mode_k(t_IRC_Client &client, char sign, t_IRC_Channel &channe
 	return false;
 }
 
-static bool	handle_mode_l(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+static bool	handle_limit(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
 		std::string &minus_chars)
 {
@@ -283,7 +283,7 @@ static bool	handle_mode_l(t_IRC_Client &client, char sign, t_IRC_Channel &channe
 	return false;
 }
 
-static bool	handle_mode_o(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+static bool	handle_operator(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
 		std::string &minus_chars, std::string &minus_args)
 {
