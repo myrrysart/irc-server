@@ -41,8 +41,6 @@ void	send_messages_to_all_clients(t_IRC_Server &server)
 			{
 				if (errno == EAGAIN || errno == EWOULDBLOCK)
 				{
-					// WARN: Discuss this with teammates on the next meeting.
-
 					/* This occurs for non-blocking sockets, if space is not
 					 * available at the sending socket to hold the message to
 					 * be transmitted. -> try again later */

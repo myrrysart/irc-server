@@ -1,75 +1,24 @@
 
 #include "../lib/irc_fatstruct.hpp"
+#include "../lib/numerics.hpp"
 
 #include <string>
 #include <string_view>
 
-void	append_common_reply_prefix(std::string &buffer,
-            std::string_view numeric, std::string_view nick);
-
-static void	append_channel_modes(std::string &buffer, const t_IRC_Channel &channel, bool broadcast_key)
-{
-	std::string	modes;
-	if (is_flag_set(channel.mode, INVITE))
-		modes += 'i';
-	if (is_flag_set(channel.mode, TOPIC))
-		modes += 't';
-	if (is_flag_set(channel.mode, KEY) && !channel.key.empty())
-		modes += 'k';
-	if (is_flag_set(channel.mode, LIMIT))
-		modes += 'l';
-	if (modes.empty())
-		return;
-
-	buffer += '+';
-	buffer += modes;
-	if (is_flag_set(channel.mode, KEY) && !channel.key.empty() && broadcast_key)
-	{
-		buffer += ' ';
-		buffer += channel.key;
-	}
-	if (is_flag_set(channel.mode, LIMIT))
-	{
-		buffer += ' ';
-		buffer += std::to_string(channel.user_limit);
-	}
-}
-
-// NOTE: From the modern documentation, regarding numeric replies:
-// "Most messages sent from a client to a server generates a reply of some sort.
-// The most common form of reply is the numeric reply, used for both errors and
-// normal replies. Distinct from a normal message, a numeric reply MUST contain
-// a <source> and use a three-digit numeric as the command. A numeric reply
-// SHOULD contain the target of the reply as the first parameter of the message.
-// A numeric reply is not allowed to originate from a client.
-// In all other respects, a numeric reply is just like a normal message. A list
-// of numeric replies is supplied in the Numerics section."
-
-// FIXME: Consider designing a single function that could be overloaded and serve
-// all of the present functions.
-// If that ends up making sense, we could design an enum with the macros of the
-// ERRORS, and an array of static constexpr const char * strings, where the enum
-// values would match the right indices for their appropriate string - since
-// often these numeric replies have a string message as their trailing parameter.
-// This might not make sense for certain numeric replies, which have to output
-// more complex strings which include variables... In which case, std::string
-// would be useful - but that would add a lot of dynamic memory allocation overhead
-
-// NOTE: "Clients MUST NOT include a source when sending a message. Servers MAY
-// include a source on any message, and MAY leave a source off of any message.
-// Clients MUST be able to process any given message the same way whether it
-// contains a source or does not contain one."
-
-// TODO: "When sending messages, ensure that a pair of \r\n characters follows
-// every single message your software sends out"
-
-// NOTE: When IRC documentation uses the '<client>' placeholder, it should be
-// replaced by the client's nickname
-
-// WARN: These numeric replies heavily rely on std::string internals, which,
-// in theory, could throw exceptions when they allocate memory. Therefore,
-// always make sure that a try-catch block is handling the eventual throw,
-// when calling any of these - setting the appropriate server flag.
+/* From the modern documentation, regarding numeric replies:
+* "Most messages sent from a client to a server generates a reply of some sort.
+* The most common form of reply is the numeric reply, used for both errors and
+* normal replies. Distinct from a normal message, a numeric reply MUST contain
+* a <source> and use a three-digit numeric as the command. A numeric reply
+* SHOULD contain the target of the reply as the first parameter of the message.
+* A numeric reply is not allowed to originate from a client."
+* In all other respects, a numeric reply is just like a normal message. A list
+* of numeric replies is supplied in the Numerics section."
+*
+* "Clients MUST NOT include a source when sending a message. Servers MAY
+* include a source on any message, and MAY leave a source off of any message.
+* Clients MUST be able to process any given message the same way whether it
+* contains a source or does not contain one." */
 
 // RPL_WELCOME (001)
 // "<client> :Welcome to the <networkname> Network, <nick>[!<user>@<host>]"
@@ -126,9 +75,6 @@ void	build_ERR_INPUTTOOLONG(t_IRC_Client &client)
 	buffer += ":Input line was too long\r\n";
 }
 
-// WARN: If the message is extremely long but still within the 512 byte cap,
-// and there are no spaces: the command will be huge. Does the protocol allow
-// to send such long messages to the client? Research this.
 // ERR_UNKNOWNCOMMAND (421)
 // "<client> <command> :Unknown command"
 // "Sent to a registered client to indicate that the command they sent isn’t
@@ -163,9 +109,6 @@ void	build_ERR_NONICKNAMEGIVEN(t_IRC_Client &client)
 void	build_ERR_ERRONEOUSNICKNAME(t_IRC_Client &client,
             std::string_view new_nick)
 {
-	// WARN: is the last parameter too long? Check IRC documentation regarding
-	// length of server-client messages.
-
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "432", client.nick);
@@ -211,10 +154,6 @@ void	build_ERR_NOTREGISTERED(t_IRC_Client &client)
 // "<client> <command> :Not enough parameters"
 // "Returned when a client command cannot be parsed because not enough parameters
 // were supplied. The text used in the last param of this message may vary."
-// WARN: Make sure that verb_in_caps is not deprecated when this function is
-// called! It is a static character array, shared between all clients! But it
-// should be fine, since concatenating this message to the output buffer happens
-// right after parsing the incoming message.
 void	build_ERR_NEEDMOREPARAMS(t_IRC_Client &client)
 {
 	std::string_view	capitalized_verb{client.parser.verb_in_caps,
@@ -265,9 +204,6 @@ void	build_ERR_ALREADYREGISTERED(t_IRC_Client &client)
 	append_common_reply_prefix(buffer, "462", client.nick);
 	buffer += ":You may not reregister\r\n";
 }
-
-// FIXME: the client gets disconnected BEFORE getting this message!
-// Make sure they receive it and only then send it !!
 
 // ERR_PASSWDMISMATCH (464)
 // "<client> :Password incorrect"
@@ -352,6 +288,34 @@ void	build_RPL_ISUPPORT(t_IRC_Client &client)
 	buffer += " CHANNELLEN=";
 	buffer += std::to_string(t_IRC_Channel::CHANNELLEN);
 	buffer += " :are supported by this server\r\n";
+}
+
+static void	append_channel_modes(std::string &buffer, const t_IRC_Channel &channel, bool broadcast_key)
+{
+	std::string	modes;
+	if (is_flag_set(channel.mode, INVITE))
+		modes += 'i';
+	if (is_flag_set(channel.mode, TOPIC))
+		modes += 't';
+	if (is_flag_set(channel.mode, KEY) && !channel.key.empty())
+		modes += 'k';
+	if (is_flag_set(channel.mode, LIMIT))
+		modes += 'l';
+	if (modes.empty())
+		return;
+
+	buffer += '+';
+	buffer += modes;
+	if (is_flag_set(channel.mode, KEY) && !channel.key.empty() && broadcast_key)
+	{
+		buffer += ' ';
+		buffer += channel.key;
+	}
+	if (is_flag_set(channel.mode, LIMIT))
+	{
+		buffer += ' ';
+		buffer += std::to_string(channel.user_limit);
+	}
 }
 
 // RPL_CHANNELMODEIS (324)

@@ -41,6 +41,7 @@ void	build_RPL_MOTDSTART(t_IRC_Client &client);                       // 375
 void	build_RPL_ENDOFMOTD(t_IRC_Client &client);                       // 376
 
 
+/* Error messages */
 void	build_ERR_NOSUCHNICK(t_IRC_Client &client,                       // 401
             std::string_view nick);
 void	build_ERR_NOSUCHCHANNEL(t_IRC_Client &client,                    // 403
@@ -85,8 +86,8 @@ void	build_ERR_CHANOPRIVSNEEDED(t_IRC_Client &client,                 // 482
 void	build_ERR_UMODEUNKNOWNFLAG(t_IRC_Client &client);                // 501
 void	build_ERR_USERSDONTMATCH(t_IRC_Client &client);                  // 502
 
-
+/* Utils */
 void	append_common_reply_prefix(std::string &buffer,
-			std::string_view code, std::string_view nick);
+            std::string_view numeric, std::string_view nick);
 
 #endif
