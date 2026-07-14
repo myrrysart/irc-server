@@ -54,7 +54,7 @@ typedef struct	s_IRC_Channel
 	std::unordered_set<t_IRC_Client*>			invited;
 	static constexpr size_t						CHANNELLEN = 50;
 }												t_IRC_Channel;
-static_assert(sizeof(t_IRC_Channel) <= 42*CACHE_LINE_SIZE," t_IRC_Channel did not use 42 cache line" );
+static_assert(sizeof(t_IRC_Channel) <= 4*CACHE_LINE_SIZE," t_IRC_Channel did not use 4 cache line" );
 
 typedef struct	s_parser
 {
