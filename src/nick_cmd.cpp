@@ -7,13 +7,13 @@
 
 #include <cctype> // for std::isdigit()
 #include <string_view>
+#include <unordered_map>
 
-void	store_new_nickname(t_IRC_Client &client, std::string_view new_nick)
-{
-	for (size_t	i = 0; i < new_nick.size(); ++i)
-		client.nick_buf[i] = new_nick[i];
-	client.nick = std::string_view{client.nick_buf, new_nick.size()};
-}
+static void	prepare_to_store_new_nick_and_alert_clients(t_IRC_Client &client,
+	            std::string_view new_nick);
+static void	store_new_nickname(t_IRC_Client &client, std::string_view new_nick);
+static bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients,
+	            int fd, std::string_view new_nick);
 
 void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -61,8 +61,8 @@ void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	prepare_to_store_new_nick_and_alert_clients(client, new_nick);
 }
 
-void	prepare_to_store_new_nick_and_alert_clients(t_IRC_Client &client,
-	        std::string_view new_nick)
+static void	prepare_to_store_new_nick_and_alert_clients(t_IRC_Client &client,
+	            std::string_view new_nick)
 {
 	// nickname request is valid: update client's state
 	client.state |= t_IRC_Client::NICK;
@@ -95,6 +95,13 @@ void	prepare_to_store_new_nick_and_alert_clients(t_IRC_Client &client,
 	* since their registration process has failed */
 }
 
+static void	store_new_nickname(t_IRC_Client &client, std::string_view new_nick)
+{
+	for (size_t	i = 0; i < new_nick.size(); ++i)
+		client.nick_buf[i] = new_nick[i];
+	client.nick = std::string_view{client.nick_buf, new_nick.size()};
+}
+
 bool	is_nickname_valid(std::string_view nickname)
 {
 	size_t	len = nickname.size();
@@ -114,8 +121,8 @@ bool	is_nickname_valid(std::string_view nickname)
 }
 
 // uses 'ascii' CASEMAPPING, meaning case-insensitive checks: "tommy" == "ToMMY"
-bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients,
-            int fd, std::string_view new_nick)
+static bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients,
+	            int fd, std::string_view new_nick)
 {
 	// iterator->first is the fd key, iterator->second is t_IRC_Client value
 	for (std::unordered_map<int, t_IRC_Client>::const_iterator iterator = clients.begin();
@@ -131,4 +138,3 @@ bool	is_nick_already_in_use(const std::unordered_map<int, t_IRC_Client> &clients
 	}
 	return false;
 }
-
