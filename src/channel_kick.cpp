@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 
 void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)

@@ -4,6 +4,7 @@
 #include "irc_fatstruct.hpp"
 #include <string_view>
 #include <string>
+#include <unordered_map>
 // commands
 // /join <channel_name>
 void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server);

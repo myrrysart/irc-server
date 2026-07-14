@@ -3,6 +3,7 @@
 #include "../lib/parser.hpp"
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {

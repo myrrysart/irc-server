@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <unordered_map>
 
 std::string_view	next_comma_token(std::string_view list, size_t &pos)
 {
@@ -32,7 +33,6 @@ t_IRC_Client	*find_chmember_by_nick(t_IRC_Channel &channel, std::string_view nic
 std::unordered_map<std::string, t_IRC_Channel>::iterator
 	find_channel_by_name(t_IRC_Server &server, std::string_view ch_name)
 {
-
 	std::unordered_map<std::string, t_IRC_Channel>::iterator	ch_it =
 		server.channels.begin();
 

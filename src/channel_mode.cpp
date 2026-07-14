@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <string>
 #include <algorithm> // std::min()
+#include <unordered_map>
 
 static void	append_sign_group(std::string &out, char sign,
 		const std::string &chars, const std::string &args)
