@@ -120,6 +120,20 @@ static bool	is_message_already_loaded(t_delivery_tracker &tracker, int fd)
 	return false;
 }
 
+void	broadcast_nick_change(t_IRC_Client &client, const std::string &old_nick)
+{
+	// build the reply
+	std::string	nick_msg;
+	build_NICK_message(nick_msg, client, old_nick);
+
+	// queue the reply to requesting client's output buffer
+	client.send_message_buffer += nick_msg;
+
+	// broadcast to all fellow channelers - but only once per client, even if
+	// they happen to share more than one channel with the client
+	broadcast_to_fellow_channelers_once_per_client(client, nick_msg);
+}
+
 /* - appends 'msg' to all buffers of clients who share a channel with 'sender'
 * - skips 'sender'
 * - if a client shares multiple channels with 'sender', appends 'msg' only once
