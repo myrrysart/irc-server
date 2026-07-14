@@ -8,20 +8,20 @@
 #include <unordered_map>
 
 static void	append_sign_group(std::string &out, char sign,
-		const std::string &chars, const std::string &args)
-{
-	if (chars.empty())
-		return;
-	if (!out.empty())
-		out += ' ';
-	out += sign;
-	out += chars;
-	if (!args.empty())
-	{
-		out += ' ';
-		out += args;
-	}
-}
+		const std::string &chars, const std::string &args);
+static void	handle_invite(char sign, t_IRC_Channel &channel,
+		std::string &plus_chars, std::string &minus_chars);
+static void	handle_topic(char sign, t_IRC_Channel &channel,
+		std::string &plus_chars, std::string &minus_chars);
+static bool	handle_key(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
+		std::string &minus_chars);
+static bool	handle_limit(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
+		std::string &minus_chars);
+static bool	handle_operator(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
+		std::string &minus_chars, std::string &minus_args);
 
 void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -110,154 +110,26 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			continue;
 
 		if (current_char == 'i')
-		{
-			if (sign == '+')
-			{
-				if (!is_flag_set(channel.mode, INVITE))
-				{
-					channel.mode |= INVITE;
-					plus_chars += 'i';
-				}
-			}
-			else
-			{
-				if (is_flag_set(channel.mode, INVITE))
-				{
-					channel.mode &= ~INVITE;
-					minus_chars += 'i';
-				}
-			}
-		}
+			handle_invite(sign, channel, plus_chars, minus_chars);
 		else if (current_char == 't')
-		{
-			if (sign == '+')
-			{
-				if (!is_flag_set(channel.mode, TOPIC))
-				{
-					channel.mode |= TOPIC;
-					plus_chars += 't';
-				}
-			}
-			else
-			{
-				if (is_flag_set(channel.mode, TOPIC))
-				{
-					channel.mode &= ~TOPIC;
-					minus_chars += 't';
-				}
-			}
-		}
-		// channel key. +k with argument, -k without
+			handle_topic(sign, channel, plus_chars, minus_chars);
 		else if (current_char == 'k')
 		{
-			if (sign == '+')
-			{
-				if (arg_idx < client.parser.n_params)
-				{
-					std::string_view	key = client.parser.params[arg_idx];
-					arg_idx++;
-					if (key.empty() || has_space_character(key))
-						continue;
-					if (!is_flag_set(channel.mode, KEY) || channel.key != key)
-					{
-						channel.mode |= KEY;
-						channel.key.assign(key);
-						plus_chars += 'k';
-						if (!plus_args.empty())
-							plus_args += ' ';
-						plus_args += key;
-					}
-				}
-				else
-					continue ; // ignore request if required argument is not there
-			}
-			else
-			{
-				if (is_flag_set(channel.mode, KEY))
-				{
-					channel.mode &= ~KEY;
-					channel.key.clear();
-					minus_chars += 'k';
-				}
-			}
+			if (handle_key(client, sign, channel, arg_idx,
+					plus_chars, plus_args, minus_chars))
+				continue;
 		}
-		// user limit. +l w. argument (parses numeric), -l no argument
 		else if (current_char == 'l')
 		{
-			if (sign == '+')
-			{
-				if (arg_idx < client.parser.n_params)
-				{
-					std::string_view	limit = client.parser.params[arg_idx];
-					arg_idx++;
-
-					size_t				parsed_limit = 0;
-					if (!parse_positive_integer_and_validate_input(limit, parsed_limit))
-						continue;
-
-					size_t	new_limit = std::min(parsed_limit,
-						static_cast<size_t>(MAX_CLIENTS));
-					if (!is_flag_set(channel.mode, LIMIT)
-						|| channel.user_limit != new_limit)
-					{
-						channel.mode |= LIMIT;
-						channel.user_limit = new_limit;
-						plus_chars += 'l';
-						if (!plus_args.empty())
-							plus_args += ' ';
-						plus_args += std::to_string(channel.user_limit);
-					}
-				}
-				else
-					continue ; // required argument is not there -> ignore
-			}
-			else
-			{
-				if (is_flag_set(channel.mode, LIMIT))
-				{
-					channel.mode &= ~LIMIT;
-					channel.user_limit = 0;
-					minus_chars += 'l';
-				}
-			}
+			if (handle_limit(client, sign, channel, arg_idx,
+					plus_chars, plus_args, minus_chars))
+				continue;
 		}
-		// operator status on a target member. Always with an argument
 		else if (current_char == 'o')
 		{
-			if (arg_idx < client.parser.n_params)
-			{
-				std::string_view	target_nick = client.parser.params[arg_idx];
-				trim_nickname_if_longer_than_max_nicklen(target_nick);
-				t_IRC_Client		*target =
-					find_chmember_by_nick(channel, target_nick);
-				arg_idx++;
-				if (!target)
-					build_ERR_USERNOTINCHANNEL(client, channel.name, target_nick); // 441
-				else if (sign == '+')
-				{
-					if (!is_flag_set(channel.members.at(target), IS_OPERATOR))
-					{
-						channel.members.at(target) |= IS_OPERATOR;
-						plus_chars += 'o';
-						if (!plus_args.empty())
-							plus_args += ' ';
-						plus_args += target->nick;
-					}
-				}
-				else
-				{
-					if (is_flag_set(channel.members.at(target), IS_OPERATOR))
-					{
-						channel.members.at(target) &= ~IS_OPERATOR;
-						minus_chars += 'o';
-						if (!minus_args.empty())
-							minus_args += ' ';
-						minus_args += target->nick;
-					}
-				}
-			}
-			else
-				continue ; // required argument ain't there -> ignore request
+			if (handle_operator(client, sign, channel, arg_idx,
+					plus_chars, plus_args, minus_chars, minus_args))
+				continue;
 		}
 		else
 			build_ERR_UNKNOWNMODE(client, current_char); // 472
@@ -274,4 +146,182 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		append_MODE_msg(line, client, channel.name, applied_mode_changes);
 		broadcast_to_channel(channel, line, client, false);
 	}
+}
+
+static void	append_sign_group(std::string &out, char sign,
+		const std::string &chars, const std::string &args)
+{
+	if (chars.empty())
+		return;
+	if (!out.empty())
+		out += ' ';
+	out += sign;
+	out += chars;
+	if (!args.empty())
+	{
+		out += ' ';
+		out += args;
+	}
+}
+
+static void	handle_invite(char sign, t_IRC_Channel &channel,
+		std::string &plus_chars, std::string &minus_chars)
+{
+	if (sign == '+')
+	{
+		if (!is_flag_set(channel.mode, INVITE))
+		{
+			channel.mode |= INVITE;
+			plus_chars += 'i';
+		}
+	}
+	else
+	{
+		if (is_flag_set(channel.mode, INVITE))
+		{
+			channel.mode &= ~INVITE;
+			minus_chars += 'i';
+		}
+	}
+}
+
+static void	handle_topic(char sign, t_IRC_Channel &channel,
+		std::string &plus_chars, std::string &minus_chars)
+{
+	if (sign == '+')
+	{
+		if (!is_flag_set(channel.mode, TOPIC))
+		{
+			channel.mode |= TOPIC;
+			plus_chars += 't';
+		}
+	}
+	else
+	{
+		if (is_flag_set(channel.mode, TOPIC))
+		{
+			channel.mode &= ~TOPIC;
+			minus_chars += 't';
+		}
+	}
+}
+
+static bool	handle_key(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
+		std::string &minus_chars)
+{
+	if (sign == '+')
+	{
+		if (arg_idx >= client.parser.n_params)
+			return true;
+
+		std::string_view	key = client.parser.params[arg_idx];
+		arg_idx++;
+		if (key.empty() || has_space_character(key))
+			return true;
+
+		if (!is_flag_set(channel.mode, KEY) || channel.key != key)
+		{
+			channel.mode |= KEY;
+			channel.key.assign(key);
+			plus_chars += 'k';
+			if (!plus_args.empty())
+				plus_args += ' ';
+			plus_args += key;
+		}
+	}
+	else
+	{
+		if (is_flag_set(channel.mode, KEY))
+		{
+			channel.mode &= ~KEY;
+			channel.key.clear();
+			minus_chars += 'k';
+		}
+	}
+	return false;
+}
+
+static bool	handle_limit(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
+		std::string &minus_chars)
+{
+	if (sign == '+')
+	{
+		if (arg_idx >= client.parser.n_params)
+			return true;
+
+		std::string_view	limit = client.parser.params[arg_idx];
+		arg_idx++;
+
+		size_t	parsed_limit = 0;
+		if (!parse_positive_integer_and_validate_input(limit, parsed_limit))
+			return true;
+
+		size_t	new_limit = std::min(parsed_limit,
+			static_cast<size_t>(MAX_CLIENTS));
+		if (!is_flag_set(channel.mode, LIMIT)
+			|| channel.user_limit != new_limit)
+		{
+			channel.mode |= LIMIT;
+			channel.user_limit = new_limit;
+			plus_chars += 'l';
+			if (!plus_args.empty())
+				plus_args += ' ';
+			plus_args += std::to_string(channel.user_limit);
+		}
+	}
+	else
+	{
+		if (is_flag_set(channel.mode, LIMIT))
+		{
+			channel.mode &= ~LIMIT;
+			channel.user_limit = 0;
+			minus_chars += 'l';
+		}
+	}
+	return false;
+}
+
+static bool	handle_operator(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
+		std::string &minus_chars, std::string &minus_args)
+{
+	if (arg_idx >= client.parser.n_params)
+		return true;
+
+	std::string_view	target_nick = client.parser.params[arg_idx];
+	trim_nickname_if_longer_than_max_nicklen(target_nick);
+	t_IRC_Client		*target = find_chmember_by_nick(channel, target_nick);
+	arg_idx++;
+
+	if (!target)
+	{
+		build_ERR_USERNOTINCHANNEL(client, channel.name, target_nick); // 441
+		return false;
+	}
+
+	if (sign == '+')
+	{
+		if (!is_flag_set(channel.members.at(target), IS_OPERATOR))
+		{
+			channel.members.at(target) |= IS_OPERATOR;
+			plus_chars += 'o';
+			if (!plus_args.empty())
+				plus_args += ' ';
+			plus_args += target->nick;
+		}
+	}
+	else
+	{
+		if (is_flag_set(channel.members.at(target), IS_OPERATOR))
+		{
+			channel.members.at(target) &= ~IS_OPERATOR;
+			minus_chars += 'o';
+			if (!minus_args.empty())
+				minus_args += ' ';
+			minus_args += target->nick;
+		}
+	}
+	return false;
 }
