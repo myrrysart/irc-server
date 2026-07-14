@@ -53,6 +53,8 @@ void	append_PRIVMSG_msg(std::string &buf, const t_IRC_Client &who,
 void	append_quit_message(std::string &quit_msg, const t_IRC_Client &quitter,
 			bool is_quit_requested);
 void	send_names_reply(t_IRC_Client &client, const t_IRC_Channel &channel);
+void	build_NICK_message(std::string &nick_msg, t_IRC_Client &client,
+	        const std::string &old_nick);
 
 typedef struct			s_key_channel
 {

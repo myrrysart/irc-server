@@ -92,3 +92,25 @@ void	append_PRIVMSG_msg(std::string &buf, const t_IRC_Client &who,
 	buf += message;
 	buf += "\r\n";
 }
+
+void	build_NICK_message(std::string &nick_msg, t_IRC_Client &client,
+	        const std::string &old_nick)
+{
+	const std::string_view	slice = " NICK ";
+	size_t	len = old_nick.size() + client.username.size()
+		+ sizeof(client.hostname) + slice.size() + client.nick.size() + 6;
+	// 6: ':' + '!' + '@' + ':' + '\r' + '\n'
+
+	nick_msg.reserve(len);
+
+	nick_msg += ':';
+	nick_msg += old_nick;
+	nick_msg += '!';
+	nick_msg += client.username;
+	nick_msg += '@';
+	nick_msg += client.hostname;
+	nick_msg += slice;
+	nick_msg += ':';
+	nick_msg += client.nick;
+	nick_msg += "\r\n";
+}

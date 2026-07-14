@@ -65,8 +65,8 @@ bool	are_equal_strs_case_insensitive(std::string_view str1, std::string_view str
 /* 'nick' has to be passed as a reference */
 void	trim_nickname_if_longer_than_max_nicklen(std::string_view &nick)
 {
-	if (nick.size() > t_IRC_Client::max_nicklen)
-		nick.remove_suffix(nick.size() - t_IRC_Client::max_nicklen);
+	if (nick.size() > t_IRC_Client::NICKLEN)
+		nick.remove_suffix(nick.size() - t_IRC_Client::NICKLEN);
 }
 
 bool	has_space_character(std::string_view str)

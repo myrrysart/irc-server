@@ -98,16 +98,21 @@ typedef struct	s_parser
 		return len;
 	}();
 
-	size_t				n_params; // the 'trailing' parameter is not split into differnet fields, and counts as 1
+	// the 'trailing' parameter is not split into differnet fields.
+	// It counts for a single parameter in 'n_params' and is part of 'params'
+	size_t				n_params;
 	std::string_view	verb;
 	std::string_view	params[max_params];
-	static char			verb_in_caps[longest_cmd_size]; // lives outside of the struct and shared between clients. WARN: If threads are introduced in this project, this will not be thread safe!
+	static char			verb_in_caps[longest_cmd_size];
+	// 'verb_in_caps' lives outside of the struct and is shared between clients.
+	// warning: If threads are introduced in this project, this will not be thread safe.
 
 }	t_parser;
 static_assert(sizeof(t_parser) <= 65*CACHE_LINE_SIZE, "t_parser did not use 65 cache lines");
-// WARN: this struct is quite large - is there a way to reduce it?
 
-//NOTE: state is essentially an error code catcher for the IRC_Client. BIT(0) means client is in error state (or has asked to quit) and should be disconnected. Anything else is an active state that needs to be resolved in some way.
+/* state is essentially an error code catcher for the IRC_Client. BIT(0) means
+* client is in error state (or has asked to quit) and should be disconnected.
+* Anything else is an active state that should be resolved in some way. */
 typedef struct	s_IRC_Client
 {
 	// IRC_Client state bitmask definitions
@@ -122,17 +127,18 @@ typedef struct	s_IRC_Client
 	};
 
 	// IRC protocol's username length parameter
-	static constexpr size_t	userlen = 10;
+	static constexpr size_t	USERLEN = 10;
 
 	// "If <nickname> is longer than the server allows (...), it is silently truncated"
-	static constexpr size_t	max_nicklen = 30;
+	static constexpr size_t	NICKLEN = 30;
 
 	// Allows reducing calls to std::string.erase() for the output buffer, since
 	// erasing string's beginning may require moving its tail to the front.
 	static constexpr size_t	offset_threshold = 8192;
 
-	// whitelist of allowed characters for clients' nickname
-	// Updating the allowed symbols in this array would carry over whole program.
+	/* whitelist of allowed characters for clients' nickname.
+	* Updating the symbols in this array would carry over the whole program,
+	* i.e. a change here would propagate to requested nickname validation */
 	static constexpr const std::string_view	nick_whitelist = {
 		"[]{}\\|#&:$%<>_-" // allowed symbols: can be modified safely.
 		"0123456789" // digits
@@ -156,10 +162,12 @@ typedef struct	s_IRC_Client
 	int										fd;
 	std::chrono::steady_clock::time_point	connection_time;
 	std::string_view						nick;
-	char									nick_buf[max_nicklen]; // not nullterminated, use 'nick' instead
+	char									nick_buf[NICKLEN]; // not nullterminated, use 'nick' instead
 	std::string								username;
 	std::string								realname;
-	char									hostname[INET_ADDRSTRLEN]; // This array is null terminated when initialized by inet_ntop(). Change macro to 'INET6_ADDRSTRLEN' if server ever switches to TCP6 ('AF_INET6').
+	// 'hostname' is null terminated when initialized by inet_ntop(). Switch
+	// macro to 'INET6_ADDRSTRLEN' if server ever switches to TCP6 ('AF_INET6').
+	char									hostname[INET_ADDRSTRLEN];
 	std::string								received_message_buffer;
 	std::string								send_message_buffer;
 	size_t									send_offset;
