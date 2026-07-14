@@ -4,7 +4,6 @@
 # include "irc_fatstruct.hpp"
 
 # include <string>
-# include <string_view>
 
 /* Command handling dispatch */
 void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server);
@@ -26,9 +25,6 @@ bool	has_provided_password_first_and_it_is_correct(t_bmask state);
 bool	is_or_was_password_provided_first(t_bmask state);
 
 /* Utils */
-bool	is_nickname_valid(std::string_view nickname);
-void	build_NICK_message(std::string &nick_msg, t_IRC_Client &client,
-	const std::string &old_nick);
 void	append_client_quit_msg(std::string &buffer, const t_IRC_Client &quitter);
 void	append_nick_user_host(std::string &buffer, const t_IRC_Client &client);
 

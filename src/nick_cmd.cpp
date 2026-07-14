@@ -9,6 +9,7 @@
 #include <string_view>
 #include <unordered_map>
 
+static bool	is_nickname_valid(std::string_view nickname);
 static void	prepare_to_store_new_nick_and_alert_clients(t_IRC_Client &client,
 	            std::string_view new_nick);
 static void	store_new_nickname(t_IRC_Client &client, std::string_view new_nick);
@@ -102,7 +103,7 @@ static void	store_new_nickname(t_IRC_Client &client, std::string_view new_nick)
 	client.nick = std::string_view{client.nick_buf, new_nick.size()};
 }
 
-bool	is_nickname_valid(std::string_view nickname)
+static bool	is_nickname_valid(std::string_view nickname)
 {
 	size_t	len = nickname.size();
 
