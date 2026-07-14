@@ -4,6 +4,7 @@
 #include "irc_fatstruct.hpp"
 #include <string_view>
 #include <string>
+#include <unordered_map>
 // commands
 // /join <channel_name>
 void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server);
@@ -25,7 +26,8 @@ void	execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server);
 void	execute_LIST_cmd(t_IRC_Client &client, t_IRC_Server &server);
 // utils
 t_IRC_Client		*find_chmember_by_nick(t_IRC_Channel &channel, std::string_view nick);
-t_IRC_Channel		*find_channel_by_name(t_IRC_Server &server, std::string_view ch_name);
+std::unordered_map<std::string, t_IRC_Channel>::iterator
+	find_channel_by_name(t_IRC_Server &server, std::string_view ch_name);
 t_IRC_Client		*find_client_by_nick(t_IRC_Server &server, std::string_view nick);
 void				remove_client_from_channel(t_IRC_Client &client, t_IRC_Channel &channel, t_IRC_Server &server);
 void				remove_client_from_all_channels(t_IRC_Client &client, t_IRC_Server &server);

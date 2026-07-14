@@ -48,14 +48,17 @@ void	execute_JOIN_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		if (client.parser.n_params >= 2 && key_pos <= keys.size())
 			req.key = next_comma_token(keys, key_pos);
 
-		if (req.channel.size() < 2 || (req.channel[0] != '#' && req.channel[0] != '&'))
+		if (req.channel.size() < 2 || (req.channel[0] != '#' && req.channel[0] != '&')
+			|| req.channel.size() > t_IRC_Channel::CHANNELLEN)
 		{
 			build_ERR_BADCHANMASK(client, req.channel); // 476
 			continue;
 		}
 
 		std::string	channel_name(req.channel);
-		auto		ch_it = server.channels.find(channel_name);
+
+		std::unordered_map<std::string, t_IRC_Channel>::iterator	ch_it =
+			find_channel_by_name(server, channel_name);
 
 		if (ch_it == server.channels.end())
 			handle_join_request_to_new_channel(client, server, channel_name);

@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -27,24 +28,27 @@ void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		has_nonempty_channel_token = true;
 
 		// channel must exist and client must be in it
-		t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
-		if (!channel)
+		std::unordered_map<std::string, t_IRC_Channel>::iterator	ch_it =
+			find_channel_by_name(server, channel_name);
+
+		if (ch_it == server.channels.end())
 		{
 			build_ERR_NOSUCHCHANNEL(client, channel_name); // 403
 			continue;
 		}
+		t_IRC_Channel	&channel = ch_it->second;
 
-		if (!channel->members.contains(&client))
+		if (!channel.members.contains(&client))
 		{
-			build_ERR_NOTONCHANNEL(client, channel->name); // 442
+			build_ERR_NOTONCHANNEL(client, channel.name); // 442
 			continue;
 		}
 
 		// broadcast to  members, then erase membership
 		std::string		line;
-		append_PART_msg(line, client, channel->name, reason);
-		broadcast_to_channel(*channel, line, client, false);
-		remove_client_from_channel(client, *channel, server);
+		append_PART_msg(line, client, channel.name, reason);
+		broadcast_to_channel(channel, line, client, false);
+		remove_client_from_channel(client, channel, server);
 	}
 	if (!has_nonempty_channel_token)
 		build_ERR_NEEDMOREPARAMS(client); // 461

@@ -349,6 +349,8 @@ void	build_RPL_ISUPPORT(t_IRC_Client &client)
 	buffer += std::to_string(t_IRC_Client::userlen);
 	buffer += " NICKLEN=";
 	buffer += std::to_string(t_IRC_Client::max_nicklen);
+	buffer += " CHANNELLEN=";
+	buffer += std::to_string(t_IRC_Channel::CHANNELLEN);
 	buffer += " :are supported by this server\r\n";
 }
 

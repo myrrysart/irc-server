@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 {
@@ -37,20 +38,22 @@ void	execute_PRIVMSG_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		// channel target: must exist and client must be a member
 		if (target[0] == '#' || target[0] == '&')
 		{
-			t_IRC_Channel	*channel = find_channel_by_name(server, target);
-			if (!channel)
+			std::unordered_map<std::string, t_IRC_Channel>::iterator ch_it =
+				find_channel_by_name(server, target);
+			if (ch_it == server.channels.end())
 			{
 				build_ERR_NOSUCHCHANNEL(client, target); // 403
 				return;
 			}
-			if (!channel->members.contains(&client))
+			t_IRC_Channel	&channel = ch_it->second;
+			if (!channel.members.contains(&client))
 			{
 				build_ERR_CANNOTSENDTOCHAN(client, target); // 404
 				return;
 			}
 			std::string		line;
-			append_PRIVMSG_msg(line, client, channel->name, message);
-			broadcast_to_channel(*channel, line, client, true);
+			append_PRIVMSG_msg(line, client, channel.name, message);
+			broadcast_to_channel(channel, line, client, true);
 		}
 		// nick target: must be an online client
 		else
@@ -229,24 +232,27 @@ void	execute_PART_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		has_nonempty_channel_token = true;
 
 		// channel must exist and client must be in it
-		t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
-		if (!channel)
+		std::unordered_map<std::string, t_IRC_Channel>::iterator ch_it =
+			find_channel_by_name(server, channel_name);
+		if (ch_it == server.channels.end())
 		{
 			build_ERR_NOSUCHCHANNEL(client, channel_name); // 403
 			continue;
 		}
 
-		if (!channel->members.contains(&client))
+		t_IRC_Channel	&channel = ch_it->second;
+
+		if (!channel.members.contains(&client))
 		{
-			build_ERR_NOTONCHANNEL(client, channel->name); // 442
+			build_ERR_NOTONCHANNEL(client, channel.name); // 442
 			continue;
 		}
 
 		// broadcast to  members, then erase membership
 		std::string		line;
-		append_PART_msg(line, client, channel->name, reason);
-		broadcast_to_channel(*channel, line, client, false);
-		remove_client_from_channel(client, *channel, server);
+		append_PART_msg(line, client, channel.name, reason);
+		broadcast_to_channel(channel, line, client, false);
+		remove_client_from_channel(client, channel, server);
 	}
 	if (!has_nonempty_channel_token)
 		build_ERR_NEEDMOREPARAMS(client); // 461
@@ -261,23 +267,26 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 	}
 	std::string_view	channel_name(kicker.parser.params[0]);
 	std::string_view	victims(kicker.parser.params[1]);
-	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
-	if (!channel)
+	std::unordered_map<std::string, t_IRC_Channel>::iterator ch_it =
+		find_channel_by_name(server, channel_name);
+	if (ch_it == server.channels.end())
 	{
 		build_ERR_NOSUCHCHANNEL(kicker, channel_name); // 403
 		return;
 	}
 
+	t_IRC_Channel	&channel = ch_it->second;
+
 	// kicker must be in the channel and an operator
-	auto			kicker_it = channel->members.find(&kicker);
-	if (kicker_it == channel->members.end())
+	auto			kicker_it = channel.members.find(&kicker);
+	if (kicker_it == channel.members.end())
 	{
-		build_ERR_NOTONCHANNEL(kicker, channel->name); // 442
+		build_ERR_NOTONCHANNEL(kicker, channel.name); // 442
 		return;
 	}
 	if (!is_flag_set(kicker_it->second, IS_OPERATOR))
 	{
-		build_ERR_CHANOPRIVSNEEDED(kicker, channel->name); // 482
+		build_ERR_CHANOPRIVSNEEDED(kicker, channel.name); // 482
 		return;
 	}
 
@@ -296,18 +305,18 @@ void	execute_KICK_cmd(t_IRC_Client &kicker, t_IRC_Server &server)
 		trim_nickname_if_longer_than_max_nicklen(victim);
 
 		// each victim must currently be in the channel
-		t_IRC_Client	*to_be_kicked = find_chmember_by_nick(*channel, victim);
+		t_IRC_Client	*to_be_kicked = find_chmember_by_nick(channel, victim);
 		if (!to_be_kicked)
 		{
-			build_ERR_USERNOTINCHANNEL(kicker, channel->name, victim); // 441
+			build_ERR_USERNOTINCHANNEL(kicker, channel.name, victim); // 441
 			continue;
 		}
 
 		// notify, then remove.
 		std::string	line;
-		append_KICK_msg(line, kicker, channel->name, to_be_kicked->nick, reason);
-		broadcast_to_channel(*channel, line, kicker, false);
-		remove_client_from_channel(*to_be_kicked, *channel, server);
+		append_KICK_msg(line, kicker, channel.name, to_be_kicked->nick, reason);
+		broadcast_to_channel(channel, line, kicker, false);
+		remove_client_from_channel(*to_be_kicked, channel, server);
 		// self-kick.  Channel/members may be gone, stop here
 		if (to_be_kicked == &kicker)
 			return;
@@ -326,41 +335,46 @@ void	execute_TOPIC_cmd(t_IRC_Client &client, t_IRC_Server &server)
 
 	// client must be a member to see/set its topic
 	std::string_view	channel_name(client.parser.params[0]);
-	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
-	if (!channel)
+
+	std::unordered_map<std::string, t_IRC_Channel>::iterator ch_it =
+		find_channel_by_name(server, channel_name);
+
+	if (ch_it == server.channels.end())
 	{
 		build_ERR_NOSUCHCHANNEL(client, channel_name); // 403
 		return;
 	}
 
-	auto	member_it = channel->members.find(&client);
-	if (member_it == channel->members.end())
+	t_IRC_Channel	&channel = ch_it->second;
+
+	auto	member_it = channel.members.find(&client);
+	if (member_it == channel.members.end())
 	{
-		build_ERR_NOTONCHANNEL(client, channel->name); // 442
+		build_ERR_NOTONCHANNEL(client, channel.name); // 442
 		return;
 	}
 
 	// no second param
 	if (client.parser.n_params < 2)
 	{
-		if (channel->topic.empty())
-			build_RPL_NOTOPIC(client, channel->name); // 331
+		if (channel.topic.empty())
+			build_RPL_NOTOPIC(client, channel.name); // 331
 		else
-			build_RPL_TOPIC(client, *channel); // 332
+			build_RPL_TOPIC(client, channel); // 332
 		return;
 	}
 
 	// +t topic change for operators only
-	if (is_flag_set(channel->mode, TOPIC) && !is_flag_set(member_it->second, IS_OPERATOR))
+	if (is_flag_set(channel.mode, TOPIC) && !is_flag_set(member_it->second, IS_OPERATOR))
 	{
-		build_ERR_CHANOPRIVSNEEDED(client, channel->name); // 482
+		build_ERR_CHANOPRIVSNEEDED(client, channel.name); // 482
 		return;
 	}
-	channel->topic.assign(client.parser.params[1]); // copy out of the receive buffer
+	channel.topic.assign(client.parser.params[1]); // copy out of the receive buffer
 
 	std::string	line;
-	append_TOPIC_msg(line, client, channel->name, channel->topic);
-	broadcast_to_channel(*channel, line, client, false);
+	append_TOPIC_msg(line, client, channel.name, channel.topic);
+	broadcast_to_channel(channel, line, client, false);
 }
 
 
@@ -392,13 +406,15 @@ void execute_NAMES_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			continue;
 		saw_nonempty_channel_toke = true;
 
-		t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
-		if (!channel)
+
+		std::unordered_map<std::string, t_IRC_Channel>::iterator ch_it =
+			find_channel_by_name(server, channel_name);
+		if (ch_it == server.channels.end())
 		{
 			build_RPL_ENDOFNAMES(client, channel_name); // 366
 			continue;
 		}
-		send_names_reply(client, *channel);
+		send_names_reply(client, ch_it->second);
 	}
 	if (!saw_nonempty_channel_toke)
 		build_RPL_ENDOFNAMES(client, "*"); // 366
@@ -424,9 +440,11 @@ void	execute_LIST_cmd(t_IRC_Client &client, t_IRC_Server &server)
 			std::string_view	name = next_comma_token(targets, pos);
 			if (name.empty())
 				continue; //skip empty tokens
-			t_IRC_Channel	*channel = find_channel_by_name(server, name);
-			if (channel)
-				build_RPL_LIST(client, *channel); // 322
+
+			std::unordered_map<std::string, t_IRC_Channel>::iterator ch_it =
+				find_channel_by_name(server, name);
+			if (ch_it != server.channels.end())
+				build_RPL_LIST(client, ch_it->second); // 322
 		}
 	}
 	build_RPL_LISTEND(client); // 323
@@ -444,22 +462,26 @@ void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 	std::string_view	target_nick(client.parser.params[0]);
 	trim_nickname_if_longer_than_max_nicklen(target_nick);
 	std::string_view	channel_name(client.parser.params[1]);
-	t_IRC_Channel		*channel = find_channel_by_name(server, channel_name);
-	if (!channel)
+
+	std::unordered_map<std::string, t_IRC_Channel>::iterator ch_it =
+		find_channel_by_name(server, channel_name);
+	if (ch_it == server.channels.end())
 	{
 		build_ERR_NOSUCHCHANNEL(client, channel_name); // 403
 		return;
 	}
 
-	auto	inviter_it = channel->members.find(&client);
-	if (inviter_it == channel->members.end())
+	t_IRC_Channel	&channel = ch_it->second;
+
+	auto	inviter_it = channel.members.find(&client);
+	if (inviter_it == channel.members.end())
 	{
-		build_ERR_NOTONCHANNEL(client, channel->name); // 442
+		build_ERR_NOTONCHANNEL(client, channel.name); // 442
 		return;
 	}
 	if (!is_flag_set(inviter_it->second, IS_OPERATOR))
 	{
-		build_ERR_CHANOPRIVSNEEDED(client, channel->name); // 482
+		build_ERR_CHANOPRIVSNEEDED(client, channel.name); // 482
 		return;
 	}
 
@@ -471,17 +493,17 @@ void	execute_INVITE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		return;
 	}
 
-	if (channel->members.contains(target))
+	if (channel.members.contains(target))
 	{
-		build_ERR_USERONCHANNEL(client, target->nick, channel->name); // 443
+		build_ERR_USERONCHANNEL(client, target->nick, channel.name); // 443
 		return;
 	}
 
 	// record invite (bypasses +i) and notify both sides
-	channel->invited.insert(target);
-	build_RPL_INVITING(client, target->nick, channel->name); // 341
+	channel.invited.insert(target);
+	build_RPL_INVITING(client, target->nick, channel.name); // 341
 
 	std::string		line;
-	append_INVITE_msg(line, client, target->nick, channel->name);
+	append_INVITE_msg(line, client, target->nick, channel.name);
 	target->send_message_buffer += line;
 }
