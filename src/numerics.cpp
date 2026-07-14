@@ -346,9 +346,9 @@ void	build_RPL_ISUPPORT(t_IRC_Client &client)
 	// D: does not take any parameter (i & t)
 	buffer += " CHANMODES=,,kl,it PREFIX=(o)@ NETWORK=Hive CASEMAPPING=ascii "
 		"USERLEN=";
-	buffer += std::to_string(t_IRC_Client::userlen);
+	buffer += std::to_string(t_IRC_Client::USERLEN);
 	buffer += " NICKLEN=";
-	buffer += std::to_string(t_IRC_Client::max_nicklen);
+	buffer += std::to_string(t_IRC_Client::NICKLEN);
 	buffer += " CHANNELLEN=";
 	buffer += std::to_string(t_IRC_Channel::CHANNELLEN);
 	buffer += " :are supported by this server\r\n";

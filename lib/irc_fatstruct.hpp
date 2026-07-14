@@ -122,10 +122,10 @@ typedef struct	s_IRC_Client
 	};
 
 	// IRC protocol's username length parameter
-	static constexpr size_t	userlen = 10;
+	static constexpr size_t	USERLEN = 10;
 
 	// "If <nickname> is longer than the server allows (...), it is silently truncated"
-	static constexpr size_t	max_nicklen = 30;
+	static constexpr size_t	NICKLEN = 30;
 
 	// Allows reducing calls to std::string.erase() for the output buffer, since
 	// erasing string's beginning may require moving its tail to the front.
@@ -156,7 +156,7 @@ typedef struct	s_IRC_Client
 	int										fd;
 	std::chrono::steady_clock::time_point	connection_time;
 	std::string_view						nick;
-	char									nick_buf[max_nicklen]; // not nullterminated, use 'nick' instead
+	char									nick_buf[NICKLEN]; // not nullterminated, use 'nick' instead
 	std::string								username;
 	std::string								realname;
 	char									hostname[INET_ADDRSTRLEN]; // This array is null terminated when initialized by inet_ntop(). Change macro to 'INET6_ADDRSTRLEN' if server ever switches to TCP6 ('AF_INET6').
