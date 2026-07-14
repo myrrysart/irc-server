@@ -13,13 +13,13 @@ static void	handle_invite(char sign, t_IRC_Channel &channel,
 		std::string &plus_chars, std::string &minus_chars);
 static void	handle_topic(char sign, t_IRC_Channel &channel,
 		std::string &plus_chars, std::string &minus_chars);
-static bool	handle_key(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+static void	handle_key(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
 		std::string &minus_chars);
-static bool	handle_limit(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+static void	handle_limit(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
 		std::string &minus_chars);
-static bool	handle_operator(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+static void	handle_operator(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
 		std::string &minus_chars, std::string &minus_args);
 
@@ -114,23 +114,14 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		else if (current_char == 't')
 			handle_topic(sign, channel, plus_chars, minus_chars);
 		else if (current_char == 'k')
-		{
-			if (handle_key(client, sign, channel, arg_idx,
-					plus_chars, plus_args, minus_chars))
-				continue;
-		}
+			handle_key(client, sign, channel, arg_idx, plus_chars,
+				plus_args, minus_chars);
 		else if (current_char == 'l')
-		{
-			if (handle_limit(client, sign, channel, arg_idx,
-					plus_chars, plus_args, minus_chars))
-				continue;
-		}
+			handle_limit(client, sign, channel, arg_idx, plus_chars,
+				plus_args, minus_chars);
 		else if (current_char == 'o')
-		{
-			if (handle_operator(client, sign, channel, arg_idx,
-					plus_chars, plus_args, minus_chars, minus_args))
-				continue;
-		}
+			handle_operator(client, sign, channel, arg_idx,
+					plus_chars, plus_args, minus_chars, minus_args);
 		else
 			build_ERR_UNKNOWNMODE(client, current_char); // 472
 	}
@@ -206,19 +197,19 @@ static void	handle_topic(char sign, t_IRC_Channel &channel,
 	}
 }
 
-static bool	handle_key(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+static void	handle_key(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
 		std::string &minus_chars)
 {
 	if (sign == '+')
 	{
 		if (arg_idx >= client.parser.n_params)
-			return true;
+			return;
 
 		std::string_view	key = client.parser.params[arg_idx];
 		arg_idx++;
 		if (key.empty() || has_space_character(key))
-			return true;
+			return;
 
 		if (!is_flag_set(channel.mode, KEY) || channel.key != key)
 		{
@@ -239,24 +230,23 @@ static bool	handle_key(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 			minus_chars += 'k';
 		}
 	}
-	return false;
 }
 
-static bool	handle_limit(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+static void	handle_limit(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
 		std::string &minus_chars)
 {
 	if (sign == '+')
 	{
 		if (arg_idx >= client.parser.n_params)
-			return true;
+			return;
 
 		std::string_view	limit = client.parser.params[arg_idx];
 		arg_idx++;
 
 		size_t	parsed_limit = 0;
 		if (!parse_positive_integer_and_validate_input(limit, parsed_limit))
-			return true;
+			return;
 
 		size_t	new_limit = std::min(parsed_limit,
 			static_cast<size_t>(MAX_CLIENTS));
@@ -280,15 +270,14 @@ static bool	handle_limit(t_IRC_Client &client, char sign, t_IRC_Channel &channel
 			minus_chars += 'l';
 		}
 	}
-	return false;
 }
 
-static bool	handle_operator(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
+static void	handle_operator(t_IRC_Client &client, char sign, t_IRC_Channel &channel,
 		size_t &arg_idx, std::string &plus_chars, std::string &plus_args,
 		std::string &minus_chars, std::string &minus_args)
 {
 	if (arg_idx >= client.parser.n_params)
-		return true;
+		return;
 
 	std::string_view	target_nick = client.parser.params[arg_idx];
 	trim_nickname_if_longer_than_max_nicklen(target_nick);
@@ -298,7 +287,7 @@ static bool	handle_operator(t_IRC_Client &client, char sign, t_IRC_Channel &chan
 	if (!target)
 	{
 		build_ERR_USERNOTINCHANNEL(client, channel.name, target_nick); // 441
-		return false;
+		return;
 	}
 
 	if (sign == '+')
@@ -323,5 +312,4 @@ static bool	handle_operator(t_IRC_Client &client, char sign, t_IRC_Channel &chan
 			minus_args += target->nick;
 		}
 	}
-	return false;
 }
