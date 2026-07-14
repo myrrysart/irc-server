@@ -1,9 +1,6 @@
 #include <iostream>
 #include <cstring> // std::strerror()
 #include <cerrno>
-#include <chrono> // std::chrono::system_clock (incoming message timestamps)
-#include <ctime> // std::time_t, std::tm, std::localtime()
-#include <iomanip> // std::put_time() (incoming message timestamps)
 #include <string_view>
 #include "../lib/irc_fatstruct.hpp"
 #include "../lib/server.hpp"

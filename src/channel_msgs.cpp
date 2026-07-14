@@ -93,6 +93,15 @@ void	append_PRIVMSG_msg(std::string &buf, const t_IRC_Client &who,
 	buf += "\r\n";
 }
 
+void	append_client_quit_msg(std::string &buffer, const t_IRC_Client &quitter)
+{
+	append_nick_user_host(buffer, quitter);
+	buffer += " QUIT :Quit: ";
+	if (quitter.parser.n_params)
+		buffer += quitter.parser.params[0];
+	buffer += "\r\n";
+}
+
 void	build_NICK_message(std::string &nick_msg, t_IRC_Client &client,
 	        const std::string &old_nick)
 {
@@ -113,4 +122,13 @@ void	build_NICK_message(std::string &nick_msg, t_IRC_Client &client,
 	nick_msg += ':';
 	nick_msg += client.nick;
 	nick_msg += "\r\n";
+}
+
+void	append_nick_user_host(std::string &buffer, const t_IRC_Client &client)
+{
+	buffer += client.nick;
+	buffer += '!';
+	buffer += client.username;
+	buffer += '@';
+	buffer += client.hostname;
 }
