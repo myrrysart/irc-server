@@ -437,8 +437,9 @@ void	build_RPL_MOTD(t_IRC_Client &client, const std::string_view line)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "372", client.nick);
-	buffer += ":";
+	buffer += ":- ";
 	buffer += line;
+	buffer += "    -";
 	buffer += "\r\n";
 }
 
@@ -449,7 +450,7 @@ void	build_RPL_ENDOFMOTD(t_IRC_Client &client)
 	std::string	&buffer = client.send_message_buffer;
 
 	append_common_reply_prefix(buffer, "376", client.nick);
-	buffer += ":End of /MOTD command\r\n";
+	buffer += ":- End of /MOTD command             -\r\n";
 }
 
 // ERR_USERNOTINCHANNEL (441)
