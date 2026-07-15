@@ -5,8 +5,6 @@
 # BLOCK START:
 !.github/workflows/build.yml
 !.gitignore
-! tests.md
-! mandatory_status.md
 # NOTE: these are testing files
 !tests/
 !tests/*.sh
@@ -21,3 +19,4 @@
 !*.cpp
 !*.hpp
 !*.tpp
+!dcc_test.txt
