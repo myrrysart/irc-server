@@ -32,7 +32,9 @@ void	execute_CAP_cmd(t_IRC_Client &client)
 		queue_CAP_reply(client, true);
 	}
 	else if (are_equal_strs_case_insensitive(first_argument, "END"))
+	{
 		; // explicitly ignore CAP with END argument
+	}
 	// else: ignore
 }
 
