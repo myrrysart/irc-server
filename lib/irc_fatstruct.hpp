@@ -59,6 +59,7 @@ static_assert(sizeof(t_IRC_Channel) <= 4*CACHE_LINE_SIZE," t_IRC_Channel did not
 typedef struct	s_parser
 {
 	static constexpr std::string_view	commands[] = {
+		"CAP",
 		"PASS",
 		"NICK",
 		"USER",
