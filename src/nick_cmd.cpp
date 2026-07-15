@@ -82,18 +82,13 @@ static void	prepare_to_store_new_nick_and_alert_clients(t_IRC_Client &client,
 		// Broadcast NICK reply to the requesting client and to all fellow
 		// channelers (but not more than once per client)
 		broadcast_nick_change(client, old_nick);
-
 	}
-	else if (is_flag_set(client.state, t_IRC_Client::PSWD_FIRST))
+	else
 	{
 		// Client registration process seems to be going well:
 		// Store new nickname (has to be a deep copy)
 		store_new_nickname(client, new_nick);
 	}
-	/* 'else': we return, silently ignoring the NICK change. No need to inform
-	* anyone about it since the client is not yet connected and no one else is
-	* aware of its connection attempt - and it will be disconnected soon enough,
-	* since their registration process has failed */
 }
 
 static void	store_new_nickname(t_IRC_Client &client, std::string_view new_nick)
