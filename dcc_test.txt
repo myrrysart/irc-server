@@ -1,10 +1,14 @@
-i'm a test file. And a text file. See what i did there?
-
-this sets the Irssis own ip to localhost:
+This sets the Irssi's own ip to localhost:
 /set dcc_own_ip 127.0.0.1
 
-this is the command:
+This is the command:
 /dcc send <nick> <path to the file>
 
-so on my computer when sending this file you would use:
+So on my computer when sending this file you would use:
 /dcc send <nick> /home/mbonsdor/work/irc-server/dcc_test.txt
+
+And this is how you accept:
+/dcc get <nick>
+
+Or for individual files:
+/dcc get <nick> <filename>
