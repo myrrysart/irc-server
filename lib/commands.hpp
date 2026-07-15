@@ -13,6 +13,7 @@ void	client_registration(t_IRC_Client &client, size_t i, t_IRC_Server &server);
 void	execute_PASS_cmd(t_IRC_Client &client, const t_IRC_Server &server);
 void	execute_USER_cmd(t_IRC_Client &client);
 void	execute_NICK_cmd(t_IRC_Client &client, t_IRC_Server &server);
+void	execute_CAP_cmd(t_IRC_Client &client);
 
 /* IRC Commands */
 void	execute_QUIT_cmd(t_IRC_Client &quitter, t_IRC_Server &server);

@@ -11,11 +11,12 @@ void	client_registration(t_IRC_Client &client, size_t i, t_IRC_Server &server)
 {
 	switch (i)
 	{
-		default: build_ERR_NOTREGISTERED(client); break;
-		case 0: execute_PASS_cmd(client, server); break;
-		case 1: execute_NICK_cmd(client, server); break;
-		case 2: execute_USER_cmd(client);         break;
-		case 3: execute_QUIT_cmd(client, server); break;
+		default: build_ERR_NOTREGISTERED(client);   break;
+		case 0:  execute_CAP_cmd(client);           break;
+		case 1:  execute_PASS_cmd(client, server);  break;
+		case 2:  execute_NICK_cmd(client, server);  break;
+		case 3:  execute_USER_cmd(client);          break;
+		case 4:  execute_QUIT_cmd(client, server);  break;
 	}
 
 	if (has_provided_user_and_nick_names(client.state))

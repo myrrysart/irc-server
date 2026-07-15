@@ -38,22 +38,23 @@ void	dispatch_client_command(t_IRC_Client &client, t_IRC_Server &server)
 		// dispatch for all commands
 		switch (i)
 		{
-			default: build_ERR_UNKNOWNCOMMAND(client);     break;
-			case 0:  execute_PASS_cmd(client, server);     break;
-			case 1:  execute_NICK_cmd(client, server);     break;
-			case 2:  execute_USER_cmd(client);             break;
-			case 3:  execute_QUIT_cmd(client, server);     break;
-			case 4:  execute_JOIN_cmd(client, server);     break;
-			case 5:  execute_PART_cmd(client, server);     break;
-			case 6:  execute_PRIVMSG_cmd(client, server);  break;
-			case 7:  execute_MODE_cmd(client, server);     break;
-			case 8:  execute_KICK_cmd(client, server);     break;
-			case 9:  execute_INVITE_cmd(client, server);   break;
-			case 10: execute_TOPIC_cmd(client, server);    break;
-			case 11: execute_NAMES_cmd(client, server);    break;
-			case 12: execute_LIST_cmd(client, server);     break;
-			case 13: execute_PING_cmd(client, server);     break;
-			case 14: execute_PONG_cmd(client, server);     break;
+			default:  build_ERR_UNKNOWNCOMMAND(client);     break;
+			case 0:   execute_CAP_cmd(client);              break;
+			case 1:   execute_PASS_cmd(client, server);     break;
+			case 2:   execute_NICK_cmd(client, server);     break;
+			case 3:   execute_USER_cmd(client);             break;
+			case 4:   execute_QUIT_cmd(client, server);     break;
+			case 5:   execute_JOIN_cmd(client, server);     break;
+			case 6:   execute_PART_cmd(client, server);     break;
+			case 7:   execute_PRIVMSG_cmd(client, server);  break;
+			case 8:   execute_MODE_cmd(client, server);     break;
+			case 9:   execute_KICK_cmd(client, server);     break;
+			case 10:  execute_INVITE_cmd(client, server);   break;
+			case 11:  execute_TOPIC_cmd(client, server);    break;
+			case 12:  execute_NAMES_cmd(client, server);    break;
+			case 13:  execute_LIST_cmd(client, server);     break;
+			case 14:  execute_PING_cmd(client, server);     break;
+			case 15:  execute_PONG_cmd(client, server);     break;
 		}
 	}
 

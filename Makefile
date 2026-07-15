@@ -9,7 +9,7 @@ SRC		= src/main.cpp src/server.cpp src/listener.cpp src/client.cpp \
 		  src/channel_topic.cpp src/channel_names.cpp src/channel_list.cpp \
 		  src/channel_invite.cpp src/message_logger.cpp src/pingpong.cpp \
 		  src/command_dispatch.cpp src/pass_cmd.cpp src/user_cmd.cpp \
-		  src/nick_cmd.cpp src/quit_cmd.cpp
+		  src/nick_cmd.cpp src/quit_cmd.cpp src/cap_cmd.cpp
 OBJS	= $(SRC:.cpp=.o)
 DEPS	= $(SRC:.cpp=.d)
 
