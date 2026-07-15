@@ -21,9 +21,9 @@ void	execute_PING_cmd(t_IRC_Client &client, t_IRC_Server &server);
 void	execute_PONG_cmd(t_IRC_Client &client, t_IRC_Server &server);
 
 /* Bitmask check helpers */
-bool	has_provided_user_and_nick_names(t_bmask mask);
-bool	has_provided_password_first_and_it_is_correct(t_bmask state);
-bool	is_or_was_password_provided_first(t_bmask state);
+bool	has_provided_a_password(t_bmask state);
+bool	has_provided_both_user_and_nick(t_bmask state);
+bool	has_provided_credents_in_right_order_and_pass_is_correct(t_bmask state);
 
 /* Utils */
 void	append_client_quit_msg(std::string &buffer, const t_IRC_Client &quitter);

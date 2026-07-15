@@ -19,57 +19,76 @@ void	client_registration(t_IRC_Client &client, size_t i, t_IRC_Server &server)
 		case 4:  execute_QUIT_cmd(client, server);  break;
 	}
 
-	if (has_provided_user_and_nick_names(client.state))
+
+	if (has_provided_both_user_and_nick(client.state))
 	{
-		if (has_provided_password_first_and_it_is_correct(client.state))
+		if (has_provided_a_password(client.state))
 		{
-			/* client registered successfully */
-			client.state |= t_IRC_Client::REGISTERED;
+			if (has_provided_credents_in_right_order_and_pass_is_correct(client.state))
+			{
+				/* client registered successfully */
+				client.state |= t_IRC_Client::REGISTERED;
 
-			build_RPL_WELCOME(client);
-			build_RPL_YOURHOST(client);
-			build_RPL_CREATED(client);
-			build_RPL_MYINFO(client);
-			build_RPL_ISUPPORT(client);
+				build_RPL_WELCOME(client);
+				build_RPL_YOURHOST(client);
+				build_RPL_CREATED(client);
+				build_RPL_MYINFO(client);
+				build_RPL_ISUPPORT(client);
 
-			build_RPL_MOTDSTART(client);
-			build_RPL_MOTD(client, "Welcome to our humble server!");
-			build_RPL_ENDOFMOTD(client);
+				build_RPL_MOTDSTART(client);
+				build_RPL_MOTD(client, "Welcome to our humble server!");
+				build_RPL_ENDOFMOTD(client);
+
+			}
+			else
+			{
+				/* client has failed the registration process */
+				client.state |= t_IRC_Client::DISCONNECT;
+				build_ERR_PASSWDMISMATCH(client);
+				queue_registration_error(client.send_message_buffer, server.name,
+					client.hostname);
+			}
 		}
 		else
 		{
-			/* The "dd horse" protocol treats all of the following registration
-			* scnarios as failed attempts. It requires sending the numeric reply
-			* ERR_PASSWDMISMATCH and an error message before disconnecting:
-			* • Wrong password
-			* • NICK / USER provided before password
-			* • both NICK and USER provided but no password */
-			build_ERR_PASSWDMISMATCH(client);
-			queue_registration_error(client.send_message_buffer, server.name,
-				client.hostname);
-			client.state |= t_IRC_Client::DISCONNECT;
+			/* Wrong order!
+			*  client has not provided password yet, but they did provide both
+			*  NICK & USER. Grant them possiblity to still provide the password;
+			*  but registration will end up failing anyways */
+			client.state |= t_IRC_Client::WRONG_ORDER;
 		}
 	}
 }
 
-bool	is_flag_set(const t_bmask state, const unsigned int mask)
+bool	is_flag_set(t_bmask state, t_bmask mask)
 {
 	if ((state & mask) == mask)
 		return true;
 	return false;
 }
 
-bool	has_provided_user_and_nick_names(t_bmask state)
+bool	has_provided_a_password(t_bmask state)
 {
-
-	if (is_flag_set(state, (t_IRC_Client::NICK | t_IRC_Client::USERNAME)))
+	if (is_flag_set(state, t_IRC_Client::PSWD_GIVEN))
 		return true;
 	return false;
 }
 
-bool	has_provided_password_first_and_it_is_correct(t_bmask state)
+bool	has_provided_credents_in_right_order_and_pass_is_correct(t_bmask state)
 {
-	if (is_flag_set(state, (t_IRC_Client::PSWD_FIRST | t_IRC_Client::PSWD_CORRECT)))
+	if (is_flag_set(state, t_IRC_Client::WRONG_ORDER))
+		return false;
+
+	if (is_flag_set(state, t_IRC_Client::PSWD_CORRECT))
+		return true;
+
+	return false;
+}
+
+bool	has_provided_both_user_and_nick(t_bmask state)
+{
+
+	if (is_flag_set(state, (t_IRC_Client::NICK | t_IRC_Client::USERNAME)))
 		return true;
 	return false;
 }

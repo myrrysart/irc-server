@@ -120,11 +120,12 @@ typedef struct	s_IRC_Client
 	enum {
 		DISCONNECT   = BIT(0),
 		REGISTERED   = BIT(1),
-		PSWD_FIRST   = BIT(2),
+		PSWD_GIVEN   = BIT(2),
 		PSWD_CORRECT = BIT(3),
-		NICK         = BIT(4),
-		USERNAME     = BIT(5),
-		DISCARD_MSG  = BIT(6)
+		WRONG_ORDER  = BIT(4),
+		NICK         = BIT(5),
+		USERNAME     = BIT(6),
+		DISCARD_MSG  = BIT(7)
 	};
 
 	// IRC protocol's username length parameter
@@ -202,7 +203,7 @@ typedef struct	s_IRC_Server
 }													t_IRC_Server;
 
 /* Bit mask utils */
-bool	is_flag_set(const t_bmask state, const unsigned int mask);
+bool	is_flag_set(t_bmask state, t_bmask mask);
 
 /* Error logging */
 void	log_error(const char *error, const char *context, const char *filename,
