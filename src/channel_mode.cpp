@@ -77,11 +77,6 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		build_ERR_NOTONCHANNEL(client, channel.name); // 442
 		return;
 	}
-	if (!is_flag_set(member_it->second, IS_OPERATOR))
-	{
-		build_ERR_CHANOPRIVSNEEDED(client, channel.name); // 482
-		return;
-	}
 
 	std::string_view	modes = client.parser.params[1];
 	size_t				arg_idx = 2;	// next mode-argument param to consume (for k/l/o)
@@ -109,6 +104,21 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		if (!sign)  // skip invalid
 			continue;
 
+		if(current_char != 'i' &&
+			current_char != 't' &&
+			current_char != 'k' &&
+			current_char != 'l' &&
+			current_char != 'o')
+		{
+			build_ERR_UNKNOWNMODE(client, current_char); // 472
+			continue;
+		}
+
+		if (!is_flag_set(member_it->second, IS_OPERATOR))
+		{
+			build_ERR_CHANOPRIVSNEEDED(client, channel.name); // 482
+			return;
+		}
 		if (current_char == 'i')
 			handle_invite(sign, channel, plus_chars, minus_chars);
 		else if (current_char == 't')
@@ -122,8 +132,6 @@ void	execute_MODE_cmd(t_IRC_Client &client, t_IRC_Server &server)
 		else if (current_char == 'o')
 			handle_operator(client, sign, channel, arg_idx,
 					plus_chars, plus_args, minus_chars, minus_args);
-		else
-			build_ERR_UNKNOWNMODE(client, current_char); // 472
 	}
 
 	// broadcast only the changes that actually applied, e.g. "+ik key -l"
